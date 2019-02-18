@@ -32,17 +32,21 @@ class CommentAnnotation:
         self.evidentiality = json["comment"]["Evidentiality"]
         self.annotated_at = json["comment"]["AnnotatedAt"]
 
-    def create_feature_vector(self):
+    def create_feature_vector(self, swear_words, negation_words):
         feature_vec = list()
 
         feature_vec.extend(self.text_features())
         feature_vec.extend(self.user_features())
-        feature_vec.extend(self.special_words_in_text())
+        feature_vec.extend(self.special_words_in_text(swear_words, negation_words))
+        feature_vec.extend(self.reddit_comment_features())
 
         return (self.comment_id, self.sdqc_to_int(self.sdqc_parent), self.sdqc_to_int(self.sdqc_submission), feature_vec)
     
     def text_features(self):
+        # number of chars
         txt_len = len(self.text)
+        # number of words
+        word_len = len(self.text.split())
         #Period (.)
         period = '.' in self.text
         #Explamation mark (!)
@@ -52,14 +56,29 @@ class CommentAnnotation:
         #Ratio of capital letters
         cap_count = sum(1 for c in self.text if c.isupper())
         cap_ratio = cap_count / len(self.text)
-        return [int(period), int(e_mark), int(q_mark), float(cap_ratio), txt_len]
+        return [int(period), int(e_mark), int(q_mark), float(cap_ratio), txt_len, word_len]
     
     def user_features(self):
         return [self.user_karma, int(self.user_gold_status), int(self.user_is_employee), int(self.user_has_verified_email)]
 
     # TODO: find special word cases
-    def special_words_in_text(self):
-        return []
+    def special_words_in_text(self, swear_words, negation_words):
+        split_text = self.text.split(" ")
+        
+        swear_count = 0
+        negation_count = 0
+        for word in split_text:
+            w = word.strip().lower()
+            if w in swear_words:
+                swear_count += 1
+
+            if w in negation_words:
+                negation_count += 1
+                
+        return [swear_count, negation_count]
+
+    def reddit_comment_features(self):
+        return [self.upvotes, self.reply_count, int(self.is_submitter)]
 
     def sdqc_to_int(self, sdqc):
         return {
