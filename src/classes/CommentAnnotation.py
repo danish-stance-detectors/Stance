@@ -84,6 +84,7 @@ class CommentAnnotation:
                 word_len,
                 avg_word_len]
     
+    # TODO: Normalize user karma
     def user_features(self):
         return [self.user_karma, int(self.user_gold_status), int(self.user_is_employee), int(self.user_has_verified_email)]
 
