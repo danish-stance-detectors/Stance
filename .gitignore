@@ -1,5 +1,7 @@
 # Data files
 data/fasttext/*.bin
+data/annotated/**/*.json
+data/preprocessed/*.csv
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

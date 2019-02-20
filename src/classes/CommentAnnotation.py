@@ -47,16 +47,42 @@ class CommentAnnotation:
         txt_len = len(self.text)
         # number of words
         word_len = len(self.text.split())
+
+        avg_word_len = sum([len(word) for word in self.text.split()]) / word_len
+
         #Period (.)
         period = '.' in self.text
-        #Explamation mark (!)
+        #Exclamation mark (!)
         e_mark = '!' in self.text
         #Question mark(?)
         q_mark = '?' in self.text
+
+        #dotdotdot
+        hasTripDot = '...' in self.text
+        
+        #dotdotdot count
+        tripDotCount = self.text.count('...')
+        
+        #Question mark count
+        q_mark_count = self.text.count('?')
+
+        #Exclamation mark count
+        e_mark_count = self.text.count('!')
+
         #Ratio of capital letters
         cap_count = sum(1 for c in self.text if c.isupper())
         cap_ratio = cap_count / len(self.text)
-        return [int(period), int(e_mark), int(q_mark), float(cap_ratio), txt_len, word_len]
+        return [int(period), 
+                int(e_mark), 
+                int(q_mark), 
+                int(hasTripDot), 
+                tripDotCount, 
+                q_mark_count, 
+                e_mark_count, 
+                float(cap_ratio), 
+                txt_len, 
+                word_len,
+                avg_word_len]
     
     def user_features(self):
         return [self.user_karma, int(self.user_gold_status), int(self.user_is_employee), int(self.user_has_verified_email)]
