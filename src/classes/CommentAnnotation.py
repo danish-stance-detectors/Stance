@@ -1,3 +1,6 @@
+from nltk import word_tokenize
+import re
+
 class CommentAnnotation:
 
     # initialies comment annotation class given json
@@ -32,13 +35,20 @@ class CommentAnnotation:
         self.evidentiality = json["comment"]["Evidentiality"]
         self.annotated_at = json["comment"]["AnnotatedAt"]
 
-    def create_feature_vector(self, swear_words, negation_words):
+        # Remove non-alphabetic characters and tokenize
+        text_ = re.sub("[^a-zA-Z]", " ", self.text) #replace with space
+        #Convert all words to lower case and tokenize
+        self.tokens = word_tokenize(text_.lower())
+
+    def create_feature_vector(self, swear_words, negation_words, word_embeddings):
         feature_vec = list()
 
         feature_vec.extend(self.text_features())
         feature_vec.extend(self.user_features())
         feature_vec.extend(self.special_words_in_text(swear_words, negation_words))
         feature_vec.extend(self.reddit_comment_features())
+        if word_embeddings:
+            feature_vec.extend(word_embeddings)
 
         return (self.comment_id, self.sdqc_to_int(self.sdqc_parent), self.sdqc_to_int(self.sdqc_submission), feature_vec)
     

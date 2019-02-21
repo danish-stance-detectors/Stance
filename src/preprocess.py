@@ -1,6 +1,7 @@
 import os, json, csv, sys
 import numpy as np
 
+import word_embeddings
 from classes.CommentAnnotation import CommentAnnotation
 
 datafolder = '../data/'
@@ -19,7 +20,7 @@ with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
     for line in negation_word_file.readlines():
         negation_words.append(line.strip())
 
-def preprocess(datafolder):
+def preprocess(datafolder, wembs=None, emb_dim=100):
     feature_list = []
     for submission_json in os.listdir(datafolder):
         file_json_path = os.path.join(datafolder, submission_json)
@@ -27,12 +28,10 @@ def preprocess(datafolder):
             json_list = json.load(file)
             for json_obj in json_list:
                 annotation = CommentAnnotation(json_obj)
-                feature_list.append(annotation.create_feature_vector(swear_words, negation_words))
+                wembs_ = word_embeddings.avg_word_emb(annotation.tokens, emb_dim, wembs) if wembs else []
+                feature_list.append(annotation.create_feature_vector(swear_words, negation_words, wembs_))                
+                    
     return feature_list
-
-# vec = [x[3] for x in feature_list]
-# karma = vec[:6]
-# vec [:6] = (karma - karma.min()) / (karma.max() - karma.min())
 
 def write_preprocessed(preprocessed_data, filename):
     with open(preprocessed_folder + filename, "w+", newline='') as out_file:
@@ -44,7 +43,8 @@ def write_preprocessed(preprocessed_data, filename):
         
 def main(argv):
     hpv_data_folder = '../data/annotated/hpv/'
-    data = preprocess(hpv_data_folder)
+    wembs = word_embeddings.load_saved_word2vec_wv('../data/word2vec/dsl_sentences.txt_200_cbow_softmax.kv')
+    data = preprocess(hpv_data_folder, wembs, emb_dim=200)
     write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":

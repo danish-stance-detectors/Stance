@@ -24,6 +24,9 @@ def train_save_word2vec(corpus_file_path, vector_size=100, architecture='cbow', 
     print('Saved!')
     return model
 
+def load_saved_word2vec_wv(filepath):
+    return KeyedVectors.load(filepath)
+
 def load_word_embeddings_bin(filename, algorithm='fasttext'):
     model = lambda: None
     if(algorithm == 'fasttext'):
@@ -32,18 +35,18 @@ def load_word_embeddings_bin(filename, algorithm='fasttext'):
         model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
     return model
 
-def avg_word_emb(tokens, embedding_size, model):
+def avg_word_emb(tokens, embedding_size, wembs):
     vec = np.zeros(embedding_size) #word embedding
     #make up for varying lengths with zero-padding
     n = len(tokens)
     for w_i in range(n):
         token = tokens[w_i]
-        if (token in model.wv):
-            vec += model.wv[token]
+        if (token in wembs):
+            vec += wembs[token]
     #Average word embeddings
-    return vec/n
+    return (vec/n).tolist()
 
-corpus_file = '../../Data/DSL_Corpus/dsl_sentences.txt'
-train_save_word2vec(corpus_file)
+# corpus_file = '../../Data/DSL_Corpus/dsl_sentences.txt'
+# train_save_word2vec(corpus_file)
 
 
