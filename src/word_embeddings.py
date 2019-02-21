@@ -1,14 +1,27 @@
-import pickle
+import sys, os
 import numpy as np
 from gensim.models import Word2Vec
 from gensim.models.keyedvectors import KeyedVectors
 from gensim.models.fasttext import FastText
 
-def train_word2vec(corpus_file_path, vector_size=100, window_size=5, architecture='cbow', train_algorithm='softmax', sub_sample=0.001):
+word2vec_path = '../data/word2vec/'
+
+def train_save_word2vec(corpus_file_path, vector_size=100, architecture='cbow', train_algorithm='softmax', workers=4):
     """architecture: 'skim-gram' or 'cbow'. train_algorithm: 'softmax' or 'negative'"""
+    sentences = []
+    with open(corpus_file, 'r', encoding='utf8') as corpus:
+        for line in corpus:
+            sentences.append(line.rstrip('\n').split(' '))
     arch = 1 if architecture=='skip-gram' else 0
     train = 1 if train_algorithm=='softmax' else 0
-    model = Word2Vec(corpus_file=corpus_file_path, size=vector_size, window=window_size, min_count=1, workers=4, sg=arch, hs=train, sample=sub_sample)
+    print('Training...')
+    model = Word2Vec(sentences=sentences, size=vector_size, min_count=1, workers=workers, sg=arch, hs=train)
+    print('Done!')
+    filename = "{0}_{1}_{2}_{3}".format(corpus_file_path.split('/')[-1].split('.')[0], vector_size, architecture, train_algorithm)
+    print('Saving model and word embeddings in {0}.model and {0}.kv respectively'.format(filename))
+    model.save(os.path.join(word2vec_path, "{}.model".format(filename)))
+    model.wv.save(os.path.join(word2vec_path, "{}.kv".format(filename)))
+    print('Saved!')
     return model
 
 def load_word_embeddings_bin(filename, algorithm='fasttext'):
@@ -29,3 +42,8 @@ def avg_word_emb(tokens, embedding_size, model):
             vec += model.wv[token]
     #Average word embeddings
     return vec/n
+
+corpus_file = '../../Data/DSL_Corpus/dsl_sentences.txt'
+train_save_word2vec(corpus_file)
+
+
