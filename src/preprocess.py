@@ -41,10 +41,11 @@ def write_preprocessed(preprocessed_data, filename):
         for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
         
+# TODO: make file and emb size dynamic / inputs
 def main(argv):
     hpv_data_folder = '../data/annotated/hpv/'
-    wembs = word_embeddings.load_saved_word2vec_wv('../data/word2vec/dsl_sentences.txt_200_cbow_softmax.kv')
-    data = preprocess(hpv_data_folder, wembs, emb_dim=200)
+    wembs = word_embeddings.load_saved_word2vec_wv('../data/word2vec/dsl_sentences_100_cbow_softmax.kv')
+    data = preprocess(hpv_data_folder, wembs, emb_dim=100)
     write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":
