@@ -2,6 +2,8 @@
 data/fasttext/*.bin
 data/annotated/**/*.json
 data/preprocessed/*.csv
+data/word2vec/*
+!data/word2vec/README.md
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
