@@ -100,16 +100,13 @@ class CommentAnnotation:
 
     # TODO: find special word cases
     def special_words_in_text(self, swear_words, negation_words):
-        split_text = self.text.split(" ")
-        
         swear_count = 0
         negation_count = 0
-        for word in split_text:
-            w = word.strip().lower()
-            if w in swear_words:
+        for word in self.tokens:
+            if word in swear_words:
                 swear_count += 1
 
-            if w in negation_words:
+            if word in negation_words:
                 negation_count += 1
                 
         return [swear_count, negation_count]
