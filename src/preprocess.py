@@ -1,6 +1,6 @@
 import os, json, csv, sys
 import numpy as np
-
+import getopt
 import word_embeddings
 from classes.CommentAnnotation import CommentAnnotation
 
@@ -21,6 +21,8 @@ with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
         negation_words.append(line.strip())
 
 def preprocess(datafolder, wembs=None, emb_dim=100):
+    if not datafolder:
+        return
     feature_list = []
     for submission_json in os.listdir(datafolder):
         file_json_path = os.path.join(datafolder, submission_json)
@@ -34,6 +36,8 @@ def preprocess(datafolder, wembs=None, emb_dim=100):
     return feature_list
 
 def write_preprocessed(preprocessed_data, filename):
+    if not preprocessed_data:
+        return
     with open(preprocessed_folder + filename, "w+", newline='') as out_file:
         csv_writer = csv.writer(out_file, delimiter='\t')
         csv_writer.writerow(['comment_id', 'sdqc_parent', 'sdqc_submission', 'feature_vector'])
@@ -41,11 +45,23 @@ def write_preprocessed(preprocessed_data, filename):
         for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
         
-# TODO: make file and emb size dynamic / inputs
+
 def main(argv):
-    hpv_data_folder = '../data/annotated/hpv/'
-    wembs = word_embeddings.load_saved_word2vec_wv('../data/word2vec/dsl_sentences_100_cbow_softmax.kv')
-    data = preprocess(hpv_data_folder, wembs, emb_dim=100)
+    data_folder = wembs = emb_dim = None
+    try:
+        opts, _ = getopt.getopt(argv, "l:d:e:", ["loadw2v=","data=","emb_dim=","help"])
+    except getopt.GetoptError:
+        print("see: preprocess.py -help")
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt in ('-l', '-loadw2v'):
+            wembs = word_embeddings.load_saved_word2vec_wv(arg)
+        elif opt in ('-d', '-data'):
+            data_folder = arg
+        elif opt in ('-e', '-emb_dim'):
+            emb_dim = arg
+
+    data = preprocess(data_folder, wembs, emb_dim=emb_dim)
     write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":
