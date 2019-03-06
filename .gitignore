@@ -1,5 +1,6 @@
 # Data files
-data/fasttext/*.bin
+data/fasttext/*
+!data/fasttext/README.md
 data/annotated/**/*.json
 data/preprocessed/*.csv
 src/tree_pdfs/**
