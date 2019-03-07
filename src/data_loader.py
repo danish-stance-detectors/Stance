@@ -14,7 +14,7 @@ def get_instances(filename, delimiter):
             next(csvreader) # Skip header row
         for row in csvreader:
             c_id = row[0]
-            sdqc = int(row[1])
+            sdqc = int(row[2])
             values = row[3].strip("[").strip("]").split(',')
             instance_vec = [float(i.strip()) for i in values]
             max_emb = max(max_emb, len(instance_vec))
