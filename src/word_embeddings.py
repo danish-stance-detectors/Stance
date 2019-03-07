@@ -50,6 +50,8 @@ def avg_word_emb(tokens, embedding_size, wembs):
     vec = np.zeros(embedding_size) #word embedding
     #make up for varying lengths with zero-padding
     n = len(tokens)
+    if (n == 0):
+        return vec.tolist()
     for w_i in range(n):
         token = tokens[w_i]
         if (token in wembs):
