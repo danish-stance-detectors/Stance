@@ -1,6 +1,4 @@
 import os, json, csv, sys
-import numpy as np
-import getopt
 import word_embeddings
 import feature_extractor
 from classes.CommentAnnotation import CommentAnnotation
@@ -21,6 +19,7 @@ with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
     for line in negation_word_file.readlines():
         negation_words.append(line.strip())
 
+
 def loadAnnotations(datafolder):
     if not datafolder:
         return
@@ -34,14 +33,16 @@ def loadAnnotations(datafolder):
                 annotations.append(annotation)
     return annotations
 
+
 def preprocess(annotations, wembs=None, emb_dim=100):
     if not annotations:
         return
     feature_list = []
     for annotation in annotations:
-        wembs_ = word_embeddings.avg_word_emb(annotation.tokens, emb_dim, wembs) if wembs else []
-        feature_list.append(feature_extractor.create_feature_vector(annotation, swear_words, negation_words, wembs_))
+        instance = feature_extractor.create_feature_vector(annotation, swear_words, negation_words, wembs, emb_dim)
+        feature_list.append(instance)
     return feature_list
+
 
 def write_preprocessed(preprocessed_data, filename):
     if not preprocessed_data:
@@ -70,7 +71,8 @@ def main(argv):
     #         emb_dim = arg
 
     wembs = word_embeddings.load_saved_word2vec_wv(word2vec_data)
-    data = preprocess("../data/annotated/peter-madsen", wembs, emb_dim=200)
+    annotations = loadAnnotations("../data/annotated/peter-madsen")
+    data = preprocess(annotations, wembs, emb_dim=200)
     write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":

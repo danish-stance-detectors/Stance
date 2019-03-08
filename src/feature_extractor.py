@@ -1,8 +1,12 @@
+import word_embeddings
+
 # Module for extracting features from comment annotations
 
 # Extracts features from comment annotation and extends the different kind of features to eachother.
-def create_feature_vector(comment, swear_words, negation_words, word_embeddings):
+def create_feature_vector(comment, swear_words, negation_words, wembs, emb_dim):
     feature_vec = list()
+
+    word_embeddings = word_embeddings.avg_word_emb(comment.tokens, emb_dim, wembs) if wembs else []
 
     feature_vec.extend(text_features(comment.text))
     feature_vec.extend(user_features(comment))
