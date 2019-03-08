@@ -1,6 +1,6 @@
 import word_embeddings
-from CommentAnnotation import CommentAnnotation
-from CommentAnnotation Import Annotations
+from classes.Annotation import CommentAnnotation
+from classes.Annotation import Annotations
 
 # Module for extracting features from comment annotations
 
@@ -31,14 +31,14 @@ class FeatureExtractor:
     def create_feature_vector(self, comment):
         feature_vec = list()
 
-        word_embeddings = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wembs) if self.wembs else []
+        wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wembs) if self.wembs else []
 
         feature_vec.extend(self.text_features(comment.text))
         feature_vec.extend(self.user_features(comment))
         feature_vec.extend(self.special_words_in_text(comment.tokens, self.swear_words, self.negation_words))
         feature_vec.extend(self.reddit_comment_features(comment))
-        if word_embeddings:
-            feature_vec.extend(word_embeddings)
+        if wembs:
+            feature_vec.extend(wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 

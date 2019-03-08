@@ -1,6 +1,5 @@
 import os, json, csv, sys
 import word_embeddings
-import feature_extractor
 from classes.Annotation import CommentAnnotation
 from classes.Annotation import Annotations
 from classes.Features import FeatureExtractor
@@ -39,7 +38,7 @@ def loadAnnotations(datafolder):
 def preprocess(annotations, wembs=None, emb_dim=100):
     if not annotations:
         return
-    feature_extractor = FeatureExtactor(annotations, swear_words, negation_words, wembs, emb_dim)
+    feature_extractor = FeatureExtractor(annotations, swear_words, negation_words, wembs, emb_dim)
     return feature_extractor.create_feature_vectors()
 
 
