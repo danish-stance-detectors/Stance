@@ -1,15 +1,13 @@
 from nltk import word_tokenize
 import re
 
-karma_max = 0
-karma_min = 0
 
 class CommentAnnotation:
 
-    # initialies comment annotation class given json
+    # initialises comment annotation class given json
     def __init__(self, json):
 
-        #comment info
+        # comment info
         self.submission_id = json["comment"]["SubmissionID"]
         self.comment_id = json["comment"]["comment_id"]
         self.text = json["comment"]["text"]
@@ -43,9 +41,31 @@ class CommentAnnotation:
         # Convert all words to lower case and tokenize
         self.tokens = word_tokenize(text_.lower())
 
-        if self.user_karma > karma_max:
-            global karma_max
-            karma_max = self.user_karma
-        if self.user_karma < karma_min:
-            global karma_min
-            karma_min = self.user_karma
+
+class Annotations:
+    def __init__(self):
+        self.annotations = []
+        self.current_index = 0
+        self.karma_max = 0
+        self.karma_min = 0
+
+    def add_annotation(self, annotation):
+        if not annotation:
+            return
+        self.handle_karma(annotation)
+
+        self.annotations.append(annotation)
+        return annotation
+
+    def handle_karma(self, annotation):
+        if annotation.user_karma > self.karma_max:
+            self.karma_max = annotation.user_karma
+        if annotation.user_karma < self.karma_min:
+            self.karma_min = annotation.user_karma
+
+    # def handle_frequent_words(self, annotation):
+    # TODO: Make histogram of frequent words per class
+
+    def iterate(self):
+        for annotation in self.annotations:
+            yield annotation

@@ -1,7 +1,9 @@
 import os, json, csv, sys
 import word_embeddings
 import feature_extractor
-from classes.CommentAnnotation import CommentAnnotation
+from classes.Annotation import CommentAnnotation
+from classes.Annotation import Annotations
+from classes.Features import FeatureExtractor
 
 datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
@@ -23,25 +25,22 @@ with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
 def loadAnnotations(datafolder):
     if not datafolder:
         return
-    annotations = []
+    annotations = Annotations()
     for submission_json in os.listdir(datafolder):
         file_json_path = os.path.join(datafolder, submission_json)
         with open(file_json_path, "r", encoding='utf-8') as file:
             json_list = json.load(file)
             for json_obj in json_list:
                 annotation = CommentAnnotation(json_obj)
-                annotations.append(annotation)
+                annotations.add_annotation(annotation)
     return annotations
 
 
 def preprocess(annotations, wembs=None, emb_dim=100):
     if not annotations:
         return
-    feature_list = []
-    for annotation in annotations:
-        instance = feature_extractor.create_feature_vector(annotation, swear_words, negation_words, wembs, emb_dim)
-        feature_list.append(instance)
-    return feature_list
+    feature_extractor = FeatureExtactor(annotations, swear_words, negation_words, wembs, emb_dim)
+    return feature_extractor.create_feature_vectors()
 
 
 def write_preprocessed(preprocessed_data, filename):
