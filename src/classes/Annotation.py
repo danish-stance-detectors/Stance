@@ -37,7 +37,7 @@ class CommentAnnotation:
         self.annotated_at = json["comment"]["AnnotatedAt"]
 
         # Remove non-alphabetic characters and tokenize
-        text_ = re.sub("[^a-zA-Z]", " ", self.text) # replace with space
+        text_ = re.sub("[^a-åA-Å]", " ", self.text) # replace with space
         # Convert all words to lower case and tokenize
         self.tokens = word_tokenize(text_.lower())
 
@@ -46,22 +46,43 @@ class Annotations:
     def __init__(self):
         self.annotations = []
         self.current_index = 0
+        # mapping from property to tuple: (min, max)
+        self.min_max = {
+            'karma': [0, 0],
+            'txt_len': [0, 0],
+            'tokens_len': [0, 0],
+            'avg_word_len': [0, 0]
+        }
+        self.min_i = 0
+        self.max_i = 1
         self.karma_max = 0
         self.karma_min = 0
 
     def add_annotation(self, annotation):
         if not annotation:
             return
-        self.handle_karma(annotation)
+        self.handle(self.min_max['karma'], annotation.user_karma)
+        self.handle(self.min_max['txt_len'], len(annotation.text))
+        word_len = len(annotation.tokens)
+        if not word_len == 0:
+            self.handle(self.min_max['tokens_len'], word_len)
+            self.handle(self.min_max['avg_word_len'],
+                        sum([len(word) for word in annotation.tokens]) / word_len)
 
         self.annotations.append(annotation)
         return annotation
 
-    def handle_karma(self, annotation):
-        if annotation.user_karma > self.karma_max:
-            self.karma_max = annotation.user_karma
-        if annotation.user_karma < self.karma_min:
-            self.karma_min = annotation.user_karma
+    def handle(self, entries, property):
+        if property > entries[self.max_i]:
+            entries[self.max_i] = property
+        if property < entries[self.min_i] or entries[self.min_i] == 0:
+            entries[self.min_i] = property
+
+    def get_min(self, key):
+        return self.min_max[key][self.min_i]
+
+    def get_max(self, key):
+        return self.min_max[key][self.max_i]
 
     # def handle_frequent_words(self, annotation):
     # TODO: Make histogram of frequent words per class

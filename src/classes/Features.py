@@ -33,7 +33,7 @@ class FeatureExtractor:
 
         wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wembs) if self.wembs else []
 
-        feature_vec.extend(self.text_features(comment.text))
+        feature_vec.extend(self.text_features(comment.text, comment.tokens))
         feature_vec.extend(self.user_features(comment))
         feature_vec.extend(self.special_words_in_text(comment.tokens, self.swear_words, self.negation_words))
         feature_vec.extend(self.reddit_comment_features(comment))
@@ -44,24 +44,34 @@ class FeatureExtractor:
 
         return (comment.comment_id, parent_sdqc, sub_sdqc, feature_vec)
 
-    def text_features(self, text):
+    def text_features(self, text, tokens):
         # number of chars
-        txt_len = len(text)
+        #txt_len = len(text)
+        txt_len = normalize(
+            len(text), self.annotations.get_min('txt_len'), self.annotations.get_max('txt_len')
+            ) if len(text) > 0 else 0
         # number of words
-        word_len = len(text.split())
-
-        avg_word_len = sum([len(word) for word in text.split()]) / word_len
+        #word_len = len(tokens)
+        tokens_len = 0
+        avg_word_len = 0
+        if len(tokens) > 0:
+            tokens_len = normalize(len(tokens),
+                                   self.annotations.get_min('tokens_len'), self.annotations.get_max('tokens_len'))
+            avg_word_len_true = sum([len(word) for word in tokens]) / len(tokens)
+            avg_word_len = normalize(avg_word_len_true,
+                                     self.annotations.get_min('avg_word_len'), self.annotations.get_max('avg_word_len'))
 
         # Period (.)
-        period = '.' in text
+        period = int('.' in text)
         # Exclamation mark (!)
-        e_mark = '!' in text
+        e_mark = int('!' in text)
         # Question mark(?)
-        q_mark = '?' in text
+        q_mark = int('?' in text)
 
         # dotdotdot
-        hasTripDot = '...' in text
+        hasTripDot = int('...' in text)
 
+        # TODO: Normalize the following?
         # dotdotdot count
         tripDotCount = text.count('...')
 
@@ -73,22 +83,22 @@ class FeatureExtractor:
 
         # Ratio of capital letters
         cap_count = sum(1 for c in text if c.isupper())
-        cap_ratio = cap_count / len(text)
-        return [int(period),
-                int(e_mark),
-                int(q_mark),
-                int(hasTripDot),
+        cap_ratio = float(cap_count) / float(len(text)) if len(text) > 0 else 0.0
+        return [period,
+                e_mark,
+                q_mark,
+                hasTripDot,
                 tripDotCount,
                 q_mark_count,
                 e_mark_count,
-                float(cap_ratio),
+                cap_ratio,
                 txt_len,
-                word_len,
+                tokens_len,
                 avg_word_len]
 
     # TODO: Normalize user karma
     def user_features(self, comment):
-        karma_norm = normalize(comment.user_karma, self.annotations.karma_min, self.annotations.karma_max)
+        karma_norm = normalize(comment.user_karma, self.annotations.get_min('karma'), self.annotations.get_max('karma'))
         return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee), int(comment.user_has_verified_email)]
 
 
