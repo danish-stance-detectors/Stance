@@ -15,11 +15,11 @@ negation_words = []
 
 with open('../data/lexicon/swear_words.txt', "r") as swear_word_file:
     for line in swear_word_file.readlines():
-        swear_words.append(line.strip())
+        swear_words.append(line.strip().lower())
 
 with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
     for line in negation_word_file.readlines():
-        negation_words.append(line.strip())
+        negation_words.append(line.strip().lower())
 
 
 def loadAnnotations(datafolder):
