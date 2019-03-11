@@ -6,6 +6,7 @@ from classes.Features import FeatureExtractor
 
 datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
+annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
 word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
 
@@ -25,13 +26,17 @@ def loadAnnotations(datafolder):
     if not datafolder:
         return
     annotations = Annotations()
-    for submission_json in os.listdir(datafolder):
-        file_json_path = os.path.join(datafolder, submission_json)
-        with open(file_json_path, "r", encoding='utf-8') as file:
-            json_list = json.load(file)
-            for json_obj in json_list:
-                annotation = CommentAnnotation(json_obj)
-                annotations.add_annotation(annotation)
+    for rumour_folder in os.listdir(datafolder):
+        rumour_folder_path = os.path.join(datafolder, rumour_folder)
+        if not os.path.isdir(rumour_folder_path):
+            continue
+        for submission_json in os.listdir(rumour_folder_path):
+            file_json_path = os.path.join(rumour_folder_path, submission_json)
+            with open(file_json_path, "r", encoding='utf-8') as file:
+                json_list = json.load(file)
+                for json_obj in json_list:
+                    annotation = CommentAnnotation(json_obj)
+                    annotations.add_annotation(annotation)
     return annotations
 
 
@@ -69,7 +74,7 @@ def main(argv):
     #         emb_dim = arg
 
     wembs = word_embeddings.load_saved_word2vec_wv(word2vec_data)
-    annotations = loadAnnotations("../data/annotated/peter-madsen")
+    annotations = loadAnnotations(annotated_folder)
     data = preprocess(annotations, wembs, emb_dim=200)
     write_preprocessed(data, 'preprocessed.csv')
 
