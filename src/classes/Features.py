@@ -46,20 +46,14 @@ class FeatureExtractor:
 
     def text_features(self, text, tokens):
         # number of chars
-        #txt_len = len(text)
-        txt_len = normalize(
-            len(text), self.annotations.get_min('txt_len'), self.annotations.get_max('txt_len')
-            ) if len(text) > 0 else 0
+        txt_len = self.normalize(len(text), 'txt_len') if len(text) > 0 else 0
         # number of words
-        #word_len = len(tokens)
         tokens_len = 0
         avg_word_len = 0
         if len(tokens) > 0:
-            tokens_len = normalize(len(tokens),
-                                   self.annotations.get_min('tokens_len'), self.annotations.get_max('tokens_len'))
+            tokens_len = self.normalize(len(tokens), 'tokens_len')
             avg_word_len_true = sum([len(word) for word in tokens]) / len(tokens)
-            avg_word_len = normalize(avg_word_len_true,
-                                     self.annotations.get_min('avg_word_len'), self.annotations.get_max('avg_word_len'))
+            avg_word_len = self.normalize(avg_word_len_true,'avg_word_len')
 
         # Period (.)
         period = int('.' in text)
@@ -73,13 +67,13 @@ class FeatureExtractor:
 
         # TODO: Normalize the following?
         # dotdotdot count
-        tripDotCount = text.count('...')
+        # tripDotCount = text.count('...')
 
-        # Question mark count
-        q_mark_count = text.count('?')
+        # # Question mark count
+        # q_mark_count = text.count('?')
 
-        # Exclamation mark count
-        e_mark_count = text.count('!')
+        # # Exclamation mark count
+        # e_mark_count = text.count('!')
 
         # Ratio of capital letters
         cap_count = sum(1 for c in text if c.isupper())
@@ -88,17 +82,17 @@ class FeatureExtractor:
                 e_mark,
                 q_mark,
                 hasTripDot,
-                tripDotCount,
-                q_mark_count,
-                e_mark_count,
+                # tripDotCount,
+                # q_mark_count,
+                # e_mark_count,
                 cap_ratio,
                 txt_len,
                 tokens_len,
                 avg_word_len]
 
-    # TODO: Normalize user karma
+
     def user_features(self, comment):
-        karma_norm = normalize(comment.user_karma, self.annotations.get_min('karma'), self.annotations.get_max('karma'))
+        karma_norm = self.normalize(comment.user_karma, 'karma')
         return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee), int(comment.user_has_verified_email)]
 
 
@@ -113,10 +107,14 @@ class FeatureExtractor:
             if word in negation_words:
                 negation_count += 1
 
-        return [swear_count, negation_count]
+        return [swear_count, negation_count] #TODO: Normalize
 
     def reddit_comment_features(self, comment):
-        return [comment.upvotes, comment.reply_count, int(comment.is_submitter)]
+        upvotes_norm = self.normalize(comment.upvotes, 'upvotes')
+        reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
+        return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
 
-def normalize(x_i, min_x, max_x):
-    return (x_i-min_x)/(max_x-min_x)
+    def normalize(self, x_i, property):
+        min_x = self.annotations.get_min(property)
+        max_x = self.annotations.get_max(property)
+        return (x_i-min_x)/(max_x-min_x)

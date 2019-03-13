@@ -51,7 +51,9 @@ class Annotations:
             'karma': [0, 0],
             'txt_len': [0, 0],
             'tokens_len': [0, 0],
-            'avg_word_len': [0, 0]
+            'avg_word_len': [0, 0],
+            'upvotes': [0, 0],
+            'reply_count': [0, 0]
         }
         self.min_i = 0
         self.max_i = 1
@@ -68,6 +70,8 @@ class Annotations:
             self.handle(self.min_max['tokens_len'], word_len)
             self.handle(self.min_max['avg_word_len'],
                         sum([len(word) for word in annotation.tokens]) / word_len)
+        self.handle(self.min_max['upvotes'], annotation.upvotes)
+        self.handle(self.min_max['reply_count'], annotation.reply_count)
 
         self.annotations.append(annotation)
         return annotation
