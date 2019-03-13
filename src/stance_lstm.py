@@ -68,8 +68,8 @@ training_data = '../data/preprocessed/preprocessed.csv'
 instances, emb_size = data_loader.get_instances(training_data, '\t')
 train, test = train_test_split(instances, test_size=0.25, random_state=42)
 EMB = emb_size
-HIDDEN_DIM = 100
-EPOCHS = 30
+HIDDEN_DIM = 300
+EPOCHS = 50
 
 model = StanceLSTM(EMB, HIDDEN_DIM, len(l2i), pre_trained=True)
 loss_func = nn.NLLLoss()
