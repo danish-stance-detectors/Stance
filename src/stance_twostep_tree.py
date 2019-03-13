@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 import data_loader
 import model_stats
 
-training_data = '../data/preprocessed/preprocessed.csv'
+training_data = '../data/preprocessed/preprocessed_nouser.csv'
 instances, emb_size = data_loader.get_instances(training_data, '\t')
 
 train, test = train_test_split(instances, test_size=0.25, random_state=42)
@@ -40,12 +40,12 @@ comment_pred = comment_tree.predict(test_vec)
 
 model_stats.print_confusion_matrix(test_comment_labels, comment_pred, [0,1])
 
-# # train tree to recognize all
-# clf = tree.DecisionTreeClassifier(criterion="entropy") 
-# clf = clf.fit(train_vec_no_comments, train_label_no_comments)
-# labels_pred = clf.predict(test_vec_no_comments)
+# train tree to recognize all
+clf = tree.DecisionTreeClassifier(criterion="entropy") 
+clf = clf.fit(train_vec_no_comments, train_label_no_comments)
+labels_pred = clf.predict(test_vec_no_comments)
 
-# model_stats.print_confusion_matrix(labels_true_no_comments, labels_pred, [0,1,2])
+model_stats.print_confusion_matrix(labels_true_no_comments, labels_pred, [0,1,2])
 
 # two_step_pred = [3 if comment_pred[x] == 1 else labels_pred[x] for x in range(len(labels_pred))]
 

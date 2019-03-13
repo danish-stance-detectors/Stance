@@ -61,6 +61,8 @@ class FeatureExtractor:
         e_mark = int('!' in text)
         # Question mark(?)
         q_mark = int('?' in text)
+        # Edit in text
+        edited = int('Edit:' in text)
 
         # dotdotdot
         hasTripDot = int('...' in text)

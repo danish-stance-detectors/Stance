@@ -59,6 +59,7 @@ class Annotations:
         self.max_i = 1
         self.karma_max = 0
         self.karma_min = 0
+        self.freq_histogram = []
 
     def add_annotation(self, annotation):
         if not annotation:
@@ -90,6 +91,36 @@ class Annotations:
 
     # def handle_frequent_words(self, annotation):
     # TODO: Make histogram of frequent words per class
+
+    def make_frequent_words(self, take_count=100, use_parent_sdqc=0):
+        # Most frequent words for annotation classes, string to int (word counter)
+
+        # dictionary at idx #num is used for label #num, example: support at 0
+        self.freq_histogram = [dict(),dict(),dict(),dict()]
+        
+        sdqc_to_int = {
+            "Supporting": 0,
+            "Denying": 1,
+            "Querying": 2,
+            "Commenting": 3
+        }
+
+        for annotation in self.annotations:
+            dict_idx = sdqc_to_int[annotation.sdqc_parent] if use_parent_sdqc == 0 else sdqc_to_int[annotation.sdqc_submission]
+            for token in annotation.tokens:
+                current_histo = self.freq_histogram[dict_idx]
+                if token in current_histo:
+                    current_histo[token] = current_histo[token] + 1
+                else:
+                    current_histo[token] = 1
+        
+        for idx in range(len(self.freq_histogram)):
+            keys = [(self.freq_histogram[idx][key],key) for key in self.freq_histogram[idx].keys()]
+            keys.sort()
+            keys.reverse()
+
+            self.freq_histogram[idx] = keys[:take_count]
+
 
     def iterate(self):
         for annotation in self.annotations:

@@ -75,6 +75,8 @@ def main(argv):
 
     wembs = word_embeddings.load_saved_word2vec_wv(word2vec_data)
     annotations = loadAnnotations(annotated_folder)
+    #annotations.make_frequent_words()
+    #print(annotations.freq_histogram)
     data = preprocess(annotations, wembs, emb_dim=200)
     write_preprocessed(data, 'preprocessed.csv')
 
