@@ -2,6 +2,8 @@
 import graphviz
 import os
 from sklearn import tree
+from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 
 #internal imports (our py classes)
@@ -34,7 +36,7 @@ labels_true_no_comments = [x[1] for x in test if x[1] != 3]
 test_comment_labels = [1 if x[1] == 3 else 0 for x in test]
 
 # train tree to recognize comments
-comment_tree = tree.DecisionTreeClassifier(criterion="entropy")
+comment_tree = gnb = GaussianNB()#svm.LinearSVC()#tree.DecisionTreeClassifier(criterion="entropy")
 comment_tree = comment_tree.fit(train_vec, train_comment_label)
 comment_pred = comment_tree.predict(test_vec)
 
