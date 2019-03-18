@@ -51,7 +51,9 @@ class Annotations:
             'karma': [0, 0],
             'txt_len': [0, 0],
             'tokens_len': [0, 0],
-            'avg_word_len': [0, 0]
+            'avg_word_len': [0, 0],
+            'upvotes': [0, 0],
+            'reply_count': [0, 0]
         }
         self.min_i = 0
         self.max_i = 1
@@ -69,6 +71,8 @@ class Annotations:
             self.handle(self.min_max['tokens_len'], word_len)
             self.handle(self.min_max['avg_word_len'],
                         sum([len(word) for word in annotation.tokens]) / word_len)
+        self.handle(self.min_max['upvotes'], annotation.upvotes)
+        self.handle(self.min_max['reply_count'], annotation.reply_count)
 
         self.annotations.append(annotation)
         return annotation
@@ -121,3 +125,17 @@ class Annotations:
     def iterate(self):
         for annotation in self.annotations:
             yield annotation
+    
+    #TODO: the filter methods below can also extract all urls / quotes to get count of them as features maybe?
+
+    # filters text of all annotations to replace reddit quotes with 'Reference'
+    def filter_reddit_quotes(self):
+        regex = re.compile(r"^>*\n$")
+        for annotation in self.annotations:
+            annotation.text = regex.sub("Reference", annotation.text)
+    
+    # filters text of all annotations to replace urls.
+    def filter_text_urls(self):
+        regex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
+        for annotation in self.annotations:
+            annotation.text = regex.sub("url", annotation.text)
