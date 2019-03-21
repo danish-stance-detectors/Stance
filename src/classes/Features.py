@@ -6,9 +6,11 @@ from classes.Annotation import Annotations
 
 class FeatureExtractor:
 
-    def __init__(self, annotations, swear_words, negation_words, wembs, emb_dim):
+    def __init__(self, annotations, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim):
         self.annotations = annotations
         self.swear_words = swear_words
+        self.negative_smileys = negative_smileys
+        self.positive_smileys = positive_smileys
         self.negation_words = negation_words
         self.wembs = wembs
         self.emb_dim = emb_dim
@@ -19,6 +21,27 @@ class FeatureExtractor:
             "Querying": 2,
             "Commenting": 3
         }
+    
+    # constructor used for test purposes, inserting a single text at a time
+    def __init__(self, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim):
+        self.annotations = Annotations()
+        self.swear_words = swear_words
+        self.negative_smileys = negative_smileys
+        self.positive_smileys = positive_smileys
+        self.negation_words = negation_words
+        self.wembs = wembs
+        self.emb_dim = emb_dim
+
+        self.sdqc_to_int = {
+            "Supporting": 0,
+            "Denying": 1,
+            "Querying": 2,
+            "Commenting": 3
+        }
+    
+    def create_feature_vector(self, annotation):
+        self.annotations.add_annotation(annotation)
+        return self.create_feature_vector(annotation, include_reddit_features=False)
 
     def create_feature_vectors(self):
         feature_vectors = []
@@ -28,15 +51,20 @@ class FeatureExtractor:
         return feature_vectors
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, comment):
+    def create_feature_vector(self, comment, include_reddit_features=True):
         feature_vec = list()
 
         wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wembs) if self.wembs else []
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
-        feature_vec.extend(self.user_features(comment))
-        feature_vec.extend(self.special_words_in_text(comment.tokens, self.swear_words, self.negation_words))
-        feature_vec.extend(self.reddit_comment_features(comment))
+
+        # reddit specific features
+        if include_reddit_features:
+            feature_vec.extend(self.user_features(comment))
+            feature_vec.extend(self.reddit_comment_features(comment))
+
+        feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
+        
         if wembs:
             feature_vec.extend(wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
@@ -67,6 +95,10 @@ class FeatureExtractor:
         # dotdotdot
         hasTripDot = int('...' in text)
 
+        url_count = tokens.count('url')
+
+        quote_count = tokens.count('Reference')
+
         # TODO: Normalize the following?
         # dotdotdot count
         # tripDotCount = text.count('...')
@@ -84,6 +116,8 @@ class FeatureExtractor:
                 e_mark,
                 q_mark,
                 hasTripDot,
+                url_count,
+                quote_count,
                 # tripDotCount,
                 # q_mark_count,
                 # e_mark_count,
@@ -99,17 +133,18 @@ class FeatureExtractor:
 
 
     # TODO: find special word cases
-    def special_words_in_text(self, tokens, swear_words, negation_words):
-        swear_count = 0
-        negation_count = 0
-        for word in tokens:
-            if word in swear_words:
-                swear_count += 1
+    # TODO: fix case where 'http://...' triggers a negative smiley (:/)
+    def special_words_in_text(self, tokens, text, swear_words, negation_words, negative_smileys, positive_smileys):
+        swear_count = self.count_lexicon_occurence(tokens, swear_words)
+        negation_count = self.count_lexicon_occurence(tokens, negation_words)
+        positive_smiley_count = self.count_lexicon_occurence(text.split(), positive_smileys)
+        negative_smiley_count =  self.count_lexicon_occurence(text.split(), negative_smileys)
 
-            if word in negation_words:
-                negation_count += 1
+        return [swear_count, negation_count, positive_smiley_count, negative_smiley_count] #TODO: Normalize
 
-        return [swear_count, negation_count] #TODO: Normalize
+    # Counts the amount of words which appear in the lexicon
+    def count_lexicon_occurence(self, words, lexion):
+        return sum([1 if word in lexion else 0 for word in words])
 
     def reddit_comment_features(self, comment):
         upvotes_norm = self.normalize(comment.upvotes, 'upvotes')
@@ -119,4 +154,7 @@ class FeatureExtractor:
     def normalize(self, x_i, property):
         min_x = self.annotations.get_min(property)
         max_x = self.annotations.get_max(property)
-        return (x_i-min_x)/(max_x-min_x)
+        if max_x-min_x != 0:
+            return (x_i-min_x)/(max_x-min_x)
+        
+        return x_i

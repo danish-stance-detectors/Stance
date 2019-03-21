@@ -3,43 +3,52 @@ import re
 
 
 class CommentAnnotation:
-
-    # initialises comment annotation class given json
-    def __init__(self, json):
-
-        # comment info
-        self.submission_id = json["comment"]["SubmissionID"]
-        self.comment_id = json["comment"]["comment_id"]
-        self.text = json["comment"]["text"]
-        self.parent_id = json["comment"]["parent_id"]
-        self.comment_url = json["comment"]["comment_url"]
-        self.created = json["comment"]["created"]
-        self.upvotes = json["comment"]["upvotes"]
-        self.is_submitter = json["comment"]["is_submitter"]
-        self.is_deleted = json["comment"]["is_deleted"]
-        self.reply_count = json["comment"]["replies"]
         
-        # user info
-        self.user_id = json["comment"]["user"]["id"]
-        self.user_name = json["comment"]["user"]["username"]
-        self.user_created = json["comment"]["user"]["created"]
-        self.user_karma = json["comment"]["user"]["karma"]
-        self.user_gold_status = json["comment"]["user"]["gold_status"]
-        self.user_is_employee = json["comment"]["user"]["is_employee"]
-        self.user_has_verified_email = json["comment"]["user"]["has_verified_email"]
+    # initialises comment annotation class given json
+    def __init__(self, json, test=False):
 
-        # annotation info
-        self.annotator = json["annotator"]
-        self.sdqc_parent = json["comment"]["SDQC_Parent"]
-        self.sdqc_submission = json["comment"]["SDQC_Submission"]
-        self.certainty = json["comment"]["Certainty"]
-        self.evidentiality = json["comment"]["Evidentiality"]
-        self.annotated_at = json["comment"]["AnnotatedAt"]
+        if test:
+            self.comment_id = "test"
+            self.text = json
+            self.tokens = word_tokenize(json.lower())
+            
+            # sdcq is just placeholder values
+            self.sdqc_parent = "Supporting"
+            self.sdqc_submission = "Supporting"
+        else:
+            # comment info
+            self.submission_id = json["comment"]["SubmissionID"]
+            self.comment_id = json["comment"]["comment_id"]
+            self.text = json["comment"]["text"]
+            self.parent_id = json["comment"]["parent_id"]
+            self.comment_url = json["comment"]["comment_url"]
+            self.created = json["comment"]["created"]
+            self.upvotes = json["comment"]["upvotes"]
+            self.is_submitter = json["comment"]["is_submitter"]
+            self.is_deleted = json["comment"]["is_deleted"]
+            self.reply_count = json["comment"]["replies"]
+            
+            # user info
+            self.user_id = json["comment"]["user"]["id"]
+            self.user_name = json["comment"]["user"]["username"]
+            self.user_created = json["comment"]["user"]["created"]
+            self.user_karma = json["comment"]["user"]["karma"]
+            self.user_gold_status = json["comment"]["user"]["gold_status"]
+            self.user_is_employee = json["comment"]["user"]["is_employee"]
+            self.user_has_verified_email = json["comment"]["user"]["has_verified_email"]
 
-        # Remove non-alphabetic characters and tokenize
-        text_ = re.sub("[^a-åA-Å]", " ", self.text) # replace with space
-        # Convert all words to lower case and tokenize
-        self.tokens = word_tokenize(text_.lower())
+            # annotation info
+            self.annotator = json["annotator"]
+            self.sdqc_parent = json["comment"]["SDQC_Parent"]
+            self.sdqc_submission = json["comment"]["SDQC_Submission"]
+            self.certainty = json["comment"]["Certainty"]
+            self.evidentiality = json["comment"]["Evidentiality"]
+            self.annotated_at = json["comment"]["AnnotatedAt"]
+
+            # Remove non-alphabetic characters and tokenize
+            text_ = re.sub("[^a-åA-Å]", " ", self.text) # replace with space
+            # Convert all words to lower case and tokenize
+            self.tokens = word_tokenize(text_.lower())
 
 
 class Annotations:
@@ -133,9 +142,11 @@ class Annotations:
         regex = re.compile(r"^>*\n$")
         for annotation in self.annotations:
             annotation.text = regex.sub("Reference", annotation.text)
+            print("found reference!")
     
     # filters text of all annotations to replace urls.
     def filter_text_urls(self):
         regex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
         for annotation in self.annotations:
             annotation.text = regex.sub("url", annotation.text)
+            print("found url!")

@@ -10,8 +10,16 @@ annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
 word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
 
+# Loads lexicon file given path
+# Assumes file has one word per line
+def read_lexicon(file_path):
+    with open(file_path, "r") as lexicon_file:
+        return [line.strip().lower() for line in lexicon_file.readlines()]
+
 swear_words = []
 negation_words = []
+positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
+negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
 
 with open('../data/lexicon/swear_words.txt', "r") as swear_word_file:
     for line in swear_word_file.readlines():
@@ -43,7 +51,7 @@ def loadAnnotations(datafolder):
 def preprocess(annotations, wembs=None, emb_dim=100):
     if not annotations:
         return
-    feature_extractor = FeatureExtractor(annotations, swear_words, negation_words, wembs, emb_dim)
+    feature_extractor = FeatureExtractor(annotations, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim)
     return feature_extractor.create_feature_vectors()
 
 
@@ -72,13 +80,17 @@ def main(argv):
     #         data_folder = arg
     #     elif opt in ('-e', '-emb_dim'):
     #         emb_dim = arg
-
+    
     wembs = word_embeddings.load_saved_word2vec_wv(word2vec_data)
     annotations = loadAnnotations(annotated_folder)
+
+    annotations.filter_reddit_quotes()
+    annotations.filter_text_urls()
+
     #annotations.make_frequent_words()
     #print(annotations.freq_histogram)
     data = preprocess(annotations, wembs, emb_dim=200)
-    write_preprocessed(data, 'preprocessed.csv')
+    write_preprocessed(data, 'preprocessed_url_quote_sub.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
