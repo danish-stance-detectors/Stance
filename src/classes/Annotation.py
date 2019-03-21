@@ -46,10 +46,9 @@ class CommentAnnotation:
             self.annotated_at = json["comment"]["AnnotatedAt"]
 
             # Remove non-alphabetic characters and tokenize
-            text_ = re.sub("[^a-åA-Å]", " ", self.text) # replace with space
+            text_ = re.sub("[^a-zA-ZæøåÆØÅ]", " ", self.text) # replace with space
             # Convert all words to lower case and tokenize
             self.tokens = word_tokenize(text_.lower())
-
 
 class Annotations:
     def __init__(self):
