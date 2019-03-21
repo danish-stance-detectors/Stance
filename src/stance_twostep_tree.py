@@ -2,6 +2,8 @@
 import graphviz
 import os
 from sklearn import tree
+from sklearn import svm
+from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 
 #internal imports (our py classes)
@@ -34,19 +36,30 @@ labels_true_no_comments = [x[1] for x in test if x[1] != 3]
 test_comment_labels = [1 if x[1] == 3 else 0 for x in test]
 
 # train tree to recognize comments
-comment_tree = tree.DecisionTreeClassifier(criterion="entropy")
+comment_tree = gnb = GaussianNB()#svm.LinearSVC()#tree.DecisionTreeClassifier(criterion="entropy")
 comment_tree = comment_tree.fit(train_vec, train_comment_label)
 comment_pred = comment_tree.predict(test_vec)
 
 model_stats.print_confusion_matrix(test_comment_labels, comment_pred, [0,1])
 
+non_comment_vec = []
+for (i, pred) in enumerate(comment_pred, start=0):
+    if pred == 0:
+        non_comment_vec.append((i, test_vec[i]))
+    else:
+        comment_pred[i] = 3 # set as comment
+
 # train tree to recognize all
 clf = tree.DecisionTreeClassifier(criterion="entropy") 
 clf = clf.fit(train_vec_no_comments, train_label_no_comments)
-labels_pred = clf.predict(test_vec_no_comments)
+labels_pred = clf.predict([x[1] for x in non_comment_vec])
 
-model_stats.print_confusion_matrix(labels_true_no_comments, labels_pred, [0,1,2])
+for (idx, act_pred) in enumerate(labels_pred):
+    pred_idx = non_comment_vec[idx][0]
+    comment_pred[pred_idx] = act_pred
+
+#model_stats.print_confusion_matrix(labels_true_no_comments, labels_pred, [0,1,2])
 
 # two_step_pred = [3 if comment_pred[x] == 1 else labels_pred[x] for x in range(len(labels_pred))]
 
-# model_stats.print_confusion_matrix(labels_true, two_step_pred, [0,1,2,3])
+model_stats.print_confusion_matrix(labels_true, comment_pred, [0,1,2,3])
