@@ -36,7 +36,7 @@ def main(argv):
      12: "positive smiley count",
      13: "negative smiley count" }
 
-    extractor = FeatureExtractor(swear_words, negation_words, negative_smileys, positive_smileys, wembs, wembs_dim)
+    extractor = FeatureExtractor([], swear_words, negation_words, negative_smileys, positive_smileys, wembs, wembs_dim, test=True)
     text_input = ""
     
     while text_input != "exit":

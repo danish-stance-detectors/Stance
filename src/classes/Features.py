@@ -6,25 +6,13 @@ from classes.Annotation import Annotations
 
 class FeatureExtractor:
 
-    def __init__(self, annotations, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim):
-        self.annotations = annotations
-        self.swear_words = swear_words
-        self.negative_smileys = negative_smileys
-        self.positive_smileys = positive_smileys
-        self.negation_words = negation_words
-        self.wembs = wembs
-        self.emb_dim = emb_dim
+    def __init__(self, annotations, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim, test=False):
+        #using passed annotations if not testing
+        if test:
+            self.annotations =  Annotations()
+        else:
+            self.annotations = annotations
 
-        self.sdqc_to_int = {
-            "Supporting": 0,
-            "Denying": 1,
-            "Querying": 2,
-            "Commenting": 3
-        }
-    
-    # constructor used for test purposes, inserting a single text at a time
-    def __init__(self, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim):
-        self.annotations = Annotations()
         self.swear_words = swear_words
         self.negative_smileys = negative_smileys
         self.positive_smileys = positive_smileys
