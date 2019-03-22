@@ -3,16 +3,23 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 
 import data_loader, model_stats
 
 classifiers = {
-    'Logistic Regression': LogisticRegression(),
+    'Logistic Regression': LogisticRegression(solver='liblinear', multi_class='auto'),
     'Decision Tree': DecisionTreeClassifier(criterion="entropy"),
-    'Linear Support Vector Machine': SVC(kernel='linear'),
+    'Linear SVM': SVC(kernel='linear', C=1),
     'Random Forest': RandomForestClassifier(n_estimators=50)
 }
+
+scoring = [
+    'accuracy',
+    'f1_micro',
+    'f1_macro',
+    'f1_weighted',
+]
 
 # parser = argparse.ArgumentParser(description='Stance classification for different models')
 # parser.add_argument('-logit', help='Logistic Regression')
@@ -23,23 +30,14 @@ classifiers = {
 # args = parser.parse_args()
 
 training_data = '../data/preprocessed/preprocessed.csv'
-instances, emb_size = data_loader.get_instances(training_data, '\t')
+instances, _ = data_loader.get_instances(training_data, '\t')
 
-train, test = train_test_split(instances, test_size=0.25)
+X = [x[2] for x in instances]
+y = [x[1] for x in instances]
 
-# train vectors
-train_vec = [x[2] for x in train]
-# train labels
-train_label = [x[1] for x in train]
-
-# test vectors
-test_vec = [x[2] for x in test]
-# test labels
-labels_true = [x[1] for x in test]
-
-for name, clf in classifiers.items():
-    clf.fit(train_vec, train_label)
-    labels_pred = clf.predict(test_vec)
-    print(name)
-    model_stats.print_confusion_matrix(labels_true, labels_pred, [0,1,2,3])
+for score in scoring:
+    print()
+    for name, clf in classifiers.items():
+        scores = cross_val_score(clf, X, y, cv=5, scoring=score)
+        print("%-20s%s %0.2f (+/- %0.2f)" % (name, score, scores.mean(), scores.std() * 2))
 
