@@ -1,4 +1,3 @@
-from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
@@ -7,15 +6,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 import data_loader
 
-training_data = '../data/preprocessed/preprocessed.csv'
-instances, _ = data_loader.get_instances(training_data, '\t')
 
-X = [x[2] for x in instances]
-y = [x[1] for x in instances]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.25, random_state=0
-)
+X_train, X_test, y_train, y_test = data_loader.get_train_test_split(test_size=0.25)
 
 settings = [
     ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}),

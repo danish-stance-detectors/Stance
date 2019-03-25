@@ -21,11 +21,7 @@ scoring = [
     'f1_weighted',
 ]
 
-training_data = '../data/preprocessed/preprocessed.csv'
-instances, _ = data_loader.get_instances(training_data, '\t')
-
-X = [x[2] for x in instances]
-y = [x[1] for x in instances]
+X, y = data_loader.get_features_and_labels()
 
 for score in scoring:
     print()

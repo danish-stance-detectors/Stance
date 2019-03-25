@@ -1,6 +1,10 @@
 import csv
+from sklearn.model_selection import train_test_split
 
-def get_instances(filename, delimiter):
+datafile = '../data/preprocessed/preprocessed.csv'
+tab = '\t'
+
+def get_instances(filename=datafile, delimiter=tab):
     """Load preprocessed data from a csv-file into an iterable
     of instances in the format: [(id, SDQC, feature_vec),...].
     Return the instances as well as a count of the features: (instances, count)"""
@@ -20,3 +24,17 @@ def get_instances(filename, delimiter):
             max_emb = max(max_emb, len(instance_vec))
             instances.append((c_id, sdqc, instance_vec))
     return (instances, max_emb)
+
+def get_features_and_labels(filename=datafile, delimiter=tab):
+    instances, _ = get_instances(filename, delimiter)
+    X = [x[2] for x in instances]
+    y = [x[1] for x in instances]
+    return X, y
+
+def get_train_test_split(filename=datafile, delimiter=tab, test_size=0.25):
+    X, y = get_features_and_labels(filename, delimiter)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=0
+    )
+    return X_train, X_test, y_train, y_test
