@@ -21,6 +21,7 @@ class FeatureExtractor:
         self.negation_words = negation_words
         self.wembs = wembs
         self.emb_dim = emb_dim
+        self.bow_words = set([])
 
         self.sdqc_to_int = {
             "Supporting": 0,
@@ -55,6 +56,9 @@ class FeatureExtractor:
 
         feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
         feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
+        
+        self.make_bow_list()
+        feature_vec.extend(self.get_bow_presence(comment.tokens))
 
         if wembs:
             feature_vec.extend(wembs)
@@ -147,12 +151,16 @@ class FeatureExtractor:
         # self.annotations.make_frequent_words() must have been called for this to work
         
         vec = []
-        
+
         for histogram in self.annotations.freq_histogram:
             for kv in histogram:
                 vec.append(int(kv[1] in tokens))
  
         return vec
+
+    # Gets BOW presence (binary) for tokens
+    def get_bow_presence(self, tokens):
+        return [1 if w in tokens else 0 for w in self.bow_words]
 
     ### HELPER METHODS ###
 
@@ -168,4 +176,13 @@ class FeatureExtractor:
         
         return x_i
     
+    def make_bow_list(self):
+        words = []
+        for a in self.annotations.annotations:
+            for t in a.tokens:
+                words.append(t)
+        
+        # turning it into set to get unique entries only
+        self.bow_words = set(words)
+
     ### END OF HELPER METHODS ###

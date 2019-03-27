@@ -122,7 +122,7 @@ def main(argv):
     annotations.make_frequent_words()
     
     data = preprocess(annotations, wembs, emb_dim=200)
-    write_preprocessed(data, 'preprocessed_test_hv_cap-seq_most-freq-100.csv')
+    write_preprocessed(data, 'preprocessed_test_bow.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
