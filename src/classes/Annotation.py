@@ -100,7 +100,7 @@ class RedditSubmission:
 
 class RedditDataset:
     def __init__(self):
-        # self.annotations = []
+        self.annotations = [] # purely for testing purposes
         self.submissions = []
         self.last_submission = lambda: len(self.submissions) - 1
         # mapping from property to tuple: (min, max)
@@ -124,6 +124,10 @@ class RedditDataset:
             "Querying": 2,
             "Commenting": 3
         }
+
+    def add_annotation(self, annotation):
+        """Add to self.annotations. Should only be uses for testing purposes"""
+        self.annotations.append(self.analyse_annotation(annotation))
 
     def add_reddit_submission(self, source):
         self.submissions.append(RedditSubmission(RedditAnnotation(source, is_source=True)))
@@ -179,19 +183,31 @@ class RedditDataset:
     def get_frequent_words(self, take_count=100):
         histogram = {}
         for idx in range(len(self.freq_histogram)):
-            keys = [(self.freq_histogram[idx][key],key) for key in self.freq_histogram[idx].keys()]
+            keys = [(self.freq_histogram[idx][key], key) for key in self.freq_histogram[idx].keys()]
             keys.sort()
             keys.reverse()
 
             histogram[idx] = keys[:take_count]
         return histogram
 
-    def iterate(self):
+    def iterate_annotations(self):
         for submission in self.submissions:
             for branch in submission.brances:
                 for annotation in branch:
                     yield annotation
-    
+
+    def iterate_branches(self, with_source=True):
+        for submission in self.submissions:
+            for branch in submission.branches:
+                if with_source:
+                    yield submission.source, branch
+                else:
+                    yield branch
+
+    def iterate_submissions(self):
+        for submission in self.submissions:
+            yield submission
+
     #TODO: the filter methods below can also extract all urls / quotes to get count of them as features maybe?
 
     # # filters text of all annotations to replace reddit quotes with 'Reference'

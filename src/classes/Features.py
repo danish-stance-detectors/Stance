@@ -1,6 +1,5 @@
 import word_embeddings
-from classes.Annotation import CommentAnnotation
-from classes.Annotation import Annotations
+from classes.Annotation import RedditDataset
 
 import re # regular expression
 
@@ -8,18 +7,19 @@ import re # regular expression
 
 class FeatureExtractor:
 
-    def __init__(self, annotations, swear_words, negation_words, negative_smileys, positive_smileys, wembs, emb_dim, test=False):
-        #using passed annotations if not testing
+    def __init__(self, dataset, swear_words,
+                 negation_words, negative_smileys, positive_smileys, wv_model, emb_dim, test=False):
+        # using passed annotations if not testing
         if test:
-            self.annotations =  Annotations()
+            self.dataset = RedditDataset()
         else:
-            self.annotations = annotations
+            self.dataset = dataset
 
         self.swear_words = swear_words
         self.negative_smileys = negative_smileys
         self.positive_smileys = positive_smileys
         self.negation_words = negation_words
-        self.wembs = wembs
+        self.wv_model = wv_model
         self.emb_dim = emb_dim
         self.bow_words = set()
 
@@ -30,23 +30,24 @@ class FeatureExtractor:
             "Commenting": 3
         }
     
-    def create_feature_vector(self, annotation):
-        self.annotations.add_annotation(annotation)
+    def create_feature_vector_test(self, annotation):
+        self.dataset.add_annotation(annotation)
         return self.create_feature_vector(annotation, include_reddit_features=False)
 
     def create_feature_vectors(self):
-        self.make_bow_list()
+        self.make_bow_list()  # TODO: Maybe refactor to RedditDataset?
         feature_vectors = []
-        for annotation in self.annotations.iterate():
-            instance = self.create_feature_vector(annotation)
-            feature_vectors.append(instance)
+        for source, branch in self.dataset.iterate_branches():
+            prev = None
+            for annotation in branch:
+                instance = self.create_feature_vector(source, branch, prev, annotation)
+                feature_vectors.append(instance)
+                prev = annotation
         return feature_vectors
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, comment, include_reddit_features=True):
+    def create_feature_vector(self, source, branch, prev, comment, include_reddit_features=True):
         feature_vec = list()
-
-        wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wembs) if self.wembs else []
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
 
@@ -60,12 +61,37 @@ class FeatureExtractor:
         
         feature_vec.extend(self.get_bow_presence(comment.tokens))
 
-        if wembs:
-            feature_vec.extend(wembs)
+        if self.wv_model:
+            avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wv_model)
+            simToSrc = self.cosine_similarity(comment.tokens, source.tokens)
+            simToPrev = self.cosine_similarity(comment.tokens, prev.tokens) if prev else 0
+            allTokens = []
+            for annotation in branch:
+                allTokens.extend(annotation.tokens)
+            simToBranch = self.cosine_similarity(comment.tokens, allTokens)
+            feature_vec.extend([simToSrc, simToPrev, simToBranch])
+            feature_vec.extend(avg_wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 
         return (comment.comment_id, parent_sdqc, sub_sdqc, feature_vec)
+
+    def cosine_similarity(self, one, other):
+        # Lookup words in w2c vocab
+        words = []
+        for token in one:
+            if token in self.wv_model.vocab:  # check that the token exists
+                words.append(token)
+        other_words = []
+        for token in other:
+            if token in self.wv_model.vocab:
+                other_words.append(token)
+
+        if len(words) > 0 and len(other_words) > 0:  # make sure there is actually something to compare
+            # cosine similarity between two sets of words
+            return self.wv_model.n_similarity(other_words, words)
+        else:
+            return 0.  # no similarity if one set contains 0 words
 
     def text_features(self, text, tokens):
         # number of chars
@@ -152,7 +178,7 @@ class FeatureExtractor:
         
         vec = set()
 
-        for histogram in self.annotations.freq_histogram:
+        for histogram in self.dataset.get_frequent_words():
             for kv in histogram:
                 vec.add(int(kv[1] in tokens))
  
@@ -169,16 +195,17 @@ class FeatureExtractor:
         return sum([1 if word in lexion else 0 for word in words])
 
     def normalize(self, x_i, property):
-        min_x = self.annotations.get_min(property)
-        max_x = self.annotations.get_max(property)
+        min_x = self.dataset.get_min(property)
+        max_x = self.dataset.get_max(property)
         if max_x-min_x != 0:
             return (x_i-min_x)/(max_x-min_x)
         
         return x_i
-    
+
+    # TODO: Refactor to RedditDataset to make BOW dynamically?
     def make_bow_list(self):
         words = []
-        for a in self.annotations.annotations:
+        for a in self.dataset.annotations:
             for t in a.tokens:
                 words.append(t)
         
