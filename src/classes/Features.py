@@ -21,7 +21,7 @@ class FeatureExtractor:
         self.negation_words = negation_words
         self.wembs = wembs
         self.emb_dim = emb_dim
-        self.bow_words = set([])
+        self.bow_words = set()
 
         self.sdqc_to_int = {
             "Supporting": 0,
@@ -35,6 +35,7 @@ class FeatureExtractor:
         return self.create_feature_vector(annotation, include_reddit_features=False)
 
     def create_feature_vectors(self):
+        self.make_bow_list()
         feature_vectors = []
         for annotation in self.annotations.iterate():
             instance = self.create_feature_vector(annotation)
@@ -57,7 +58,6 @@ class FeatureExtractor:
         feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
         feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
         
-        self.make_bow_list()
         feature_vec.extend(self.get_bow_presence(comment.tokens))
 
         if wembs:
@@ -150,11 +150,11 @@ class FeatureExtractor:
     def most_frequent_words_for_label(self, tokens):
         # self.annotations.make_frequent_words() must have been called for this to work
         
-        vec = []
+        vec = set()
 
         for histogram in self.annotations.freq_histogram:
             for kv in histogram:
-                vec.append(int(kv[1] in tokens))
+                vec.add(int(kv[1] in tokens))
  
         return vec
 
