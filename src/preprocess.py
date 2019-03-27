@@ -119,11 +119,10 @@ def main(argv):
 
     annotations.filter_reddit_quotes()
     annotations.filter_text_urls()
-
-    #annotations.make_frequent_words()
-    #print(annotations.freq_histogram)
+    annotations.make_frequent_words()
+    
     data = preprocess(annotations, wembs, emb_dim=200)
-    write_preprocessed(data, 'preprocessed_url_quote_sub.csv')
+    write_preprocessed(data, 'preprocessed_test_hv_cap-seq_most-freq-100.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

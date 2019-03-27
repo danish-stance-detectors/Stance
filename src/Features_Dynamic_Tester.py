@@ -31,10 +31,11 @@ def main(argv):
      7: "text length",
      8: "tokens length",
      9: "avg. word length",
-     10: "swear word count",
-     11: "negation count",
-     12: "positive smiley count",
-     13: "negative smiley count" }
+     10: "Cap letter max sequence length"
+     11: "swear word count",
+     12: "negation count",
+     13: "positive smiley count",
+     14: "negative smiley count" }
 
     extractor = FeatureExtractor([], swear_words, negation_words, negative_smileys, positive_smileys, wembs, wembs_dim, test=True)
     text_input = ""

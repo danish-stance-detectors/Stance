@@ -2,6 +2,8 @@ import word_embeddings
 from classes.Annotation import CommentAnnotation
 from classes.Annotation import Annotations
 
+import re # regular expression
+
 # Module for extracting features from comment annotations
 
 class FeatureExtractor:
@@ -52,7 +54,8 @@ class FeatureExtractor:
             feature_vec.extend(self.reddit_comment_features(comment))
 
         feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
-        
+        feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
+
         if wembs:
             feature_vec.extend(wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
@@ -76,7 +79,7 @@ class FeatureExtractor:
         # Exclamation mark (!)
         e_mark = int('!' in text)
         # Question mark(?)
-        q_mark = int('?' in text)
+        q_mark = int('?' in text or any(word.startswith('hv') for word in text.split()))
         # Edit in text
         edited = int('Edit:' in text)
 
@@ -86,6 +89,9 @@ class FeatureExtractor:
         url_count = tokens.count('url')
 
         quote_count = tokens.count('Reference')
+        
+        # longest sequence of capital letters, default empty for 0 length
+        cap_sequence_max_len = len(max(re.findall(r"[A-Z]+", text), key=len, default=''))
 
         # TODO: Normalize the following?
         # dotdotdot count
@@ -112,7 +118,8 @@ class FeatureExtractor:
                 cap_ratio,
                 txt_len,
                 tokens_len,
-                avg_word_len]
+                avg_word_len,
+                cap_sequence_max_len]
 
 
     def user_features(self, comment):
@@ -130,14 +137,28 @@ class FeatureExtractor:
 
         return [swear_count, negation_count, positive_smiley_count, negative_smiley_count] #TODO: Normalize
 
-    # Counts the amount of words which appear in the lexicon
-    def count_lexicon_occurence(self, words, lexion):
-        return sum([1 if word in lexion else 0 for word in words])
-
     def reddit_comment_features(self, comment):
         upvotes_norm = self.normalize(comment.upvotes, 'upvotes')
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
         return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
+
+    
+    def most_frequent_words_for_label(self, tokens):
+        # self.annotations.make_frequent_words() must have been called for this to work
+        
+        vec = []
+        
+        for histogram in self.annotations.freq_histogram:
+            for kv in histogram:
+                vec.append(int(kv[1] in tokens))
+ 
+        return vec
+
+    ### HELPER METHODS ###
+
+    # Counts the amount of words which appear in the lexicon
+    def count_lexicon_occurence(self, words, lexion):
+        return sum([1 if word in lexion else 0 for word in words])
 
     def normalize(self, x_i, property):
         min_x = self.annotations.get_min(property)
@@ -146,3 +167,5 @@ class FeatureExtractor:
             return (x_i-min_x)/(max_x-min_x)
         
         return x_i
+    
+    ### END OF HELPER METHODS ###
