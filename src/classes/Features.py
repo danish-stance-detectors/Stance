@@ -35,7 +35,6 @@ class FeatureExtractor:
         return self.create_feature_vector(annotation, include_reddit_features=False)
 
     def create_feature_vectors(self):
-        self.make_bow_list()  # TODO: Maybe refactor to RedditDataset?
         feature_vectors = {}
         for source, branch in self.dataset.iterate_branches():
             # Gather tokens for whole branch for similarity comparison
@@ -70,7 +69,7 @@ class FeatureExtractor:
             feature_vec.extend(self.reddit_comment_features(comment))
 
         feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
-        feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
+        # feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
         
         feature_vec.extend(self.get_bow_presence(comment.tokens))
 
@@ -134,7 +133,7 @@ class FeatureExtractor:
         quote_count = tokens.count('REFREFREF')
         
         # longest sequence of capital letters, default empty for 0 length
-        cap_sequence_max_len = len(max(re.findall(r"[A-Z]+", text), key=len, default=''))
+        cap_sequence_max_len = len(max(re.findall(r"[A-Z]+", text), key=len, default='')) # TODO: Normalize?
 
         # TODO: Normalize the following?
         # dotdotdot count
@@ -184,7 +183,6 @@ class FeatureExtractor:
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
         return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
 
-    
     def most_frequent_words_for_label(self, tokens):
         # self.annotations.make_frequent_words() must have been called for this to work
         
@@ -199,7 +197,7 @@ class FeatureExtractor:
 
     # Gets BOW presence (binary) for tokens
     def get_bow_presence(self, tokens):
-        return [1 if w in tokens else 0 for w in self.bow_words]
+        return [1 if w in tokens else 0 for w in self.dataset.bow]
 
     ### HELPER METHODS ###
 
@@ -214,15 +212,5 @@ class FeatureExtractor:
             return (x_i-min_x)/(max_x-min_x)
         
         return x_i
-
-    # TODO: Refactor to RedditDataset to make BOW dynamically?
-    def make_bow_list(self):
-        words = []
-        for a in self.dataset.annotations:
-            for t in a.tokens:
-                words.append(t)
-        
-        # turning it into set to get unique entries only
-        self.bow_words = set(words)
 
     ### END OF HELPER METHODS ###

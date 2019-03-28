@@ -82,6 +82,8 @@ class RedditAnnotation:
         # Convert all words to lower case and tokenize
         return word_tokenize(text_.lower())
 
+    # TODO: the filter methods below can also extract all urls / quotes to get count of them as features maybe?
+    # TODO: Test further
     def filter_reddit_quotes(self, text):
         """filters text of all annotations to replace reddit quotes with 'REFREFREF'"""
         # TODO: Doesn't seem to replace quotes? Also, do we want it? Also quotes are sometimes " "
@@ -124,6 +126,7 @@ class RedditDataset:
         self.karma_min = 0
         # dictionary at idx #num is used for label #num, example: support at 0
         self.freq_histogram = [dict(), dict(), dict(), dict()]
+        self.bow = set()
         self.sdqc_to_int = {
             "Supporting": 0,
             "Denying": 1,
@@ -159,6 +162,7 @@ class RedditDataset:
         self.handle(self.min_max['upvotes'], annotation.upvotes)
         self.handle(self.min_max['reply_count'], annotation.reply_count)
         self.handle_frequent_words(annotation)
+        self.handle_bow(annotation.tokens)
 
         return annotation
 
@@ -185,6 +189,11 @@ class RedditDataset:
                 current_histo[token] = current_histo[token] + 1
             else:
                 current_histo[token] = 1
+
+    # TODO: Refactor to RedditDataset to make BOW dynamically?
+    def handle_bow(self, annotation_tokens):
+        for t in annotation_tokens:
+            self.bow.add(t)
 
     def get_frequent_words(self, take_count=100):
         histogram = {}
@@ -213,17 +222,3 @@ class RedditDataset:
     def iterate_submissions(self):
         for submission in self.submissions:
             yield submission
-
-    #TODO: the filter methods below can also extract all urls / quotes to get count of them as features maybe?
-
-    # # filters text of all annotations to replace reddit quotes with 'Reference'
-    # def filter_reddit_quotes(self):
-    #     regex = re.compile(r"^>*\n$")
-    #     for annotation in self.annotations:
-    #         annotation.text = regex.sub("REFREFREF", annotation.text)
-    #
-    # # filters text of all annotations to replace urls.
-    # def filter_text_urls(self):
-    #     regex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-    #     for annotation in self.annotations:
-    #         annotation.text = regex.sub("URLURLURL", annotation.text)

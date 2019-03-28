@@ -67,37 +67,6 @@ def write_preprocessed(preprocessed_data, filename):
         for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
 
-# def get_branches(annotation_list):
-#     # comments with no replies are bottom level
-#     bottom_annotations = list(filter(lambda x: x.reply_count == 0, annotation_list))
-#
-#     #get branch of each bottom level comment
-#     branches = [get_branch_of_bottom(x, annotation_list) for x in bottom_annotations]
-#     return branches
-#
-# # used by 'get_branches' to get all branches from a list of annotations
-# def get_branch_of_bottom(bottom_level_comment, annotation_list):
-#     # return empty list if deleted
-#     if bottom_level_comment.is_deleted:
-#         return []
-#
-#     # return list containing itself is it is top level comment
-#     parent_id = bottom_level_comment.parent_id
-#     if parent_id == bottom_level_comment.submission_id:
-#         return [bottom_level_comment]
-#
-#     branch = []
-#     current_comment = bottom_level_comment
-#     # continue until top level
-#     while current_comment.parent_id != current_comment.submission_id:
-#         branch.append(current_comment)
-#         # set current comment to parent
-#         current_comment = [x for x in annotation_list if x.comment_id == current_comment.parent_id][0]
-#
-#     # this is top level comment, add
-#     branch.append(current_comment)
-#     return branch
-
 def main(argv):
     # data_folder = wembs = emb_dim = None
     # try:
