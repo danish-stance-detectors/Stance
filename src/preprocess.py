@@ -7,7 +7,7 @@ datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_300_cbow_negative.kv')
+word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
 
 # Loads lexicon file given path
 # Assumes file has one word per line
@@ -33,7 +33,7 @@ def loadAnnotations(filename):
     if not filename:
         return
     dataset = RedditDataset()
-    for rumour_folder in os.listdir(filename)[:1]:
+    for rumour_folder in os.listdir(filename):
         rumour_folder_path = os.path.join(filename, rumour_folder)
         if not os.path.isdir(rumour_folder_path):
             continue
@@ -116,8 +116,8 @@ def main(argv):
     wv_model = word_embeddings.load_saved_word2vec_wv(word2vec_data)
     annotations = loadAnnotations(annotated_folder)
     
-    data = preprocess(annotations, wv_model, emb_dim=300)
-    write_preprocessed(data, 'preprocessed_test_bow.csv')
+    data = preprocess(annotations, wv_model, emb_dim=200)
+    write_preprocessed(data, 'preprocessed_new.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

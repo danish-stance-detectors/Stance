@@ -25,6 +25,7 @@ class RedditAnnotation:
         self.text = self.filter_reddit_quotes(self.text)
         self.text = self.filter_text_urls(self.text)
         if is_source:
+            self.comment_id = comment_json["submission_id"]
             self.title = json["title"]
             self.num_comments = json["num_comments"]
             self.url = json["url"]
@@ -32,11 +33,16 @@ class RedditAnnotation:
             self.is_video = json["is_video"]
             # self.subreddit = json["subreddit"] # irrelevant
             # self.comments = json["comments"] # irrelevant
+            self.reply_count = comment_json["num_comments"]
+            self.is_submitter = True
             self.is_rumour = json["IsRumour"]
             self.is_irrelevant = json["IsIrrelevant"]
             self.truth_status = json["TruthStatus"]
             self.rumour = json["RumourDescription"]
-            self.sdqc_source = json["SourceSDQC"]
+            sdqc_source = json["SourceSDQC"]
+            sdqc = "Commenting" if sdqc_source == "Underspecified" else sdqc_source
+            self.sdqc_parent = sdqc
+            self.sdqc_submission = sdqc
             self.tokens = self.tokenize(self.title)
         else:
             # comment specific info

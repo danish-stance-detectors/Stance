@@ -36,17 +36,30 @@ class FeatureExtractor:
 
     def create_feature_vectors(self):
         self.make_bow_list()  # TODO: Maybe refactor to RedditDataset?
-        feature_vectors = []
+        feature_vectors = {}
         for source, branch in self.dataset.iterate_branches():
-            prev = None
+            # Gather tokens for whole branch for similarity comparison
+            all_tokens = []
             for annotation in branch:
-                instance = self.create_feature_vector(source, branch, prev, annotation)
-                feature_vectors.append(instance)
+                # TODO: exclude itself???
+                # if comment == annotation:
+                #     continue
+                all_tokens.extend(annotation.tokens)
+            # First create a feature vector for source TODO: Should we include this?
+            # feature_vectors.append(self.create_feature_vector(source, all_tokens, None, source, is_source=True))
+            # Then create feature vectors for branches
+            prev = source
+            for annotation in branch:
+                instance = self.create_feature_vector(source, all_tokens, prev, annotation)
+                annotation_id = instance[0]
+                if annotation_id in feature_vectors:
+                    continue
+                feature_vectors[annotation_id] = instance
                 prev = annotation
-        return feature_vectors
+        return feature_vectors.values()
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, source, branch, prev, comment, include_reddit_features=True):
+    def create_feature_vector(self, source, all_tokens, prev, comment, is_source=False, include_reddit_features=True):
         feature_vec = list()
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
@@ -63,18 +76,18 @@ class FeatureExtractor:
 
         if self.wv_model:
             avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wv_model)
-            simToSrc = self.cosine_similarity(comment.tokens, source.tokens)
-            simToPrev = self.cosine_similarity(comment.tokens, prev.tokens) if prev else 0
-            allTokens = []
-            for annotation in branch:
-                allTokens.extend(annotation.tokens)
-            simToBranch = self.cosine_similarity(comment.tokens, allTokens)
-            feature_vec.extend([simToSrc, simToPrev, simToBranch])
+            sim_to_src = 0
+            sim_to_prev = 0
+            sim_to_branch = self.cosine_similarity(comment.tokens, all_tokens)
+            if not is_source:
+                sim_to_src = self.cosine_similarity(comment.tokens, source.tokens)
+                sim_to_prev = self.cosine_similarity(comment.tokens, prev.tokens)
+            feature_vec.extend([sim_to_src, sim_to_prev, sim_to_branch])
             feature_vec.extend(avg_wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 
-        return (comment.comment_id, parent_sdqc, sub_sdqc, feature_vec)
+        return comment.comment_id, parent_sdqc, sub_sdqc, feature_vec
 
     def cosine_similarity(self, one, other):
         # Lookup words in w2c vocab
@@ -116,9 +129,9 @@ class FeatureExtractor:
         # dotdotdot
         hasTripDot = int('...' in text)
 
-        url_count = tokens.count('url')
+        url_count = tokens.count('URLURLURL')
 
-        quote_count = tokens.count('Reference')
+        quote_count = tokens.count('REFREFREF')
         
         # longest sequence of capital letters, default empty for 0 length
         cap_sequence_max_len = len(max(re.findall(r"[A-Z]+", text), key=len, default=''))
@@ -158,7 +171,6 @@ class FeatureExtractor:
 
 
     # TODO: find special word cases
-    # TODO: fix case where 'http://...' triggers a negative smiley (:/)
     def special_words_in_text(self, tokens, text, swear_words, negation_words, negative_smileys, positive_smileys):
         swear_count = self.count_lexicon_occurence(tokens, swear_words)
         negation_count = self.count_lexicon_occurence(tokens, negation_words)
@@ -176,11 +188,12 @@ class FeatureExtractor:
     def most_frequent_words_for_label(self, tokens):
         # self.annotations.make_frequent_words() must have been called for this to work
         
-        vec = set()
+        vec = []
 
-        for histogram in self.dataset.get_frequent_words():
-            for kv in histogram:
-                vec.add(int(kv[1] in tokens))
+        histograms = self.dataset.get_frequent_words()
+        for sdqc_id, histogram in histograms.items():
+            for count, freq_token in histogram:
+                vec.append(int(freq_token in tokens))
  
         return vec
 
@@ -194,9 +207,9 @@ class FeatureExtractor:
     def count_lexicon_occurence(self, words, lexion):
         return sum([1 if word in lexion else 0 for word in words])
 
-    def normalize(self, x_i, property):
-        min_x = self.dataset.get_min(property)
-        max_x = self.dataset.get_max(property)
+    def normalize(self, x_i, prop):
+        min_x = self.dataset.get_min(prop)
+        max_x = self.dataset.get_max(prop)
         if max_x-min_x != 0:
             return (x_i-min_x)/(max_x-min_x)
         
