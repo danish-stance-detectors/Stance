@@ -5,12 +5,13 @@ from sklearn import tree
 from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 
 #internal imports (our py classes)
 import data_loader
 import model_stats
-
-training_data = '../data/preprocessed/preprocessed_txt_u_r_lex_mf100_bow_sim_emb200.csv'
+        
+training_data = '../data/preprocessed/preprocessed_txt_u_r_lex_mf100_sim_emb200.csv'
 instances, emb_size = data_loader.get_instances(training_data, '\t')
 
 train, test = train_test_split(instances, test_size=0.25, random_state=42)
@@ -50,7 +51,7 @@ for (i, pred) in enumerate(comment_pred, start=0):
         comment_pred[i] = 3 # set as comment
 
 # train tree to recognize all
-clf = tree.DecisionTreeClassifier(criterion="entropy") 
+clf = RandomForestClassifier(n_estimators=100, max_depth=100, criterion="entropy", max_features=100)#tree.DecisionTreeClassifier(criterion="entropy") 
 clf = clf.fit(train_vec_no_comments, train_label_no_comments)
 labels_pred = clf.predict([x[1] for x in non_comment_vec])
 
