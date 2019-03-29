@@ -19,7 +19,7 @@ scoring = [
     'f1_macro'
 ]
 
-X, y = data_loader.get_features_and_labels()
+X, y, _ = data_loader.get_features_and_labels()
 
 for score in scoring:
     print()
