@@ -16,9 +16,7 @@ classifiers = {
 
 scoring = [
     'accuracy',
-    'f1_micro',
-    'f1_macro',
-    'f1_weighted',
+    'f1_macro'
 ]
 
 X, y = data_loader.get_features_and_labels()
