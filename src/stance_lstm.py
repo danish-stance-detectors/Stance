@@ -64,9 +64,7 @@ class StanceLSTM(nn.Module):
 # w2i['page'] = len(w2i)#For testing
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
-training_data = '../data/preprocessed/preprocessed.csv'
-instances, emb_size = data_loader.get_instances(training_data, '\t')
-train, test = train_test_split(instances, test_size=0.25, random_state=42)
+X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split()
 EMB = emb_size
 HIDDEN_DIM = 300
 EPOCHS = 50

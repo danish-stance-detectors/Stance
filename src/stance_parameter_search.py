@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestClassifier
 import data_loader
 
 
-X_train, X_test, y_train, y_test = data_loader.get_train_test_split(test_size=0.25)
+X_train, X_test, y_train, y_test, _ = data_loader.get_train_test_split(test_size=0.25)
 
 settings = [
     ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}),
