@@ -1,9 +1,10 @@
 
 from sklearn.base import BaseEstimator
 
+import numpy as np
+
 class two_step(BaseEstimator):
     """ Draft of two step classifier """
-    import numpy as np
     def __init__(self, comment_model, other_model):
         self.m1 = comment_model
         self.m2 = other_model
@@ -15,7 +16,6 @@ class two_step(BaseEstimator):
         # Build comment binary label list and other lists
         for i in range(len(y)):
             if y[i] == 3:
-                comments.append(i, X[i])
                 comment_labels.append(1)
             else:
                 comment_labels.append(0)
@@ -34,9 +34,11 @@ class two_step(BaseEstimator):
 
         # for each which is predicted as not comment (0), store it and its original idx
         non_comments = []
-        for i in range(comment_pred):
+        for i in range(len(comment_pred)):
             if comment_pred[i] == 0:
-                non_comments.append((i, comment_pred[i]))
+                non_comments.append((i, X[i]))
+            else:
+                comment_pred[i] = 3 #set to proper value
         
         # predict others
         other_pred = self.m2.predict([x[1] for x in non_comments])
