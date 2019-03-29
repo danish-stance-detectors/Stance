@@ -71,7 +71,7 @@ class FeatureExtractor:
         feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
         # feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
         
-        feature_vec.extend(self.get_bow_presence(comment.tokens))
+        # feature_vec.extend(self.get_bow_presence(comment.tokens))
 
         if self.wv_model:
             avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wv_model)
