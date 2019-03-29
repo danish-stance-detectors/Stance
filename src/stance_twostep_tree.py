@@ -10,7 +10,7 @@ from sklearn.model_selection import train_test_split
 import data_loader
 import model_stats
 
-training_data = '../data/preprocessed/preprocessed_nouser.csv'
+training_data = '../data/preprocessed/preprocessed_txt_u_r_lex_mf100_bow_sim_emb200.csv'
 instances, emb_size = data_loader.get_instances(training_data, '\t')
 
 train, test = train_test_split(instances, test_size=0.25, random_state=42)
@@ -36,7 +36,7 @@ labels_true_no_comments = [x[1] for x in test if x[1] != 3]
 test_comment_labels = [1 if x[1] == 3 else 0 for x in test]
 
 # train tree to recognize comments
-comment_tree = gnb = GaussianNB()#svm.LinearSVC()#tree.DecisionTreeClassifier(criterion="entropy")
+comment_tree = svm.LinearSVC()#GaussianNB()tree.DecisionTreeClassifier(criterion="entropy")
 comment_tree = comment_tree.fit(train_vec, train_comment_label)
 comment_pred = comment_tree.predict(test_vec)
 
