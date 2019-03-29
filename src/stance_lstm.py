@@ -1,10 +1,9 @@
-import collections
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sklearn.metrics as sk
-from sklearn.model_selection import train_test_split
 import numpy as np
+from sklearn.metrics import classification_report
 
 import data_loader
 
@@ -67,7 +66,7 @@ l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split()
 EMB = emb_size
 HIDDEN_DIM = 300
-EPOCHS = 50
+EPOCHS = 20
 
 model = StanceLSTM(EMB, HIDDEN_DIM, len(l2i), pre_trained=True)
 loss_func = nn.NLLLoss()
@@ -76,7 +75,7 @@ optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
 print("#Training")
 for epoch in range(EPOCHS):
     avg_loss = 0.0
-    for _, label, vec in train:
+    for vec, label in zip(X_train, y_train):
         # Clear stored gradient
         model.zero_grad()
 
@@ -97,35 +96,30 @@ for epoch in range(EPOCHS):
 
         loss.backward() # Back propagate
         optimizer.step() # Update parameters
-    avg_loss /= len(training_data)
+    avg_loss /= len(X_train)
     print("Epoch: {0}\tavg_loss: {1}".format(epoch, avg_loss))
-        
 
-# test_data = [
-#     ("The cat ate the apple", 'C'),
-#     ("Everybody read that page", 'D')
-# ]
 
 print("#Testing")
 with torch.no_grad():
-    labels_true = []
+    labels_true = y_test
     labels_pred = []
-    for _, label, vec in test:
+    for vec in X_test:
         data_in = torch.tensor([vec])
         pred = model(data_in)
         predicted = torch.argmax(pred.data, dim=1)
         pred_val = predicted[0].item()
         # print("Predicted: {0}\tActual: {1}".format(pred_val,label))
         labels_pred.append(pred_val)
-        labels_true.append(label)
-    cm = sk.confusion_matrix(labels_true, labels_pred, labels=[0, 1, 2, 3])
-    print("Confusion matrix:")
-    print("  S  D  Q  C")
-    print(cm)
-    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    sdqc_acc = cm.diagonal()
-    acc = sk.accuracy_score(labels_true, labels_pred)
-    f1 = sk.f1_score(labels_true, labels_pred, average='macro')
-    print("SDQC acc:", sdqc_acc)
-    print("Accuracy: %.5f" % acc )
-    print("F1-macro:", f1)
+    print(classification_report(labels_true, labels_pred))
+    # cm = sk.confusion_matrix(labels_true, labels_pred, labels=[0, 1, 2, 3])
+    # print("Confusion matrix:")
+    # print("  S  D  Q  C")
+    # print(cm)
+    # cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+    # sdqc_acc = cm.diagonal()
+    # acc = sk.accuracy_score(labels_true, labels_pred)
+    # f1 = sk.f1_score(labels_true, labels_pred, average='macro')
+    # print("SDQC acc:", sdqc_acc)
+    # print("Accuracy: %.5f" % acc)
+    # print("F1-macro:", f1)
