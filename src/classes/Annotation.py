@@ -1,5 +1,6 @@
 from nltk import word_tokenize
 import re
+import word_embeddings
 
 url_tag = 'URLURLURL'
 quote_tag = 'REFREFREF'
@@ -24,6 +25,10 @@ class RedditAnnotation:
         self.text = comment_json["text"]
         self.text = self.filter_reddit_quotes(self.text)
         self.text = self.filter_text_urls(self.text)
+
+        self.sim_to_src = 0
+        self.sim_to_prev = 0
+        self.sim_to_branch = 0
         if is_source:
             self.comment_id = comment_json["submission_id"]
             self.title = json["title"]
@@ -106,9 +111,17 @@ class RedditSubmission:
         self.branches.append(annotation_branch)
 
 
+def compute_similarity(annotation, previous, source, branch_tokens, is_source=False):
+    # TODO: exclude itself???
+    annotation.sim_to_branch = word_embeddings.cosine_similarity(annotation.tokens, branch_tokens)
+    if not is_source:
+        annotation.sim_to_src = word_embeddings.cosine_similarity(annotation.tokens, source.tokens)
+        annotation.sim_to_prev = word_embeddings.cosine_similarity(annotation.tokens, previous.tokens)
+
+
 class RedditDataset:
     def __init__(self):
-        self.annotations = [] # purely for testing purposes
+        self.annotations = {}
         self.submissions = []
         self.last_submission = lambda: len(self.submissions) - 1
         # mapping from property to tuple: (min, max)
@@ -136,27 +149,40 @@ class RedditDataset:
 
     def add_annotation(self, annotation):
         """Add to self.annotations. Should only be uses for testing purposes"""
-        self.annotations.append(self.analyse_annotation(annotation))
+        annotation = self.analyse_annotation(RedditAnnotation(annotation))
+        if annotation.comment_id not in self.annotations:
+            self.annotations[annotation.comment_id] = annotation
 
     def add_reddit_submission(self, source):
         self.submissions.append(RedditSubmission(RedditAnnotation(source, is_source=True)))
 
     def add_submission_branch(self, branch, sub_sample=False):
         annotation_branch = []
-        if sub_sample:
-            comments = 0
-            for annotation in branch:
-                sdqc = annotation["comment"]["SDQC_Submission"]
-                if self.sdqc_to_int[sdqc] == 3:
-                    comments += 1
-            if comments == len(branch):
-                print("Filtered", comments)
-                return
-        for annotation in branch: # TODO: Skip existing annotations
+        branch_tokens = []
+        class_comments = 0
+        # First, convert to Python objects
+        for annotation in branch:
             annotation = RedditAnnotation(annotation)
-            self.analyse_annotation(annotation)
+            if self.sdqc_to_int[annotation.sdqc_submission] == 3:
+                class_comments += 1
+            branch_tokens.extend(annotation.tokens)
             annotation_branch.append(annotation)
-        self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)
+
+        # Filter out branches with pure commenting class labels
+        if sub_sample and class_comments == len(branch):
+            print("Filtered", class_comments)
+            return
+
+        # Compute cosine similarity
+        source = self.submissions[self.last_submission()].source
+        prev = source
+        for annotation in annotation_branch:
+            compute_similarity(annotation, prev, source, branch_tokens)
+            prev = annotation
+            if annotation.comment_id not in self.annotations:  # Skip repeated annotations
+                self.analyse_annotation(annotation)  # Analyse relevant annotations
+                self.annotations[annotation.comment_id] = annotation
+        self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)  # This might be unnecessary
 
     def print_status_report(self):
         histogram = {
@@ -171,7 +197,6 @@ class RedditDataset:
             n += 1
         for label, count in histogram.items():
             print('{0}: {1} ({2})'.format(label, count, float(count)/float(n)))
-
 
     def analyse_annotation(self, annotation):
         if not annotation:
@@ -202,7 +227,6 @@ class RedditDataset:
     def get_max(self, key):
         return self.min_max[key][self.max_i]
 
-    # TODO: Make histogram of frequent words per class
     def handle_frequent_words(self, annotation, use_parent_sdqc=False):
         # Most frequent words for annotation classes, string to int (word counter)
         dict_idx = self.sdqc_to_int[annotation.sdqc_parent] \
@@ -214,7 +238,6 @@ class RedditDataset:
             else:
                 current_histo[token] = 1
 
-    # TODO: Refactor to RedditDataset to make BOW dynamically?
     def handle_bow(self, annotation_tokens):
         for t in annotation_tokens:
             self.bow.add(t)
@@ -230,10 +253,8 @@ class RedditDataset:
         return histogram
 
     def iterate_annotations(self):
-        for submission in self.submissions:
-            for branch in submission.branches:
-                for annotation in branch:
-                    yield annotation
+        for anno_id, annotation in self.annotations.items():
+            yield annotation
 
     def iterate_branches(self, with_source=True):
         for submission in self.submissions:
@@ -248,7 +269,4 @@ class RedditDataset:
             yield submission
 
     def size(self):
-        n = 0
-        for annotation in self.iterate_annotations():
-            n += 1
-        return n
+        return len(self.annotations)

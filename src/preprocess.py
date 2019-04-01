@@ -51,11 +51,12 @@ def loadAnnotations(filename):
     return dataset
 
 
-def preprocess(annotations, wv_model=None, emb_dim=100):
+def preprocess(annotations, emb_dim=100):
     if not annotations:
         return
     feature_extractor = \
-        FeatureExtractor(annotations, swear_words, negation_words, negative_smileys, positive_smileys, wv_model, emb_dim)
+        FeatureExtractor(annotations, swear_words, negation_words,
+                         negative_smileys, positive_smileys, emb_dim, wv_model=True)
     return feature_extractor.create_feature_vectors()
 
 
@@ -84,10 +85,10 @@ def main(argv):
     #     elif opt in ('-e', '-emb_dim'):
     #         emb_dim = arg
     
-    wv_model = word_embeddings.load_saved_word2vec_wv(word2vec_data)
-    annotations = loadAnnotations(annotated_folder)
+    word_embeddings.load_saved_word2vec_wv(word2vec_data)
+    dataset = loadAnnotations(annotated_folder)
     
-    data = preprocess(annotations, wv_model, emb_dim=300)
+    data = preprocess(dataset, emb_dim=300)
     write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":

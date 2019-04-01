@@ -8,7 +8,7 @@ import re # regular expression
 class FeatureExtractor:
 
     def __init__(self, dataset, swear_words,
-                 negation_words, negative_smileys, positive_smileys, wv_model, emb_dim, test=False):
+                 negation_words, negative_smileys, positive_smileys, emb_dim, wv_model=True, test=False):
         # using passed annotations if not testing
         if test:
             self.dataset = RedditDataset()
@@ -35,30 +35,14 @@ class FeatureExtractor:
         return self.create_feature_vector(annotation, include_reddit_features=False)
 
     def create_feature_vectors(self):
-        feature_vectors = {}
-        for source, branch in self.dataset.iterate_branches():
-            # Gather tokens for whole branch for similarity comparison
-            all_tokens = []
-            for annotation in branch:
-                # TODO: exclude itself???
-                # if comment == annotation:
-                #     continue
-                all_tokens.extend(annotation.tokens)
-            # First create a feature vector for source TODO: Should we include this?
-            # feature_vectors.append(self.create_feature_vector(source, all_tokens, None, source, is_source=True))
-            # Then create feature vectors for branches
-            prev = source
-            for annotation in branch:
-                instance = self.create_feature_vector(source, all_tokens, prev, annotation)
-                annotation_id = instance[0]
-                if annotation_id in feature_vectors:
-                    continue
-                feature_vectors[annotation_id] = instance
-                prev = annotation
-        return feature_vectors.values()
+        feature_vectors = []
+        for annotation in self.dataset.iterate_annotations():
+            instance = self.create_feature_vector(annotation)
+            feature_vectors.append(instance)
+        return feature_vectors
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, source, all_tokens, prev, comment, is_source=False, include_reddit_features=True):
+    def create_feature_vector(self, comment, include_reddit_features=True):
         feature_vec = list()
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
@@ -74,36 +58,13 @@ class FeatureExtractor:
         # feature_vec.extend(self.get_bow_presence(comment.tokens))
 
         if self.wv_model:
-            avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim, self.wv_model)
-            sim_to_src = 0
-            sim_to_prev = 0
-            sim_to_branch = self.cosine_similarity(comment.tokens, all_tokens)
-            if not is_source:
-                sim_to_src = self.cosine_similarity(comment.tokens, source.tokens)
-                sim_to_prev = self.cosine_similarity(comment.tokens, prev.tokens)
-            feature_vec.extend([sim_to_src, sim_to_prev, sim_to_branch])
+            feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])
+            avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim)
             feature_vec.extend(avg_wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 
         return comment.comment_id, parent_sdqc, sub_sdqc, feature_vec
-
-    def cosine_similarity(self, one, other):
-        # Lookup words in w2c vocab
-        words = []
-        for token in one:
-            if token in self.wv_model.vocab:  # check that the token exists
-                words.append(token)
-        other_words = []
-        for token in other:
-            if token in self.wv_model.vocab:
-                other_words.append(token)
-
-        if len(words) > 0 and len(other_words) > 0:  # make sure there is actually something to compare
-            # cosine similarity between two sets of words
-            return self.wv_model.n_similarity(other_words, words)
-        else:
-            return 0.  # no similarity if one set contains 0 words
 
     def text_features(self, text, tokens):
         # number of chars
