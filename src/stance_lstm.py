@@ -55,10 +55,11 @@ class StanceLSTM(nn.Module):
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
 
-def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units, L2_reg, epochs, emb_size):
+def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units,
+          learning_rate, L2_reg, epochs, emb_size):
     model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units, len(l2i), emb_size)
     loss_func = nn.NLLLoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01, weight_decay=L2_reg)
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=L2_reg)
     print("#Training")
     for epoch in range(epochs):
         avg_loss = 0.0
