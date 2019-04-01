@@ -141,13 +141,37 @@ class RedditDataset:
     def add_reddit_submission(self, source):
         self.submissions.append(RedditSubmission(RedditAnnotation(source, is_source=True)))
 
-    def add_submission_branch(self, branch):
+    def add_submission_branch(self, branch, sub_sample=False):
         annotation_branch = []
-        for annotation in branch:
+        if sub_sample:
+            comments = 0
+            for annotation in branch:
+                sdqc = annotation["comment"]["SDQC_Submission"]
+                if self.sdqc_to_int[sdqc] == 3:
+                    comments += 1
+            if comments == len(branch):
+                print("Filtered", comments)
+                return
+        for annotation in branch: # TODO: Skip existing annotations
             annotation = RedditAnnotation(annotation)
             self.analyse_annotation(annotation)
             annotation_branch.append(annotation)
         self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)
+
+    def print_status_report(self):
+        histogram = {
+            0: 0,
+            1: 0,
+            2: 0,
+            3: 0
+        }
+        n = 0
+        for annotation in self.iterate_annotations():
+            histogram[self.sdqc_to_int[annotation.sdqc_submission]] += 1
+            n += 1
+        for label, count in histogram.items():
+            print('{0}: {1} ({2})'.format(label, count, float(count)/float(n)))
+
 
     def analyse_annotation(self, annotation):
         if not annotation:
@@ -207,7 +231,7 @@ class RedditDataset:
 
     def iterate_annotations(self):
         for submission in self.submissions:
-            for branch in submission.brances:
+            for branch in submission.branches:
                 for annotation in branch:
                     yield annotation
 
@@ -222,3 +246,9 @@ class RedditDataset:
     def iterate_submissions(self):
         for submission in self.submissions:
             yield submission
+
+    def size(self):
+        n = 0
+        for annotation in self.iterate_annotations():
+            n += 1
+        return n
