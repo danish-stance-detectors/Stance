@@ -1,5 +1,4 @@
 from nltk import word_tokenize
-from random import randint
 import re, copy
 import word_embeddings
 
