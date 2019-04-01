@@ -2,14 +2,17 @@
 from sklearn.base import BaseEstimator
 
 import numpy as np
+#from sklearn import tree
+from sklearn import svm
+from sklearn.linear_model import LogisticRegression
 
 class two_step(BaseEstimator):
     """ Draft of two step classifier """
-    def __init__(self, comment_model, other_model):
-        self.m1 = comment_model
-        self.m2 = other_model
+    def __init__(self):#, comment_model, other_model):
+        self.m1 = svm.LinearSVC()#comment_model
+        self.m2 = LogisticRegression(solver='liblinear', C=10, penalty='l1', multi_class='auto')
     
-    def fit(self, X, y, **kwargs):
+    def fit(self, X, y):
         comment_labels = []
         other_vec = []
         other_label = []
@@ -27,6 +30,8 @@ class two_step(BaseEstimator):
 
         #Train model 2 to guess others (SDQ)
         self.m2.fit(other_vec, other_label)
+
+        return self
 
     def predict(self, X):
         #Get all comment predictions
@@ -50,3 +55,5 @@ class two_step(BaseEstimator):
         
         #return
         return np.array(comment_pred)
+
+    #def score()

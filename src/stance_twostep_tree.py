@@ -6,6 +6,7 @@ from sklearn import svm
 from sklearn.naive_bayes import GaussianNB
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import cross_val_score
 
 #internal imports (our py classes)
 import data_loader
@@ -60,12 +61,15 @@ labels_true = [x[1] for x in test]
 #     pred_idx = non_comment_vec[idx][0]
 #     comment_pred[pred_idx] = act_pred
 
-ts = stance_two_step.two_step(svm.LinearSVC(), tree.DecisionTreeClassifier())
+ts = stance_two_step.two_step()
 ts.fit(train_vec, train_label)
 pred = ts.predict(test_vec)
+
+scores = cross_val_score(ts, train_vec, train_label, cv=5, scoring='accuracy')
+print("%s %0.2f (+/- %0.2f)" % (score, scores.mean(), scores.std() * 2))
 
 #model_stats.print_confusion_matrix(labels_true_no_comments, labels_pred, [0,1,2])
 
 # two_step_pred = [3 if comment_pred[x] == 1 else labels_pred[x] for x in range(len(labels_pred))]
 
-model_stats.print_confusion_matrix(labels_true, pred, [0,1,2,3])
+#model_stats.print_confusion_matrix(labels_true, pred, [0,1,2,3])

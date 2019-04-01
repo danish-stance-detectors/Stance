@@ -160,6 +160,7 @@ class RedditDataset:
         # dictionary at idx #num is used for label #num, example: support at 0
         self.freq_histogram = [dict(), dict(), dict(), dict()]
         self.bow = set()
+        self.freq_tri_gram = [dict(), dict(), dict(), dict()]
         self.sdqc_to_int = {
             "Supporting": 0,
             "Denying": 1,
@@ -244,6 +245,7 @@ class RedditDataset:
         self.handle(self.min_max['reply_count'], annotation.reply_count)
         self.handle_frequent_words(annotation)
         self.handle_bow(annotation.tokens)
+        self.handle_ngram(annotation, self.freq_tri_gram, 3)
 
         return annotation
 
@@ -273,6 +275,19 @@ class RedditDataset:
     def handle_bow(self, annotation_tokens):
         for t in annotation_tokens:
             self.bow.add(t)
+
+    def handle_ngram(self, annotation, gram_dict, gram_size):
+        annotation_tokens = annotation.tokens
+        label = self.sdqc_to_int[annotation.sdqc_submission]
+        label_dict = gram_dict[label]
+        for (idx, t) in enumerate(annotation_tokens):
+            if idx + gram_size < len(annotation_tokens)-1:
+                seq = " ".join(annotation_tokens[idx:idx+gram_size])
+                if seq in label_dict:
+                    label_dict[seq] = label_dict[seq] + 1
+                else:
+                    label_dict[seq] = 1
+        
 
     def get_frequent_words(self, take_count=100):
         histogram = {}

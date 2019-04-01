@@ -58,7 +58,6 @@ class StanceLSTM(nn.Module):
 
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
-
 def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units,
           learning_rate, L2_reg, epochs, emb_size):
     if args.cuda and torch.cuda.is_available():
