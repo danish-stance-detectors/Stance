@@ -7,7 +7,7 @@ datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
+word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_300_cbow_negative.kv')
 
 # Loads lexicon file given path
 # Assumes file has one word per line
@@ -45,15 +45,18 @@ def loadAnnotations(filename):
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for branch in branches:
-                    dataset.add_submission_branch(branch)
+                    dataset.add_submission_branch(branch, sub_sample=True)
+    print(dataset.size())
+    dataset.print_status_report()
     return dataset
 
 
-def preprocess(annotations, wv_model=None, emb_dim=100):
+def preprocess(annotations, emb_dim=100):
     if not annotations:
         return
     feature_extractor = \
-        FeatureExtractor(annotations, swear_words, negation_words, negative_smileys, positive_smileys, wv_model, emb_dim)
+        FeatureExtractor(annotations, swear_words, negation_words,
+                         negative_smileys, positive_smileys, emb_dim, wv_model=True)
     return feature_extractor.create_feature_vectors()
 
 
@@ -82,11 +85,11 @@ def main(argv):
     #     elif opt in ('-e', '-emb_dim'):
     #         emb_dim = arg
     
-    wv_model = word_embeddings.load_saved_word2vec_wv(word2vec_data)
-    annotations = loadAnnotations(annotated_folder)
+    word_embeddings.load_saved_word2vec_wv(word2vec_data)
+    dataset = loadAnnotations(annotated_folder)
     
-    data = preprocess(annotations, wv_model, emb_dim=200)
-    write_preprocessed(data, 'preprocessed_new.csv')
+    data = preprocess(dataset, emb_dim=300)
+    write_preprocessed(data, 'preprocessed.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

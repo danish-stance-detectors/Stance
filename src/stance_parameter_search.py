@@ -1,4 +1,4 @@
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.metrics import classification_report
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
@@ -23,13 +23,13 @@ scores = [
     'accuracy',
     'f1_macro'
 ]
-
+skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 for score in scores:
     for name, estimator, tuned_parameters in settings:
         print("# Tuning hyper-parameters for %s with %s" % (name, score))
         print()
         clf = GridSearchCV(
-            estimator, tuned_parameters, cv=5, scoring=score, n_jobs=-1, error_score=0
+            estimator, tuned_parameters, cv=skf, scoring=score, n_jobs=-1, error_score=0
         )
         clf.fit(X_train, y_train)
 

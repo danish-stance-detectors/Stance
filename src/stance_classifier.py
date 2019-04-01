@@ -3,7 +3,7 @@ from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, StratifiedKFold
 
 import data_loader
 
@@ -20,10 +20,10 @@ scoring = [
 ]
 
 X, y, _ = data_loader.get_features_and_labels()
-
+skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
 for score in scoring:
     print()
     for name, clf in classifiers.items():
-        scores = cross_val_score(clf, X, y, cv=5, scoring=score)
+        scores = cross_val_score(clf, X, y, cv=skf, scoring=score)
         print("%-20s%s %0.2f (+/- %0.2f)" % (name, score, scores.mean(), scores.std() * 2))
 

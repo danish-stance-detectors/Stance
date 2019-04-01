@@ -9,6 +9,7 @@ word2vec_path = '../data/word2vec/'
 fasttext_path = '../data/fasttext/'
 dsl_sentences = '../../Data/DSL_Corpus/dsl_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
+wv_model = None
 
 # memory friendly iterator
 class MySentences:
@@ -51,31 +52,56 @@ def save_fasttext(path_to_vectors, saved_filename):
     
 
 def load_saved_word2vec_wv(filepath):
-    return KeyedVectors.load(filepath)
+    global wv_model
+    wv_model = KeyedVectors.load(filepath)
+    return wv_model
 
 def load_word_embeddings_bin(filename, algorithm='fasttext'):
     print('loading model...')
-    model = lambda: None
+    global wv_model
     if(algorithm == 'fasttext'):
-        model = FastText.load_fasttext_format(filename, encoding='utf8')
+        wv_model = FastText.load_fasttext_format(filename, encoding='utf8')
     elif(algorithm == 'word2vec'):
-        model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
+        wv_model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
     print('Done!')
-    return model
+    return wv_model
 
-def avg_word_emb(tokens, embedding_size, wembs):
-    vec = np.zeros(embedding_size) #word embedding
-    #make up for varying lengths with zero-padding
+def avg_word_emb(tokens, embedding_size):
+    global wv_model
+    if not wv_model:
+        return None
+    vec = np.zeros(embedding_size) # word embedding
+    # make up for varying lengths with zero-padding
     n = len(tokens)
-    if (n == 0):
+    if n == 0:
         return vec.tolist()
     for w_i in range(n):
         token = tokens[w_i]
-        if (token in wembs):
-            vec += wembs[token]
-    #Average word embeddings
+        if token in wv_model.vocab:
+            vec += wv_model[token]
+    # Average word embeddings
     return (vec/n).tolist()
 
+def cosine_similarity(one, other):
+    global wv_model
+    if not wv_model:
+        return None
+
+    # Lookup words in w2c vocab
+    words = []
+    for token in one:
+        if token in wv_model.vocab:  # check that the token exists
+            words.append(token)
+    other_words = []
+    for token in other:
+        if token in wv_model.vocab:
+            other_words.append(token)
+
+    if len(words) > 0 and len(other_words) > 0:  # make sure there is actually something to compare
+        # cosine similarity between two sets of words
+        return wv_model.n_similarity(other_words, words)
+    else:
+        return 0.  # no similarity if one set contains 0 words
 
 def main(argv):
     # arguments setting 
