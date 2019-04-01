@@ -4,8 +4,12 @@ import torch.nn.functional as F
 import sklearn.metrics as sk
 from sklearn.metrics import classification_report
 import collections
-
+import argparse
 import data_loader
+
+parser = argparse.ArgumentParser(description='Train and test LSTM model')
+parser.add_argument('-c', '--cuda', dest='cuda', action='store_true', help='Enable CUDA')
+args = parser.parse_args()
 
 class StanceLSTM(nn.Module):
     def __init__(self, lstm_layers, lstm_dim, hidden_layers, hidden_dim,
@@ -57,7 +61,11 @@ l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
 def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units,
           learning_rate, L2_reg, epochs, emb_size):
-    model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units, len(l2i), emb_size)
+    if args.cuda and torch.cuda.is_available():
+        args.device = torch.device('cuda')
+    else:
+        args.device = torch.device('cpu')
+    model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units, len(l2i), emb_size).to(args.device)
     loss_func = nn.NLLLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=L2_reg)
     print("#Training")
@@ -71,8 +79,8 @@ def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units
             model.hidden = model.init_hidden()
 
             # Prepare data
-            data_in = torch.tensor([feature_vec])
-            target = torch.tensor([label])
+            data_in = torch.tensor([feature_vec], device=args.device)
+            target = torch.tensor([label], device=args.device)
 
             # Make prediction
             pred = model(data_in)
@@ -94,7 +102,7 @@ def test(model, X_test, y_test):
         labels_true = y_test
         labels_pred = []
         for vec in X_test:
-            data_in = torch.tensor([vec])
+            data_in = torch.tensor([vec], device=args.device)
             pred = model(data_in)
             predicted = torch.argmax(pred.data, dim=1)
             pred_val = predicted[0].item()
