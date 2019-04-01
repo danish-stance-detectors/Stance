@@ -1,5 +1,6 @@
 import word_embeddings
 from classes.Annotation import RedditDataset
+import classes.afinn_sentiment
 
 import re # regular expression
 
@@ -46,6 +47,7 @@ class FeatureExtractor:
         feature_vec = list()
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
+        #feature_vec.extend(get_afinn_sentiment(comment.text))
 
         # reddit specific features
         if include_reddit_features:

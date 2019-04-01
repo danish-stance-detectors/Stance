@@ -54,10 +54,10 @@ class StanceLSTM(nn.Module):
 
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
-X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split()
+X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split(filename="../data/preprocessed/preprocessed_txt_u_r_lex_mf100_bow_sim_emb200.csv")
 EMB = emb_size
 HIDDEN_DIM = 300
-EPOCHS = 10
+EPOCHS = 50
 
 model = StanceLSTM(2, 100, 2, 100, len(l2i), EMB)
 loss_func = nn.NLLLoss()

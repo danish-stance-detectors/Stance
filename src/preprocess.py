@@ -7,7 +7,7 @@ datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_300_cbow_negative.kv')
+word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_negative.kv')
 
 # Loads lexicon file given path
 # Assumes file has one word per line
@@ -45,7 +45,7 @@ def loadAnnotations(filename):
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for branch in branches:
-                    dataset.add_submission_branch(branch, sub_sample=True)
+                    dataset.add_submission_branch(branch)
     print(dataset.size())
     dataset.print_status_report()
     return dataset
@@ -88,8 +88,14 @@ def main(argv):
     word_embeddings.load_saved_word2vec_wv(word2vec_data)
     dataset = loadAnnotations(annotated_folder)
     
+    # for (i, _dict) in enumerate(dataset.freq_tri_gram):
+    #     for seq, count in sorted(_dict.items(), key=lambda kv: kv[1], reverse=True):
+    #         if count > 10:
+    #             print("label: %d | seq: %s | count %d" %(i, seq, count))
+
+
     data = preprocess(dataset, emb_dim=300)
-    write_preprocessed(data, 'preprocessed.csv')
+    write_preprocessed(data, 'preprocessed_afinn.csv')
 
 if __name__ == "__main__":
     main(sys.argv[1:])
