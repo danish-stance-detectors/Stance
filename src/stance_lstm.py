@@ -52,19 +52,26 @@ class StanceLSTM(nn.Module):
         label_scores = F.log_softmax(label_space, dim=1)
         return label_scores
 
+
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
-X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split()
-EMB = emb_size
-HIDDEN_DIM = 300
-EPOCHS = 10
+X_train, X_test, y_train, y_test, EMB = data_loader.get_train_test_split()
 
-model = StanceLSTM(2, 100, 2, 100, len(l2i), EMB)
+# Hyper parameters
+EPOCHS = [10, 30, 50, 100, 200]
+LSTM_LAYERS = [1, 2]
+LSTM_UNITS = [100, 200, 300]
+LINEAR_LAYERS = [1, 2, 3]
+LINEAR_UNITS = [100, 200, 300]
+LEARNING_RATE = [0.1, 0.01, 0.001]
+L2_REG = [0, 0.1, 0.01, 0.001]
+
+model = StanceLSTM(LSTM_LAYERS[0], LSTM_UNITS[0], LINEAR_LAYERS[0], LINEAR_UNITS[0], len(l2i), EMB)
 loss_func = nn.NLLLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+optimizer = torch.optim.SGD(model.parameters(), lr=0.01, weight_decay=L2_REG[0])
 
 print("#Training")
-for epoch in range(EPOCHS):
+for epoch in range(EPOCHS[0]):
     avg_loss = 0.0
     for vec, label in zip(X_train, y_train):
         # Clear stored gradient
