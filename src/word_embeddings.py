@@ -103,6 +103,13 @@ def cosine_similarity(one, other):
     else:
         return 0.  # no similarity if one set contains 0 words
 
+
+def most_similar_word(word):
+    global wv_model
+    if wv_model and word in wv_model.vocab:
+        return wv_model.similar_by_word(word)
+    return [(word, 1)]
+
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()

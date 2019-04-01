@@ -45,7 +45,7 @@ def loadAnnotations(filename):
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for branch in branches:
-                    dataset.add_submission_branch(branch, sub_sample=True)
+                    dataset.add_submission_branch(branch)
     print(dataset.size())
     dataset.print_status_report()
     return dataset
