@@ -2,7 +2,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import sklearn.metrics as sk
-import numpy as np
 from sklearn.metrics import classification_report
 import collections
 
@@ -52,63 +51,82 @@ class StanceLSTM(nn.Module):
         label_scores = F.log_softmax(label_space, dim=1)
         return label_scores
 
+
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
-X_train, X_test, y_train, y_test, emb_size = data_loader.get_train_test_split(filename="../data/preprocessed/preprocessed_txt_u_r_lex_mf100_bow_sim_emb200.csv")
-EMB = emb_size
-HIDDEN_DIM = 300
-EPOCHS = 50
+def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units,
+          learning_rate, L2_reg, epochs, emb_size):
+    model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units, len(l2i), emb_size)
+    loss_func = nn.NLLLoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=L2_reg)
+    print("#Training")
+    for epoch in range(epochs):
+        avg_loss = 0.0
+        for feature_vec, label in zip(X_train, y_train):
+            # Clear stored gradient
+            model.zero_grad()
 
-model = StanceLSTM(2, 100, 2, 100, len(l2i), EMB)
-loss_func = nn.NLLLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+            # Initialize hidden state
+            model.hidden = model.init_hidden()
 
-print("#Training")
-for epoch in range(EPOCHS):
-    avg_loss = 0.0
-    for vec, label in zip(X_train, y_train):
-        # Clear stored gradient
-        model.zero_grad()
+            # Prepare data
+            data_in = torch.tensor([feature_vec])
+            target = torch.tensor([label])
 
-        # Initialize hidden state
-        model.hidden = model.init_hidden()
+            # Make prediction
+            pred = model(data_in)
 
-        # Prepare data
-        data_in = torch.tensor([vec])
-        target = torch.tensor([label])
+            # Calculate loss
+            loss = loss_func(pred, target)
+            avg_loss += loss.item()
 
-        # Make prediction
-        pred = model(data_in)
-
-        # Calculate loss
-        loss = loss_func(pred, target)
-        avg_loss += loss.item()
-
-        loss.backward() # Back propagate
-        optimizer.step() # Update parameters
-    avg_loss /= len(X_train)
-    print("Epoch: {0}\tavg_loss: {1}".format(epoch, avg_loss))
+            loss.backward()  # Back propagate
+            optimizer.step()  # Update parameters
+        avg_loss /= len(X_train)
+        print("Epoch: {0}\tavg_loss: {1}".format(epoch, avg_loss))
+    return model
 
 
-print("#Testing")
-with torch.no_grad():
-    labels_true = y_test
-    labels_pred = []
-    for vec in X_test:
-        data_in = torch.tensor([vec])
-        pred = model(data_in)
-        predicted = torch.argmax(pred.data, dim=1)
-        pred_val = predicted[0].item()
-        labels_pred.append(pred_val)
-    print(classification_report(labels_true, labels_pred))
-    cm = sk.confusion_matrix(labels_true, labels_pred, labels=[0, 1, 2, 3])
-    print("Confusion matrix:")
-    print("  S  D  Q  C")
-    print(cm)
-    cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
-    acc = sk.accuracy_score(labels_true, labels_pred)
-    print("Accuracy: %.5f" % acc)
-    # sdqc_acc = cm.diagonal()
-    # f1 = sk.f1_score(labels_true, labels_pred, average='macro')
-    # print("SDQC acc:", sdqc_acc)
-    # print("F1-macro:", f1)
+def test(model, X_test, y_test):
+    print("#Testing")
+    with torch.no_grad():
+        labels_true = y_test
+        labels_pred = []
+        for vec in X_test:
+            data_in = torch.tensor([vec])
+            pred = model(data_in)
+            predicted = torch.argmax(pred.data, dim=1)
+            pred_val = predicted[0].item()
+            labels_pred.append(pred_val)
+        print(classification_report(labels_true, labels_pred))
+        cm = sk.confusion_matrix(labels_true, labels_pred, labels=[0, 1, 2, 3])
+        print("Confusion matrix:")
+        print("  S  D  Q  C")
+        print(cm)
+        acc = sk.accuracy_score(labels_true, labels_pred)
+        print("Accuracy: %.5f" % acc)
+        # cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # sdqc_acc = cm.diagonal()
+        # f1 = sk.f1_score(labels_true, labels_pred, average='macro')
+        # print("SDQC acc:", sdqc_acc)
+        # print("F1-macro:", f1)
+
+
+def run():
+    X_train, X_test, y_train, y_test, EMB = data_loader.get_train_test_split()
+
+    # Hyper parameters
+    EPOCHS = [10, 30, 50, 100, 200]
+    LSTM_LAYERS = [1, 2]
+    LSTM_UNITS = [100, 200, 300]
+    LINEAR_LAYERS = [1, 2, 3]
+    LINEAR_UNITS = [100, 200, 300]
+    LEARNING_RATE = [0.1, 0.01, 0.001]
+    L2_REG = [0, 0.1, 0.01, 0.001]
+
+    model = train(X_train, y_train, LSTM_LAYERS[0], LSTM_UNITS[0], LINEAR_LAYERS[0],
+                  LINEAR_UNITS[0], LEARNING_RATE[0], L2_REG[0], EPOCHS[0], EMB)
+    test(model, X_test, y_test)
+
+
+run()
