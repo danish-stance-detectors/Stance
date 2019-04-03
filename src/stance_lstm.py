@@ -28,23 +28,23 @@ class StanceLSTM(nn.Module):
 
         # Linear layer
         dense_layers = collections.OrderedDict()
-        dense_layers["lin0"] = torch.nn.Linear(lstm_dim, hidden_dim)
-        dense_layers["rec0"] = torch.nn.ReLU()
+        dense_layers["lin0"] = torch.nn.Linear(lstm_dim, hidden_dim).to(args.device)
+        dense_layers["rec0"] = torch.nn.ReLU().to(args.device)
         for i in range(hidden_layers - 1):
-            dense_layers["lin%d" % (i + 1)] = torch.nn.Linear(hidden_dim, hidden_dim)
-            dense_layers["rec%d" % (i + 1)] = torch.nn.ReLU()
+            dense_layers["lin%d" % (i + 1)] = torch.nn.Linear(hidden_dim, hidden_dim).to(args.device)
+            dense_layers["rec%d" % (i + 1)] = torch.nn.ReLU().to(args.device)
         if dropout:
-            dense_layers["drop"] = torch.nn.Dropout(p=0.5)
-        dense_layers["lin%d" % hidden_layers] = torch.nn.Linear(hidden_dim, num_labels)
-        self.hidden2label = torch.nn.Sequential(dense_layers)
+            dense_layers["drop"] = torch.nn.Dropout(p=0.5).to(args.device)
+        dense_layers["lin%d" % hidden_layers] = torch.nn.Linear(hidden_dim, num_labels).to(args.device)
+        self.hidden2label = torch.nn.Sequential(dense_layers).to(args.device)
 
         #initialize state
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
         # The axes semantics are (hidden_layers, minibatch_size, hidden_dim)
-        return (torch.zeros(self.lstm_layers, 1, self.hidden_dim),
-                torch.zeros(self.lstm_layers, 1, self.hidden_dim))
+        return (torch.zeros(self.lstm_layers, 1, self.hidden_dim).to(args.device),
+                torch.zeros(self.lstm_layers, 1, self.hidden_dim).to(args.device))
 
     def forward(self, data):
         x = data
@@ -161,7 +161,7 @@ def run():
     LINEAR_UNITS = [100, 150, 200, 300]
     LEARNING_RATE = [0.1, 0.01, 0.001]
     L2_REG = [0, 0.1, 0.01, 0.001]
-
+    
     model = train(X_train, y_train, LSTM_LAYERS[0], LSTM_UNITS[0], LINEAR_LAYERS[0],
                   LINEAR_UNITS[0], LEARNING_RATE[0], L2_REG[0], EPOCHS[0], EMB, dropout=True)
     test(model, X_test, y_test)
