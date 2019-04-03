@@ -6,6 +6,7 @@ from sklearn.metrics import classification_report
 import collections
 import argparse
 import data_loader
+from sklearn.model_selection import train_test_split
 
 parser = argparse.ArgumentParser(description='Train and test LSTM model')
 parser.add_argument('-c', '--cuda', dest='cuda', action='store_true', help='Enable CUDA')
@@ -59,39 +60,68 @@ class StanceLSTM(nn.Module):
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
 
 def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units,
-          learning_rate, L2_reg, epochs, emb_size):
+          learning_rate, L2_reg, epochs, emb_size, dropout=False, validation_size=0.2):
     if args.cuda and torch.cuda.is_available():
         args.device = torch.device('cuda')
     else:
         args.device = torch.device('cpu')
-    model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units, len(l2i), emb_size).to(args.device)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train, y_train, test_size=validation_size
+    )
+    dataloader = {
+        'train': list(zip(X_train, y_train)),
+        'val': list(zip(X_val, y_val))
+    }
+    dataset_sizes = {
+        'train': len(X_train),
+        'val': len(X_val)
+    }
+    model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units,
+                       len(l2i), emb_size, dropout=dropout).to(args.device)
     loss_func = nn.NLLLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=L2_reg)
     print("#Training")
     for epoch in range(epochs):
-        avg_loss = 0.0
-        for feature_vec, label in zip(X_train, y_train):
-            # Clear stored gradient
-            model.zero_grad()
+        print("*****Epoch {}*****".format(epoch))
+        for phase, data in dataloader.items():
+            if phase == 'train':
+                model.train()
+            else:
+                model.eval()
 
-            # Initialize hidden state
-            model.hidden = model.init_hidden()
+            running_loss = 0.0
+            running_corrects = 0
 
-            # Prepare data
-            data_in = torch.tensor([feature_vec], device=args.device)
-            target = torch.tensor([label], device=args.device)
+            for feature_vec, label in data:
+                # Clear stored gradient
+                model.zero_grad()
 
-            # Make prediction
-            pred = model(data_in)
+                # Initialize hidden state
+                model.hidden = model.init_hidden()
 
-            # Calculate loss
-            loss = loss_func(pred, target)
-            avg_loss += loss.item()
+                # Prepare data
+                data_in = torch.tensor([feature_vec], device=args.device)
+                target = torch.tensor([label], device=args.device)
 
-            loss.backward()  # Back propagate
-            optimizer.step()  # Update parameters
-        avg_loss /= len(X_train)
-        print("Epoch: {0}\tavg_loss: {1}".format(epoch, avg_loss))
+                with torch.set_grad_enabled(phase == 'train'):
+                    # Make prediction
+                    outputs = model(data_in)
+                    _, preds = torch.max(outputs, 1)
+                    # Calculate loss
+                    loss = loss_func(outputs, target)
+
+                    if phase == 'train':
+                        loss.backward()  # Back propagate
+                        optimizer.step()  # Update parameters
+
+                running_loss += loss.item()
+                running_corrects += torch.sum(preds == target.data)
+
+            epoch_loss = running_loss / dataset_sizes[phase]
+            epoch_acc = float(running_corrects) / dataset_sizes[phase]
+            print('{:10} loss: {:.4f} Acc: {:.4f}'.format(
+                phase, epoch_loss, epoch_acc))
+
     return model
 
 
@@ -126,14 +156,14 @@ def run():
     # Hyper parameters
     EPOCHS = [10, 30, 50, 100, 200]
     LSTM_LAYERS = [1, 2]
-    LSTM_UNITS = [100, 200, 300]
+    LSTM_UNITS = [100, 150, 200, 300]
     LINEAR_LAYERS = [1, 2, 3]
-    LINEAR_UNITS = [100, 200, 300]
+    LINEAR_UNITS = [100, 150, 200, 300]
     LEARNING_RATE = [0.1, 0.01, 0.001]
     L2_REG = [0, 0.1, 0.01, 0.001]
 
     model = train(X_train, y_train, LSTM_LAYERS[0], LSTM_UNITS[0], LINEAR_LAYERS[0],
-                  LINEAR_UNITS[0], LEARNING_RATE[0], L2_REG[0], EPOCHS[0], EMB)
+                  LINEAR_UNITS[0], LEARNING_RATE[0], L2_REG[0], EPOCHS[0], EMB, dropout=True)
     test(model, X_test, y_test)
 
 
