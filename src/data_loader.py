@@ -37,6 +37,6 @@ def get_train_test_split(filename=datafile, delimiter=tab, test_size=0.25):
     X, y, emb_size = get_features_and_labels(filename, delimiter)
 
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, random_state=0
+        X, y, test_size=test_size, random_state=42, shuffle=True, stratify=y
     )
     return X_train, X_test, y_train, y_test, emb_size
