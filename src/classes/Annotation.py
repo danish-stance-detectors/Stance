@@ -1,6 +1,7 @@
 from nltk import word_tokenize
 import re, copy
 import word_embeddings
+from classes.afinn_sentiment import AfinnSentiment
 
 url_tag = 'URLURLURL'
 quote_tag = 'REFREFREF'
@@ -25,6 +26,10 @@ class RedditAnnotation:
         self.text = comment_json["text"]
         self.text = self.filter_reddit_quotes(self.text)
         self.text = self.filter_text_urls(self.text)
+        
+        #Default values
+        self.parent_submission_sdqc = None
+        self.afinn_sentiment_score = 0.0
 
         self.sim_to_src = 0
         self.sim_to_prev = 0
@@ -144,6 +149,8 @@ class RedditDataset:
         self.annotations = {}
         self.submissions = []
         self.last_submission = lambda: len(self.submissions) - 1
+        
+        self.afinn_sentiment = AfinnSentiment()
         # mapping from property to tuple: (min, max)
         self.min_max = {
             'karma': [0, 0],
@@ -151,7 +158,8 @@ class RedditDataset:
             'tokens_len': [0, 0],
             'avg_word_len': [0, 0],
             'upvotes': [0, 0],
-            'reply_count': [0, 0]
+            'reply_count': [0, 0],
+            'afinn_sentiment': [0, 0]
         }
         self.min_i = 0
         self.max_i = 1
@@ -201,7 +209,7 @@ class RedditDataset:
             compute_similarity(annotation, prev, source, branch_tokens)
             prev = annotation
             if annotation.comment_id not in self.annotations:  # Skip repeated annotations
-                self.analyse_annotation(annotation)  # Analyse relevant annotations
+                self.analyse_annotation(annotation, parent_sub_sdcq=prev.sdqc_submission)  # Analyse relevant annotations
                 self.annotations[annotation.comment_id] = annotation
         self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)  # This might be unnecessary
 
@@ -213,7 +221,7 @@ class RedditDataset:
                     annotation_copy.alter_id_and_text(words_to_replace=2, early_stop=True)
                     compute_similarity(annotation, prev, source, branch_tokens)
                     if annotation.comment_id not in self.annotations:  # Skip repeated annotations
-                        self.analyse_annotation(annotation)  # Analyse relevant annotations
+                        self.analyse_annotation(annotation, parent_sub_sdcq=prev.sdqc_submission)  # Analyse relevant annotations
                         self.annotations[annotation.comment_id] = annotation
                 prev = annotation
 
@@ -231,11 +239,15 @@ class RedditDataset:
         for label, count in histogram.items():
             print('{0}: {1} ({2})'.format(label, count, float(count)/float(n)))
 
-    def analyse_annotation(self, annotation):
+    def analyse_annotation(self, annotation, parent_sub_sdcq=None):
         if not annotation:
             return
         self.handle(self.min_max['karma'], annotation.user_karma)
         self.handle(self.min_max['txt_len'], len(annotation.text))
+
+        annotation.afinn_sentiment_score = self.afinn_sentiment.get_afinn_sentiment(annotation.text)
+        self.handle(self.min_max['afinn_sentiment'], annotation.afinn_sentiment_score)
+        
         word_len = len(annotation.tokens)
         if not word_len == 0:
             self.handle(self.min_max['tokens_len'], word_len)
@@ -246,6 +258,7 @@ class RedditDataset:
         self.handle_frequent_words(annotation)
         self.handle_bow(annotation.tokens)
         self.handle_ngram(annotation, self.freq_tri_gram, 3)
+        annotation.parent_submission_sdqc = parent_sub_sdcq
 
         return annotation
 
