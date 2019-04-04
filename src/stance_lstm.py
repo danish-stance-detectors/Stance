@@ -11,7 +11,7 @@ import data_loader
 from sklearn.model_selection import train_test_split
 from skorch import NeuralNetClassifier
 from skorch.callbacks import EpochScoring
-from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from torch.utils.data import Dataset, DataLoader
 
 parser = argparse.ArgumentParser(description='Train and test LSTM model')
@@ -22,22 +22,10 @@ if args.cuda and torch.cuda.is_available():
 else:
     args.device = torch.device('cpu')
 
-class StanceDataset(Dataset):
-    def __init__(self, X, y):
-        self.data = [(
-            torch.tensor([x], device=args.device),
-            torch.tensor([y], device=args.device)
-        ) for x, y in zip(X, y)]
-
-    def __len__(self):
-        return len(self.data)
-
-    def __getitem__(self, idx):
-        return self.data[idx]
 
 class StanceLSTM(nn.Module):
     def __init__(self, lstm_layers, lstm_dim, hidden_layers, hidden_dim,
-                 num_labels, emb_dim, device, batch_size, vocab_size=0, dropout=True, pre_trained=True):
+                 num_labels, emb_dim, device, vocab_size=0, dropout=True, pre_trained=True):
         super(StanceLSTM, self).__init__()
         
         self.hidden_dim = hidden_dim
@@ -45,7 +33,6 @@ class StanceLSTM(nn.Module):
         self.pre_trained = pre_trained
         self.emb_dim = emb_dim
         self.num_labels = num_labels
-        self.batch_size = batch_size
         self.device = device
         if not pre_trained:
             self.word_embeddings = nn.Embedding(vocab_size, emb_dim)
@@ -70,26 +57,18 @@ class StanceLSTM(nn.Module):
 
     def init_hidden(self):
         # The axes semantics are (hidden_layers, minibatch_size, hidden_dim)
-        return (torch.zeros(self.lstm_layers, self.batch_size, self.hidden_dim).to(self.device),
-                torch.zeros(self.lstm_layers, self.batch_size, self.hidden_dim).to(self.device))
+        return (torch.zeros(self.lstm_layers, 1, self.hidden_dim).to(self.device),
+                torch.zeros(self.lstm_layers, 1, self.hidden_dim).to(self.device))
 
     def forward(self, data):
-        x = pack_sequence(data)
-        # if not self.pre_trained:
-        #     x = self.word_embeddings(data)
-        # lstm_out, self.hidden = self.lstm(
-        #     x.view(len(x), 1, -1), self.hidden)
-        x, _ = self.lstm(x, self.hidden)
-        x = pad_packed_sequence(x, batch_first=True)
-        # x = x.contiguous()
-        x = x.view(-1, x.shape[2])
-        # label_space = self.hidden2label(lstm_out[-1])
-        x = self.hidden2label(x)
-        x = F.log_softmax(x, dim=1)
-        x = x.view(self.batch_size, self.emb_dim, self.num_labels)
-        y_hat = x
-        # label_scores = F.log_softmax(label_space, dim=1)
-        return y_hat
+        x = data
+        if not self.pre_trained:
+            x = self.word_embeddings(data)
+        lstm_out, self.hidden = self.lstm(
+            x.view(len(x), 1, -1), self.hidden)
+        label_space = self.hidden2label(lstm_out[-1])
+        label_scores = F.log_softmax(label_space, dim=1)
+        return label_scores
 
 
 l2i = {'S': 0, 'D': 1, 'Q': 2, 'C': 3}
@@ -99,27 +78,22 @@ def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units
     X_train, X_val, y_train, y_val = train_test_split(
         X_train, y_train, test_size=validation_size
     )
-    params = {'batch_size': 32, 'shuffle': False}
-    training_set = StanceDataset(X_train, y_train)
-    training_generator = DataLoader(training_set, **params)
-    validation_set = StanceDataset(X_val, y_val)
-    validation_generator = DataLoader(validation_set, **params)
     dataloader = {
-        'train': training_generator,
-        'val': validation_generator
+        'train': list(zip(X_train, y_train)),
+        'val': list(zip(X_val, y_val))
     }
     dataset_sizes = {
-        'train': training_set.__len__(),
-        'val': validation_set.__len__()
+        'train': len(X_train),
+        'val': len(X_val)
     }
     model = StanceLSTM(lstm_layers, lstm_units, linear_layers, linear_units,
-                       len(l2i), emb_size, args.device, params['batch_size'], dropout=dropout).to(args.device)
+                       len(l2i), emb_size, args.device, dropout=dropout).to(args.device)
     loss_func = nn.NLLLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate, weight_decay=L2_reg)
     print("#Training")
     for epoch in range(epochs):
         print("*****Epoch {}*****".format(epoch))
-        for phase, data_generator in dataloader.items():
+        for phase, data in dataloader.items():
             if phase == 'train':
                 model.train()
             else:
@@ -128,9 +102,7 @@ def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units
             running_loss = 0.0
             running_corrects = 0
 
-            for X_batch, y_batch in data_generator:
-                X_batch, y_batch = X_batch.to(args.device), y_batch.to(args.device)
-
+            for feature_vec, label in data:
                 # Clear stored gradient
                 model.zero_grad()
 
@@ -138,15 +110,15 @@ def train(X_train, y_train, lstm_layers, lstm_units, linear_layers, linear_units
                 model.hidden = model.init_hidden()
 
                 # Prepare data
-                # data_in = torch.tensor([feature_vec], device=args.device)
-                # target = torch.tensor([label], device=args.device)
+                data_in = torch.tensor([feature_vec], device=args.device)
+                target = torch.tensor([label], device=args.device)
 
                 with torch.set_grad_enabled(phase == 'train'):
                     # Make prediction
-                    outputs = model(X_batch)
+                    outputs = model(data_in)
                     _, preds = torch.max(outputs, 1)
                     # Calculate loss
-                    loss = loss_func(outputs, y_batch)
+                    loss = loss_func(outputs, target)
 
                     if phase == 'train':
                         loss.backward()  # Back propagate
@@ -205,30 +177,20 @@ def run():
     test(model, X_test, y_test)
 
 def grid_search():
-    # X_train, X_test, y_train, y_test, EMB = data_loader.get_train_test_split()
-    X, y, EMB = data_loader.get_features_and_labels()
-    X = np.array(X).astype(np.float32)
-    y = np.array(y).astype(np.int64)
-    print(X.shape)
-    print(y.shape)
-    print(y.mean())
+    X_train, X_test, y_train, y_test, EMB = data_loader.get_train_test_split()
+    X_train = np.array(X_train).astype(np.float32)
+    y_train = np.array(y_train).astype(np.int64)
+
     # Hyper parameters
-    EPOCHS = [10, 30, 50, 100, 200]
-    LSTM_LAYERS = [1, 2]
-    LSTM_UNITS = [100, 150, 200, 300]
-    LINEAR_LAYERS = [1, 2, 3]
-    LINEAR_UNITS = [100, 150, 200, 300]
-    LEARNING_RATE = [0.1, 0.01, 0.001]
-    L2_REG = [0, 0.1, 0.01, 0.001]
-
-    # model = train(X_train, y_train, LSTM_LAYERS[0], LSTM_UNITS[0], LINEAR_LAYERS[0],
-    #               LINEAR_UNITS[0], LEARNING_RATE[0], L2_REG[0], EPOCHS[0], EMB, args.device, dropout=True)
-    # lstm_layers, lstm_dim, hidden_layers, hidden_dim,
-    # num_labels, emb_dim
-    # model = StanceLSTM(1, 100, 1, 100,
-    #                    4, EMB, args.device, dropout=True).to(args.device)
-
-    auc = EpochScoring(scoring='accuracy', lower_is_better=False)
+    tuned_parameters = {
+        'epochs': [10, 30, 50, 100, 200],
+        'lstm_layers': [1, 2],
+        'lstm_dim': [100, 200, 300],
+        'hidden_layers': [1, 2, 3],
+        'hidden_dim': [100, 200, 300],
+        # 'learning_rate': [0.1, 0.01, 0.001]
+        # 'l2_reg': [0, 0.1, 0.01, 0.001]
+    }
 
     net = NeuralNetClassifier(
         module=StanceLSTM,
@@ -246,11 +208,41 @@ def grid_search():
         max_epochs=10,
         batch_size=1,
         device=args.device,
-        callbacks=[auc],
+        callbacks=[EpochScoring(scoring='accuracy', lower_is_better=False)],
     )
 
-    net.fit(X, y)
+    # Test fit
+    net.fit(X_train, y_train)
+
+    # Actual grid search
+    # skf = StratifiedKFold(n_splits=10, shuffle=True, random_state=42)
+    # clf = GridSearchCV(
+    #     net, tuned_parameters, cv=skf, scoring='accuracy', n_jobs=-1, error_score=0
+    # )
+    # clf.fit(X_train, y_train)
+    #
+    # print("Best parameters set found on development set:")
+    # print()
+    # print(clf.best_params_)
+    # print()
+    # print("Grid scores on development set:")
+    # print()
+    # means = clf.cv_results_['mean_test_score']
+    # stds = clf.cv_results_['std_test_score']
+    # for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+    #     print("%0.3f (+/-%0.03f) for %r"
+    #           % (mean, std * 2, params))
+    # print()
+    #
+    # print("Detailed classification report:")
+    # print()
+    # print("The model is trained on the full development set.")
+    # print("The scores are computed on the full evaluation set.")
+    # print()
+    # y_true, y_pred = y_test, clf.predict(X_test)
+    # print(classification_report(y_true, y_pred))
+    # print()
 
 
-run()
+grid_search()
 
