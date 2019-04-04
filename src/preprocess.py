@@ -7,7 +7,7 @@ datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_negative.kv')
+word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
 
 # Loads lexicon file given path
 # Assumes file has one word per line
@@ -37,15 +37,18 @@ def loadAnnotations(filename):
         rumour_folder_path = os.path.join(filename, rumour_folder)
         if not os.path.isdir(rumour_folder_path):
             continue
+        print("Preprocessing event: ", rumour_folder)
         for submission_json in os.listdir(rumour_folder_path):
             submission_json_path = os.path.join(rumour_folder_path, submission_json)
             with open(submission_json_path, "r", encoding='utf-8') as file:
+                print("Preprocessing submission: ", submission_json)
                 json_obj = json.load(file)
                 sub = json_obj['redditSubmission']
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
-                for branch in branches:
-                    dataset.add_submission_branch(branch)
+                for i, branch in enumerate(branches):
+                    print("Adding branch", i)
+                    dataset.add_submission_branch(branch, super_sample=True)
     print(dataset.size())
     dataset.print_status_report()
     return dataset
@@ -94,7 +97,7 @@ def main(argv):
     #             print("label: %d | seq: %s | count %d" %(i, seq, count))
 
 
-    data = preprocess(dataset, emb_dim=300)
+    data = preprocess(dataset, emb_dim=200)
     write_preprocessed(data, 'preprocessed_afinn.csv')
 
 if __name__ == "__main__":

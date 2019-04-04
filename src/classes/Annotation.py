@@ -207,14 +207,15 @@ class RedditDataset:
 
         if super_sample:
             prev = source
-            for annotation in annotation_branch:
+            for i, annotation in enumerate(annotation_branch):
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
+                    print("Super sampling post", i)
                     annotation_copy = copy.deepcopy(annotation)
                     annotation_copy.alter_id_and_text(words_to_replace=2, early_stop=True)
-                    compute_similarity(annotation, prev, source, branch_tokens)
-                    if annotation.comment_id not in self.annotations:  # Skip repeated annotations
-                        self.analyse_annotation(annotation)  # Analyse relevant annotations
-                        self.annotations[annotation.comment_id] = annotation
+                    compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
+                    if annotation_copy.comment_id not in self.annotations:  # Skip repeated annotations
+                        self.analyse_annotation(annotation_copy)  # Analyse relevant annotations
+                        self.annotations[annotation_copy.comment_id] = annotation_copy
                 prev = annotation
 
     def print_status_report(self):
