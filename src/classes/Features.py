@@ -1,6 +1,5 @@
 import word_embeddings
 from classes.Annotation import RedditDataset
-import classes.afinn_sentiment
 
 import re # regular expression
 
@@ -30,6 +29,13 @@ class FeatureExtractor:
             "Querying": 2,
             "Commenting": 3
         }
+
+        self.sdqc_to_feature = {
+            "Supporting": 0.25,
+            "Denying": 0.50,
+            "Querying": 0.75,
+            "Commenting": 1
+        }
     
     def create_feature_vector_test(self, annotation):
         self.dataset.add_annotation(annotation)
@@ -47,7 +53,9 @@ class FeatureExtractor:
         feature_vec = list()
 
         feature_vec.extend(self.text_features(comment.text, comment.tokens))
-        #feature_vec.extend(get_afinn_sentiment(comment.text))
+        feature_vec.append(self.sdqc_to_feature[comment.parent_submission_sdqc])
+        feature_vec.append(self.sdqc_to_feature[comment.sdqc_parent])
+        feature_vec.append(self.normalize(comment.afinn_sentiment_score, 'afinn_sentiment'))
 
         # reddit specific features
         if include_reddit_features:
@@ -100,13 +108,13 @@ class FeatureExtractor:
 
         # TODO: Normalize the following?
         # dotdotdot count
-        # tripDotCount = text.count('...')
+        tripDotCount = text.count('...')
 
         # # Question mark count
-        # q_mark_count = text.count('?')
+        q_mark_count = text.count('?')
 
         # # Exclamation mark count
-        # e_mark_count = text.count('!')
+        e_mark_count = text.count('!')
 
         # Ratio of capital letters
         cap_count = sum(1 for c in text if c.isupper())
@@ -117,9 +125,9 @@ class FeatureExtractor:
                 hasTripDot,
                 url_count,
                 quote_count,
-                # tripDotCount,
-                # q_mark_count,
-                # e_mark_count,
+                tripDotCount,
+                q_mark_count,
+                e_mark_count,
                 cap_ratio,
                 txt_len,
                 tokens_len,
@@ -161,7 +169,7 @@ class FeatureExtractor:
     # Gets BOW presence (binary) for tokens
     def get_bow_presence(self, tokens):
         return [1 if w in tokens else 0 for w in self.dataset.bow]
-
+    
     ### HELPER METHODS ###
 
     # Counts the amount of words which appear in the lexicon
