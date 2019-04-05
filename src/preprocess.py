@@ -7,33 +7,18 @@ import argparse
 datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
-fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_negative.kv'.format(dim))
-
-# Loads lexicon file given path
-# Assumes file has one word per line
-def read_lexicon(file_path):
-    with open(file_path, "r", encoding='utf8') as lexicon_file:
-        return [line.strip().lower() for line in lexicon_file.readlines()]
-
-swear_words = []
-negation_words = []
-positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
-negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
-
-with open('../data/lexicon/swear_words.txt', "r", encoding='utf8') as swear_word_file:
-    for line in swear_word_file.readlines():
-        swear_words.append(line.strip().lower())
-
-with open('../data/lexicon/negation_words.txt', "r", encoding='utf8') as negation_word_file:
-    for line in negation_word_file.readlines():
-        negation_words.append(line.strip().lower())
 
 
 def preprocess(filename, sub_sample, super_sample):
     if not filename:
         return
     dataset = RedditDataset()
+    s = 'Loading and preprocessing data '
+    if sub_sample:
+        s += 'with sub sampling'
+    elif super_sample:
+        s += 'with super sampling'
+    print(s)
     for rumour_folder in os.listdir(filename):
         rumour_folder_path = os.path.join(filename, rumour_folder)
         if not os.path.isdir(rumour_folder_path):
@@ -48,36 +33,42 @@ def preprocess(filename, sub_sample, super_sample):
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for i, branch in enumerate(branches):
-                    print("Adding branch", i)
                     dataset.add_submission_branch(branch, sub_sample=sub_sample, super_sample=super_sample)
-    print(dataset.size())
+    print('Done')
+    print('Number of data points:', dataset.size())
     dataset.print_status_report()
     return dataset
 
 
-def create_features(dataset, emb_dim, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+def create_features(dataset, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
     if not dataset:
         return
-    feature_extractor = \
-        FeatureExtractor(dataset, swear_words, negation_words,
-                         negative_smileys, positive_smileys, emb_dim, wv_model=True)
-    data = feature_extractor.create_feature_vectors(text, lexicon, sentiment, reddit, most_freq, bow, pos)
+    print('Extracting and creating feature vectors')
+    feature_extractor = FeatureExtractor(dataset)
+    data = feature_extractor.create_feature_vectors(wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos)
+    print('Done')
     return data
 
 
 def write_preprocessed(preprocessed_data, filename):
     if not preprocessed_data:
         return
-    with open(preprocessed_folder + filename, "w+", newline='') as out_file:
+    out_path = os.path.join(preprocessed_folder, filename)
+    print('Writing feature vectors to', out_path)
+    with open(out_path, "w+", newline='') as out_file:
         csv_writer = csv.writer(out_file, delimiter='\t')
         csv_writer.writerow(['comment_id', 'sdqc_parent', 'sdqc_submission', 'feature_vector'])
         
         for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
+    print('Done')
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-v', '--vector_size', dest='dim', type=int, default=300, help='the size of a word vector')
+    parser.add_argument('-w2v', '--word2vec', dest='w2v', nargs='?', type=int, const=300,
+                        help='Enable word2vec word embeddings and specify vector size')
+    parser.add_argument('-ft', '--fasttext', dest='fasttext', default=False, action='store_true')
     parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
     parser.add_argument('-sup', '--super_sample', dest='sup', default=False, action='store_true',
@@ -89,26 +80,28 @@ def main(argv):
                         help='Enable sentiment features')
     parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
                         help='Enable Reddit features')
-    parser.add_argument('-freq', '--most_frequent', dest='freq', default=False, action='store_true',
+    parser.add_argument('-mf', '--most_frequent', dest='freq', default=False, action='store_true',
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
     args = parser.parse_args(argv)
 
-    outputfile = 'preprocessed_dim%d' % args.dim
+    outputfile = 'preprocessed'
     for arg in vars(args):
-        if arg == 'dim':
-            continue
-        if getattr(args, arg):
+        attr = getattr(args, arg)
+        if attr:
             outputfile += '_%s' % arg
+            if arg == 'w2v':
+                outputfile += '%d' % attr
     outputfile += '.csv'
 
-    word_embeddings.load_saved_word2vec_wv(word2vec_data(args.dim))
+    word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
     dataset = preprocess(annotated_folder, args.sub, args.sup)
 
-    data = create_features(dataset,
-                           args.dim, args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+    data = create_features(dataset, (args.w2v or args.fasttext),
+                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
     write_preprocessed(data, outputfile)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

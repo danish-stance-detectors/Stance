@@ -191,7 +191,6 @@ class RedditDataset:
 
         # Filter out branches with pure commenting class labels
         if sub_sample and class_comments == len(branch):
-            print("Filtered", class_comments)
             return
 
         # Compute cosine similarity
@@ -209,7 +208,6 @@ class RedditDataset:
             prev = source
             for i, annotation in enumerate(annotation_branch):
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
-                    print("Super sampling post", i)
                     annotation_copy = copy.deepcopy(annotation)
                     annotation_copy.alter_id_and_text(words_to_replace=2, early_stop=True)
                     compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
@@ -225,12 +223,14 @@ class RedditDataset:
             2: 0,
             3: 0
         }
+        ix_to_sdqc = {0: 'S', 1:'D', 2: 'Q', 3: 'C'}
         n = 0
         for annotation in self.iterate_annotations():
             histogram[self.sdqc_to_int[annotation.sdqc_submission]] += 1
             n += 1
+        print('SDQC distribution:')
         for label, count in histogram.items():
-            print('{0}: {1} ({2})'.format(label, count, float(count)/float(n)))
+            print('{}: {:4d} ({:.3f})'.format(ix_to_sdqc[label], count, float(count)/float(n)))
 
     def analyse_annotation(self, annotation):
         if not annotation:

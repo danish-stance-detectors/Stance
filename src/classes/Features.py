@@ -1,27 +1,24 @@
 import word_embeddings
 from classes.Annotation import RedditDataset
 import classes.afinn_sentiment
-
-import re # regular expression
+import re
 
 # Module for extracting features from comment annotations
 
+
 class FeatureExtractor:
 
-    def __init__(self, dataset, swear_words,
-                 negation_words, negative_smileys, positive_smileys, emb_dim, wv_model=True, test=False):
+    def __init__(self, dataset, test=False):
         # using passed annotations if not testing
         if test:
             self.dataset = RedditDataset()
         else:
             self.dataset = dataset
 
-        self.swear_words = swear_words
-        self.negative_smileys = negative_smileys
-        self.positive_smileys = positive_smileys
-        self.negation_words = negation_words
-        self.wv_model = wv_model
-        self.emb_dim = emb_dim
+        self.swear_words = []
+        self.negative_smileys = []
+        self.positive_smileys = []
+        self.negation_words = []
         self.bow_words = set()
 
         self.sdqc_to_int = {
@@ -33,22 +30,24 @@ class FeatureExtractor:
     
     def create_feature_vector_test(self, annotation):
         self.dataset.add_annotation(annotation)
-        return self.create_feature_vector(annotation, include_reddit_features=False)
+        return self.create_feature_vector(annotation, False, False, False, False, False, False, False, False)
 
-    def create_feature_vectors(self, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    def create_feature_vectors(self, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vectors = []
         for annotation in self.dataset.iterate_annotations():
-            instance = self.create_feature_vector(annotation, text, lexicon, sentiment, reddit, most_freq, bow, pos)
+            instance = self.create_feature_vector(
+                annotation, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos
+            )
             feature_vectors.append(instance)
         return feature_vectors
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, comment, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    def create_feature_vector(self, comment, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vec = list()
         if text:
             feature_vec.extend(self.text_features(comment.text, comment.tokens))
         if sentiment:
-            feature_vec.extend(get_afinn_sentiment(comment.text))
+            feature_vec.extend(classes.afinn_sentiment.get_afinn_sentiment(comment.text))
         if lexicon:
             feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text))
         if reddit:
@@ -62,9 +61,9 @@ class FeatureExtractor:
             # TODO: Include POS tagging
             pass
 
-        if self.wv_model:
+        if wembs:
             feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])
-            avg_wembs = word_embeddings.avg_word_emb(comment.tokens, self.emb_dim)
+            avg_wembs = word_embeddings.avg_word_emb(comment.tokens)
             feature_vec.extend(avg_wembs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
@@ -94,22 +93,22 @@ class FeatureExtractor:
         # dotdotdot
         hasTripDot = int('...' in text)
 
-        url_count = tokens.count('URLURLURL')
+        url_count = tokens.count('urlurlurl')
 
-        quote_count = tokens.count('REFREFREF')
+        quote_count = tokens.count('refrefref')
         
         # longest sequence of capital letters, default empty for 0 length
-        cap_sequence_max_len = len(max(re.findall(r"[A-Z]+", text), key=len, default='')) # TODO: Normalize?
+        cap_sequence_max_len = len(max(re.findall(r"[A-ZÆØÅ]+", text), key=len, default=''))  # TODO: Normalize?
 
         # TODO: Normalize the following?
         # dotdotdot count
-        # tripDotCount = text.count('...')
+        tripDotCount = text.count('...')
 
-        # # Question mark count
-        # q_mark_count = text.count('?')
+        # Question mark count
+        q_mark_count = text.count('?')
 
-        # # Exclamation mark count
-        # e_mark_count = text.count('!')
+        # Exclamation mark count
+        e_mark_count = text.count('!')
 
         # Ratio of capital letters
         cap_count = sum(1 for c in text if c.isupper())
@@ -120,29 +119,36 @@ class FeatureExtractor:
                 hasTripDot,
                 url_count,
                 quote_count,
-                # tripDotCount,
-                # q_mark_count,
-                # e_mark_count,
+                tripDotCount,
+                q_mark_count,
+                e_mark_count,
                 cap_ratio,
                 txt_len,
                 tokens_len,
                 avg_word_len,
                 cap_sequence_max_len]
 
-
     def user_features(self, comment):
         karma_norm = self.normalize(comment.user_karma, 'karma')
         return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee), int(comment.user_has_verified_email)]
 
-
     # TODO: find special word cases
     def special_words_in_text(self, tokens, text):
+        if not self.positive_smileys:
+            self.positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
+        if not self.negative_smileys:
+            self.negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
+        if not self.swear_words:
+            self.swear_words = read_lexicon('../data/lexicon/swear_words.txt')
+        if not self.negation_words:
+            self.negation_words = read_lexicon('../data/lexicon/negation_words.txt')
+
         swear_count = self.count_lexicon_occurence(tokens, self.swear_words)
         negation_count = self.count_lexicon_occurence(tokens, self.negation_words)
         positive_smiley_count = self.count_lexicon_occurence(text.split(), self.positive_smileys)
         negative_smiley_count =  self.count_lexicon_occurence(text.split(), self.negative_smileys)
 
-        return [swear_count, negation_count, positive_smiley_count, negative_smiley_count] #TODO: Normalize
+        return [swear_count, negation_count, positive_smiley_count, negative_smiley_count]  # TODO: Normalize
 
     def reddit_comment_features(self, comment):
         upvotes_norm = self.normalize(comment.upvotes, 'upvotes')
@@ -178,5 +184,11 @@ class FeatureExtractor:
             return (x_i-min_x)/(max_x-min_x)
         
         return x_i
+
+
+def read_lexicon(file_path):  # TODO: Maybe make class method?
+    """Loads lexicon file given path. Assumes file has one word per line"""
+    with open(file_path, "r", encoding='utf8') as lexicon_file:
+        return [line.strip().lower() for line in lexicon_file.readlines()]
 
     ### END OF HELPER METHODS ###

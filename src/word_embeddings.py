@@ -9,7 +9,12 @@ word2vec_path = '../data/word2vec/'
 fasttext_path = '../data/fasttext/'
 dsl_sentences = '../../Data/DSL_Corpus/dsl_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
+datafolder = '../data/'
+fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300.kv')
+word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_negative.kv'.format(dim))
+
 wv_model = None
+vector_size = 300
 
 # memory friendly iterator
 class MySentences:
@@ -51,9 +56,14 @@ def save_fasttext(path_to_vectors, saved_filename):
     print('Done!')
     
 
-def load_saved_word2vec_wv(filepath):
+def load_saved_word_embeddings(w2v, fasttext):
     global wv_model
-    wv_model = KeyedVectors.load(filepath)
+    if w2v:
+        wv_model = KeyedVectors.load(word2vec_data(w2v))
+        global vector_size
+        vector_size = w2v
+    elif fasttext:
+        wv_model = KeyedVectors.load(fasttext_data)
     return wv_model
 
 def load_word_embeddings_bin(filename, algorithm='fasttext'):
@@ -66,11 +76,11 @@ def load_word_embeddings_bin(filename, algorithm='fasttext'):
     print('Done!')
     return wv_model
 
-def avg_word_emb(tokens, embedding_size):
+def avg_word_emb(tokens):
     global wv_model
     if not wv_model:
         return None
-    vec = np.zeros(embedding_size) # word embedding
+    vec = np.zeros(vector_size) # word embedding
     # make up for varying lengths with zero-padding
     n = len(tokens)
     if n == 0:
