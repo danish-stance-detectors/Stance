@@ -30,7 +30,7 @@ with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
         negation_words.append(line.strip().lower())
 
 
-def loadAnnotations(filename):
+def loadAnnotations(filename, sub_sample, super_sample):
     if not filename:
         return
     dataset = RedditDataset()
@@ -49,19 +49,20 @@ def loadAnnotations(filename):
                 branches = json_obj['branches']
                 for i, branch in enumerate(branches):
                     print("Adding branch", i)
-                    dataset.add_submission_branch(branch, super_sample=True)
+                    dataset.add_submission_branch(branch, sub_sample=sub_sample, super_sample=super_sample)
     print(dataset.size())
     dataset.print_status_report()
     return dataset
 
 
-def preprocess(annotations, emb_dim=100):
-    if not annotations:
+def preprocess(dataset, emb_dim, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    if not dataset:
         return
     feature_extractor = \
-        FeatureExtractor(annotations, swear_words, negation_words,
+        FeatureExtractor(dataset, swear_words, negation_words,
                          negative_smileys, positive_smileys, emb_dim, wv_model=True)
-    return feature_extractor.create_feature_vectors()
+    data = feature_extractor.create_feature_vectors(text, lexicon, sentiment, reddit, most_freq, bow, pos)
+    return data
 
 
 def write_preprocessed(preprocessed_data, filename):
@@ -76,14 +77,16 @@ def write_preprocessed(preprocessed_data, filename):
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-o', '--output', type=str, nargs='*', default='preprocessed.csv',
-                        help='Output file of the feature vectors')
+    # parser.add_argument('-o', '--output', type=str, nargs='*', default='preprocessed.csv',
+    #                     help='Output file of the feature vectors')
     parser.add_argument('-v', '--vector_size', dest='dim', type=int, default=300, help='the size of a word vector')
     parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
     parser.add_argument('-sup', '--super_sample', dest='sup', default=False, action='store_true',
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
+    parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
+                        help='Enable lexicon features')
     parser.add_argument('-s', '--sentiment', dest='sentiment', default=False, action='store_true',
                         help='Enable sentiment features')
     parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
@@ -91,14 +94,24 @@ def main(argv):
     parser.add_argument('-freq', '--most_frequent', dest='freq', default=False, action='store_true',
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
+    parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
     args = parser.parse_args(argv)
-    
+
+    outputfile = 'preprocessed_dim%d' % args.dim
+    for arg in vars(args):
+        if arg == 'dim':
+            continue
+        if getattr(args, arg):
+            outputfile += '_%s' % arg
+    outputfile += '.csv'
+
     word_embeddings.load_saved_word2vec_wv(word2vec_data(args.dim))
-    dataset = loadAnnotations(annotated_folder)
+    dataset = loadAnnotations(annotated_folder, args.sub, args.sup)
+    # lexicon, sentiment, reddit, most_freq, bow, pos
 
-
-    data = preprocess(dataset, emb_dim=args.dim)
-    write_preprocessed(data, 'preprocessed_afinn.csv')
+    data = preprocess(dataset,
+                      args.dim, args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+    write_preprocessed(data, outputfile)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

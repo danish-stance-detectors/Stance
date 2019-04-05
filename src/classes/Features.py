@@ -35,29 +35,43 @@ class FeatureExtractor:
         self.dataset.add_annotation(annotation)
         return self.create_feature_vector(annotation, include_reddit_features=False)
 
-    def create_feature_vectors(self):
+    def create_feature_vectors(self, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vectors = []
         for annotation in self.dataset.iterate_annotations():
-            instance = self.create_feature_vector(annotation)
+            instance = self.create_feature_vector(annotation, text, lexicon, sentiment, reddit, most_freq, bow, pos)
             feature_vectors.append(instance)
         return feature_vectors
 
+    # parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
+    # parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
+    #                     help='Enable lexicon features')
+    # parser.add_argument('-s', '--sentiment', dest='sentiment', default=False, action='store_true',
+    #                     help='Enable sentiment features')
+    # parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
+    #                     help='Enable Reddit features')
+    # parser.add_argument('-freq', '--most_frequent', dest='freq', default=False, action='store_true',
+    #                     help='Enable most frequent words per class features')
+    # parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
+
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, comment, include_reddit_features=True):
+    def create_feature_vector(self, comment, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vec = list()
-
-        feature_vec.extend(self.text_features(comment.text, comment.tokens))
-        #feature_vec.extend(get_afinn_sentiment(comment.text))
-
-        # reddit specific features
-        if include_reddit_features:
+        if text:
+            feature_vec.extend(self.text_features(comment.text, comment.tokens))
+        if sentiment:
+            feature_vec.extend(get_afinn_sentiment(comment.text))
+        if lexicon:
+            feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text))
+        if reddit:
             feature_vec.extend(self.user_features(comment))
             feature_vec.extend(self.reddit_comment_features(comment))
-
-        feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text, self.swear_words, self.negation_words, self.negative_smileys, self.positive_smileys))
-        # feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
-        
-        # feature_vec.extend(self.get_bow_presence(comment.tokens))
+        if most_freq:
+            feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
+        if bow:
+            feature_vec.extend(self.get_bow_presence(comment.tokens))
+        if pos:
+            # TODO: Include POS tagging
+            pass
 
         if self.wv_model:
             feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])
@@ -133,11 +147,11 @@ class FeatureExtractor:
 
 
     # TODO: find special word cases
-    def special_words_in_text(self, tokens, text, swear_words, negation_words, negative_smileys, positive_smileys):
-        swear_count = self.count_lexicon_occurence(tokens, swear_words)
-        negation_count = self.count_lexicon_occurence(tokens, negation_words)
-        positive_smiley_count = self.count_lexicon_occurence(text.split(), positive_smileys)
-        negative_smiley_count =  self.count_lexicon_occurence(text.split(), negative_smileys)
+    def special_words_in_text(self, tokens, text):
+        swear_count = self.count_lexicon_occurence(tokens, self.swear_words)
+        negation_count = self.count_lexicon_occurence(tokens, self.negation_words)
+        positive_smiley_count = self.count_lexicon_occurence(text.split(), self.positive_smileys)
+        negative_smiley_count =  self.count_lexicon_occurence(text.split(), self.negative_smileys)
 
         return [swear_count, negation_count, positive_smiley_count, negative_smiley_count] #TODO: Normalize
 
