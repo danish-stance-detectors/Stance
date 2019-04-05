@@ -42,17 +42,6 @@ class FeatureExtractor:
             feature_vectors.append(instance)
         return feature_vectors
 
-    # parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
-    # parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
-    #                     help='Enable lexicon features')
-    # parser.add_argument('-s', '--sentiment', dest='sentiment', default=False, action='store_true',
-    #                     help='Enable sentiment features')
-    # parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
-    #                     help='Enable Reddit features')
-    # parser.add_argument('-freq', '--most_frequent', dest='freq', default=False, action='store_true',
-    #                     help='Enable most frequent words per class features')
-    # parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
-
     # Extracts features from comment annotation and extends the different kind of features to eachother.
     def create_feature_vector(self, comment, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vec = list()

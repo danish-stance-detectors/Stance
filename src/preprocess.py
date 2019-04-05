@@ -8,12 +8,12 @@ datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_softmax.kv'.format(dim))
+word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_negative.kv'.format(dim))
 
 # Loads lexicon file given path
 # Assumes file has one word per line
 def read_lexicon(file_path):
-    with open(file_path, "r") as lexicon_file:
+    with open(file_path, "r", encoding='utf8') as lexicon_file:
         return [line.strip().lower() for line in lexicon_file.readlines()]
 
 swear_words = []
@@ -21,16 +21,16 @@ negation_words = []
 positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
 negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
 
-with open('../data/lexicon/swear_words.txt', "r") as swear_word_file:
+with open('../data/lexicon/swear_words.txt', "r", encoding='utf8') as swear_word_file:
     for line in swear_word_file.readlines():
         swear_words.append(line.strip().lower())
 
-with open('../data/lexicon/negation_words.txt', "r") as negation_word_file:
+with open('../data/lexicon/negation_words.txt', "r", encoding='utf8') as negation_word_file:
     for line in negation_word_file.readlines():
         negation_words.append(line.strip().lower())
 
 
-def loadAnnotations(filename, sub_sample, super_sample):
+def preprocess(filename, sub_sample, super_sample):
     if not filename:
         return
     dataset = RedditDataset()
@@ -55,7 +55,7 @@ def loadAnnotations(filename, sub_sample, super_sample):
     return dataset
 
 
-def preprocess(dataset, emb_dim, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+def create_features(dataset, emb_dim, text, lexicon, sentiment, reddit, most_freq, bow, pos):
     if not dataset:
         return
     feature_extractor = \
@@ -77,8 +77,6 @@ def write_preprocessed(preprocessed_data, filename):
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    # parser.add_argument('-o', '--output', type=str, nargs='*', default='preprocessed.csv',
-    #                     help='Output file of the feature vectors')
     parser.add_argument('-v', '--vector_size', dest='dim', type=int, default=300, help='the size of a word vector')
     parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
@@ -106,11 +104,10 @@ def main(argv):
     outputfile += '.csv'
 
     word_embeddings.load_saved_word2vec_wv(word2vec_data(args.dim))
-    dataset = loadAnnotations(annotated_folder, args.sub, args.sup)
-    # lexicon, sentiment, reddit, most_freq, bow, pos
+    dataset = preprocess(annotated_folder, args.sub, args.sup)
 
-    data = preprocess(dataset,
-                      args.dim, args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+    data = create_features(dataset,
+                           args.dim, args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
     write_preprocessed(data, outputfile)
 
 if __name__ == "__main__":
