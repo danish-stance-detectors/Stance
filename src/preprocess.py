@@ -2,12 +2,13 @@ import os, json, csv, sys
 import word_embeddings
 from classes.Annotation import RedditDataset
 from classes.Features import FeatureExtractor
+import argparse
 
 datafolder = '../data/'
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 fasttext_data = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-word2vec_data = os.path.join(datafolder, 'word2vec/dsl_sentences_200_cbow_softmax.kv')
+word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_softmax.kv'.format(dim))
 
 # Loads lexicon file given path
 # Assumes file has one word per line
@@ -74,30 +75,29 @@ def write_preprocessed(preprocessed_data, filename):
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
 
 def main(argv):
-    # data_folder = wembs = emb_dim = None
-    # try:
-    #     opts, _ = getopt.getopt(argv, "l:d:e:", ["loadw2v=","data=","emb_dim=","help"])
-    # except getopt.GetoptError:
-    #     print("see: preprocess.py -help")
-    #     sys.exit(2)
-    # for opt, arg in opts:
-    #     if opt in ('-l', '-loadw2v'):
-    #         wembs = word_embeddings.load_saved_word2vec_wv(arg)
-    #     elif opt in ('-d', '-data'):
-    #         data_folder = arg
-    #     elif opt in ('-e', '-emb_dim'):
-    #         emb_dim = arg
+    parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
+    parser.add_argument('-o', '--output', type=str, nargs='*', default='preprocessed.csv',
+                        help='Output file of the feature vectors')
+    parser.add_argument('-v', '--vector_size', dest='dim', type=int, default=300, help='the size of a word vector')
+    parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
+                        help='Sub sample by removing pure comment branches')
+    parser.add_argument('-sup', '--super_sample', dest='sup', default=False, action='store_true',
+                        help='Super sample by duplicating modified SDQ comments')
+    parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
+    parser.add_argument('-s', '--sentiment', dest='sentiment', default=False, action='store_true',
+                        help='Enable sentiment features')
+    parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
+                        help='Enable Reddit features')
+    parser.add_argument('-freq', '--most_frequent', dest='freq', default=False, action='store_true',
+                        help='Enable most frequent words per class features')
+    parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
+    args = parser.parse_args(argv)
     
-    word_embeddings.load_saved_word2vec_wv(word2vec_data)
+    word_embeddings.load_saved_word2vec_wv(word2vec_data(args.dim))
     dataset = loadAnnotations(annotated_folder)
-    
-    # for (i, _dict) in enumerate(dataset.freq_tri_gram):
-    #     for seq, count in sorted(_dict.items(), key=lambda kv: kv[1], reverse=True):
-    #         if count > 10:
-    #             print("label: %d | seq: %s | count %d" %(i, seq, count))
 
 
-    data = preprocess(dataset, emb_dim=200)
+    data = preprocess(dataset, emb_dim=args.dim)
     write_preprocessed(data, 'preprocessed_afinn.csv')
 
 if __name__ == "__main__":
