@@ -54,7 +54,7 @@ class FeatureExtractor:
             feature_vec.extend(self.user_features(comment))
             feature_vec.extend(self.reddit_comment_features(comment))
         if most_freq:
-            feature_vec.extend(self.most_frequent_words_for_label(comment.tokens))
+            feature_vec.extend(self.most_frequent_words_for_label(comment.tokens, most_freq))
         if bow:
             feature_vec.extend(self.get_bow_presence(comment.tokens))
         if pos:
@@ -155,12 +155,12 @@ class FeatureExtractor:
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
         return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
 
-    def most_frequent_words_for_label(self, tokens):
+    def most_frequent_words_for_label(self, tokens, n_most=50):
         # self.annotations.make_frequent_words() must have been called for this to work
         
         vec = []
 
-        histograms = self.dataset.get_frequent_words()
+        histograms = self.dataset.get_frequent_words(n_most)
         for sdqc_id, histogram in histograms.items():
             for count, freq_token in histogram:
                 vec.append(int(freq_token in tokens))

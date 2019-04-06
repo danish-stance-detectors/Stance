@@ -177,7 +177,7 @@ class RedditDataset:
     def add_reddit_submission(self, source):
         self.submissions.append(RedditSubmission(RedditAnnotation(source, is_source=True)))
 
-    def add_submission_branch(self, branch, sub_sample=False, super_sample=False):
+    def add_submission_branch(self, branch, sub_sample=False, super_sample=None):
         annotation_branch = []
         branch_tokens = []
         class_comments = 0
@@ -206,10 +206,10 @@ class RedditDataset:
 
         if super_sample:
             prev = source
-            for i, annotation in enumerate(annotation_branch):
+            for annotation in annotation_branch:
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
                     annotation_copy = copy.deepcopy(annotation)
-                    annotation_copy.alter_id_and_text(words_to_replace=2, early_stop=True)
+                    annotation_copy.alter_id_and_text(words_to_replace=super_sample, early_stop=True)
                     compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
                     if annotation_copy.comment_id not in self.annotations:  # Skip repeated annotations
                         self.analyse_annotation(annotation_copy)  # Analyse relevant annotations
@@ -290,7 +290,7 @@ class RedditDataset:
                     label_dict[seq] = 1
         
 
-    def get_frequent_words(self, take_count=100):
+    def get_frequent_words(self, take_count):
         histogram = {}
         for idx in range(len(self.freq_histogram)):
             keys = [(self.freq_histogram[idx][key], key) for key in self.freq_histogram[idx].keys()]

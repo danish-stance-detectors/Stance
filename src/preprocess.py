@@ -71,7 +71,7 @@ def main(argv):
     parser.add_argument('-ft', '--fasttext', dest='fasttext', default=False, action='store_true')
     parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
-    parser.add_argument('-sup', '--super_sample', dest='sup', default=False, action='store_true',
+    parser.add_argument('-sup', '--super_sample', dest='sup', nargs='?', type=int, const=5,
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
     parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
@@ -80,7 +80,7 @@ def main(argv):
                         help='Enable sentiment features')
     parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
                         help='Enable Reddit features')
-    parser.add_argument('-mf', '--most_frequent', dest='freq', default=False, action='store_true',
+    parser.add_argument('-mf', '--most_frequent', dest='freq', nargs='?', type=int, const=50,
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
@@ -91,7 +91,7 @@ def main(argv):
         attr = getattr(args, arg)
         if attr:
             outputfile += '_%s' % arg
-            if arg == 'w2v':
+            if type(attr) is int:
                 outputfile += '%d' % attr
     outputfile += '.csv'
 
