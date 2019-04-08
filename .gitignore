@@ -6,6 +6,8 @@ data/preprocessed/*.csv
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
+output/*
+!output/README.md
 
 
 # Byte-compiled / optimized / DLL files
