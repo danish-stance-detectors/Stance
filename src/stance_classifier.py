@@ -4,6 +4,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold
+from sklearn.dummy import DummyClassifier
 
 import data_loader
 
@@ -11,7 +12,9 @@ classifiers = {
     'Logistic Regression': LogisticRegression(solver='liblinear', C=10, penalty='l1', multi_class='auto'),
     'Decision Tree': DecisionTreeClassifier(criterion="entropy", splitter='random'),
     'Linear SVM': SVC(kernel='linear', C=10),
-    'Random Forest': RandomForestClassifier(criterion='entropy', n_estimators=10)
+    'Random Forest': RandomForestClassifier(criterion='entropy', n_estimators=10),
+    'Majority vote': DummyClassifier(strategy='most_frequent'),
+    'Stratified Random': DummyClassifier(strategy='stratified')
 }
 
 scoring = [
