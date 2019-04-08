@@ -11,9 +11,11 @@ import data_loader
 
 output_folder = '../output/'
 
-parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
+parser = argparse.ArgumentParser(description='Hyper parameter search for stance classification models')
 parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
-                    help='Input file holding train data. If a folder, iterates files within.')
+                    help='Relative input file path holding train data')
+parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
+                    help='Number of folds for cross validation (default=5)')
 args = parser.parse_args()
 
 
@@ -89,7 +91,7 @@ scores = [
     'accuracy',
     'f1_macro'
 ]
-skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
 for name, estimator, tuned_parameters in settings:
     filepath = os.path.join(output_folder, name)
