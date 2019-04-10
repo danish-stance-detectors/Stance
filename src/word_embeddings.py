@@ -29,7 +29,8 @@ class MySentences:
                     if line:
                         yield line.split()
 
-def train_save_word2vec(corpus_file_path, save_model=False, vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
+def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=False, 
+                        vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
     """architecture: 'skim-gram' or 'cbow'. train_algorithm: 'softmax' or 'negative'"""
     sentences = MySentences(corpus_file_path)
     arch = 1 if architecture=='skip-gram' else 0
@@ -40,10 +41,13 @@ def train_save_word2vec(corpus_file_path, save_model=False, vector_size=100, arc
     s = ''
     for name in corpus_file_path:
         s += name.split('/')[-1].split('.')[0] + '_'
-    filename = "{0}_{1}_{2}_{3}".format(s, vector_size, architecture, train_algorithm)
+    filename = "{0}{1}_{2}_{3}".format(s, vector_size, architecture, train_algorithm)
     if save_model:
         print('Saving model in {0}.model'.format(filename))
         model.save(os.path.join(word2vec_path, "{}.model".format(filename)))
+    if word2vec_format:
+        print('Saving word embeddings in original C word2vec (.txt) format in {}.txt'.format(filename))
+        model.wv.save_word2vec_format(os.path.join(word2vec_path, "{}.txt".format(filename)))
     print('Saving word embeddings in {0}.kv'.format(filename))
     model.wv.save(os.path.join(word2vec_path, "{}.kv".format(filename)))
     print('Saved!')
@@ -123,19 +127,22 @@ def most_similar_word(word):
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_files', type=str, nargs='*', default=[dsl_sentences, wiki_sentences], help='Input file to train and save model for')
+    parser.add_argument('--input_files', type=str, nargs='*', default=[dsl_sentences], help='Input file to train and save model for')
     parser.add_argument('--vector_size', type=int, default=100, help='the size of a word vector')
     parser.add_argument('--architecture', type=str, default='cbow', help='the architecture: "skip-gram" or "cbow"')
     parser.add_argument('--train_algorithm', type=str, default='negative', help='the training algorithm: "softmax" or "negative"')
     parser.add_argument('--workers', type=int, default=4, help='number of workers')
+    parser.add_argument('--word2vec_format', action='store_true', default=False, help='Store in the original C word2vec (.txt) format')
     args = parser.parse_args(argv)
 
     input_files = args.input_files
     vector_size = args.vector_size
     architecture = args.architecture
     train_algorithm = args.train_algorithm
+    word2vec_format = args.word2vec_format
     workers = args.workers
-    train_save_word2vec(input_files, vector_size=vector_size, architecture=architecture, train_algorithm=train_algorithm, workers=workers)
+    train_save_word2vec(input_files, word2vec_format=word2vec_format , vector_size=vector_size, 
+                        architecture=architecture, train_algorithm=train_algorithm, workers=workers)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
