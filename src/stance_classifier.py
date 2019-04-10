@@ -6,6 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict
 from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import numpy as np
 import argparse
 import os
@@ -13,6 +14,7 @@ import sys
 import data_loader
 
 output_folder = '../output/'
+
 
 def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=5, n_jobs=-1):
     plt.figure()
@@ -39,7 +41,31 @@ def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, c
     plt.legend(loc='best')
     return plt
 
+def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
+    """Create a sample plot for indices of a cross-validation object."""
+    # Generate the training/testing visualizations for each CV split
+    for ii, (tr, tt) in enumerate(cv.split(X=X, y=y)):
+        # Fill in indices with the training/test groups
+        indices = np.array([np.nan] * len(X))
+        indices[tt] = 1
+        indices[tr] = 0
 
+        # Visualize the results
+        ax.scatter(range(len(indices)), [ii + .5] * len(indices),
+                   c=indices, marker='_', lw=lw, cmap=cmap_cv,
+                   vmin=-.2, vmax=1.2)
+
+    # Plot the data classes and groups at the end
+    ax.scatter(range(len(X)), [ii + 1.5] * len(X),
+               c=y, marker='_', lw=lw, cmap=cmap_data)
+
+    # Formatting
+    yticklabels = list(range(n_splits)) + ['class']
+    ax.set(yticks=np.arange(n_splits+1) + .5, yticklabels=yticklabels,
+           xlabel='Sample index', ylabel="CV iteration",
+           ylim=[n_splits+1.2, -.2], xlim=[0, 100])
+    ax.set_title('{}'.format(type(cv).__name__), fontsize=15)
+    return ax
 
 classifiers = {
     'Logistic Regression': LogisticRegression(solver='liblinear', C=10, penalty='l1', multi_class='auto'),
@@ -51,29 +77,18 @@ classifiers = {
 }
 
 
-def cross_val(score_metric, X, y, skf, score=False,  plot=False, predict=False):
-    if plot:
-        cross_val_plot(score_metric)
-    if predict:
-        X = np.array(X)
-        y = np.array(y)
-        for name, clf in classifiers.items():
-            predicted = cross_val_predict(clf, X, y, cv=skf, n_jobs=-1)
-            fig, ax = plt.subplots()
-            ax.scatter(y, predicted, edgecolors=(0, 0, 0))
-            ax.plot([y.min(), y.max()], [y.min(), y.max()], 'k--', lw=4)
-            ax.set_xlabel('Measured')
-            ax.set_ylabel('Predicted')
-            plt.show()
-    if score:
-        filepath = os.path.join(output_folder, 'cross_val_scoring')
-        with open('%s_%s.txt' % (filepath, score_metric), 'w+') as outfile:
-            for name, clf in classifiers.items():
-                scores = cross_val_score(clf, X, y, cv=skf, scoring=score_metric)
-                s = "%-20s%s %0.2f (+/- %0.2f)" % (name, score_metric, scores.mean(), scores.std() * 2)
-                print(s)
-                outfile.write(s + '\n')
+def visualize_cv(cv, n_splits, X, y):
+    fig, ax = plt.subplots()
+    cmap_data = plt.cm.Paired
+    cmap_cv = plt.cm.coolwarm
+    plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv)
+    ax.legend([Patch(color=cmap_cv(.8)), Patch(color=cmap_cv(.02))],
+              ['Testing set', 'Training set'], loc=(1.02, .8))
+    # Make the legend fit
+    plt.tight_layout()
+    plt.show()
 
+    
 def cross_val_plot(score):
     filepath = os.path.join(output_folder, 'cross_val_plot')
     for name, clf in classifiers.items():
@@ -83,6 +98,20 @@ def cross_val_plot(score):
         plt.savefig(s, bbox_inches='tight')
         print('Saved plot to', s)
         # plt.show()
+
+
+def cross_val(score_metric, X, y, skf, score=False,  plot=False):
+    if plot:
+        cross_val_plot(score_metric)
+    if score:
+        filepath = os.path.join(output_folder, 'cross_val_scoring')
+        with open('%s_%s.txt' % (filepath, score_metric), 'w+') as outfile:
+            for name, clf in classifiers.items():
+                scores = cross_val_score(clf, X, y, cv=skf, scoring=score_metric)
+                s = "%-20s%s %0.2f (+/- %0.2f)" % (name, score_metric, scores.mean(), scores.std() * 2)
+                print(s)
+                outfile.write(s + '\n')
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -94,8 +123,6 @@ def main(argv):
                         help='Enable accuracy metric')
     parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
                         help='Enable F1 macro metric')
-    parser.add_argument('-p', '--predict', dest='predict', action='store_true', default=False,
-                        help='Visualize prediction errors')
     parser.add_argument('-l', '--learning_curve', dest='learning_curve', action='store_true', default=False,
                         help='Enable plotting of learning curve')
     parser.add_argument('-s', '--score', dest='score', action='store_true', default=False,
@@ -104,10 +131,8 @@ def main(argv):
     X, y, _ = data_loader.get_features_and_labels(filename=args.file)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
-    if args.acc:
-        cross_val('accuracy', X, y, skf, args.score, args.learning_curve, args.predict)
-    if args.f1_macro:
-        cross_val('f1_macro', X, y, skf, args.score, args.learning_curve, args.predict)
+    visualize_cv(skf, args.k_folds, X, y)
+    cross_val('accuracy' if args.acc else 'f1_macro', X, y, skf, args.score, args.learning_curve)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
