@@ -9,27 +9,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 import argparse
 import os
+import sys
 import data_loader
 
 output_folder = '../output/'
-
-parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
-                    help='Input file holding train data. If a folder, iterates files within.')
-parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
-                    help='Number of folds for cross validation (default=5)')
-parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
-                    help='Enable accuracy metric')
-parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
-                    help='Enable F1 macro metric')
-parser.add_argument('-p', '--predict', dest='predict', action='store_true', default=False,
-                    help='Visualize prediction errors')
-parser.add_argument('-l', '--learning_curve', dest='learning_curve', action='store_true', default=False,
-                    help='Enable plotting of learning curve')
-parser.add_argument('-s', '--score', dest='score', action='store_true', default=False,
-                    help='Cross-validate scoring')
-args = parser.parse_args()
-
 
 def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=5, n_jobs=-1):
     plt.figure()
@@ -67,14 +50,13 @@ classifiers = {
     'Stratified Random': DummyClassifier(strategy='stratified')
 }
 
-X, y, _ = data_loader.get_features_and_labels(filename=args.file)
-skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
-
-def cross_val(score, plot=False, predict=False):
+def cross_val(score_metric, X, y, skf, score=False,  plot=False, predict=False):
     if plot:
-        cross_val_plot(score)
+        cross_val_plot(score_metric)
     if predict:
+        X = np.array(X)
+        y = np.array(y)
         for name, clf in classifiers.items():
             predicted = cross_val_predict(clf, X, y, cv=skf, n_jobs=-1)
             fig, ax = plt.subplots()
@@ -83,12 +65,12 @@ def cross_val(score, plot=False, predict=False):
             ax.set_xlabel('Measured')
             ax.set_ylabel('Predicted')
             plt.show()
-    else:
+    if score:
         filepath = os.path.join(output_folder, 'cross_val_scoring')
-        with open('%s_%s.txt' % (filepath, score), 'w+') as outfile:
+        with open('%s_%s.txt' % (filepath, score_metric), 'w+') as outfile:
             for name, clf in classifiers.items():
-                scores = cross_val_score(clf, X, y, cv=skf, scoring=score)
-                s = "%-20s%s %0.2f (+/- %0.2f)" % (name, score, scores.mean(), scores.std() * 2)
+                scores = cross_val_score(clf, X, y, cv=skf, scoring=score_metric)
+                s = "%-20s%s %0.2f (+/- %0.2f)" % (name, score_metric, scores.mean(), scores.std() * 2)
                 print(s)
                 outfile.write(s + '\n')
 
@@ -102,10 +84,30 @@ def cross_val_plot(score):
         print('Saved plot to', s)
         # plt.show()
 
+def main(argv):
+    parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
+    parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
+                        help='Input file holding train data. If a folder, iterates files within.')
+    parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
+                        help='Number of folds for cross validation (default=5)')
+    parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
+                        help='Enable accuracy metric')
+    parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
+                        help='Enable F1 macro metric')
+    parser.add_argument('-p', '--predict', dest='predict', action='store_true', default=False,
+                        help='Visualize prediction errors')
+    parser.add_argument('-l', '--learning_curve', dest='learning_curve', action='store_true', default=False,
+                        help='Enable plotting of learning curve')
+    parser.add_argument('-s', '--score', dest='score', action='store_true', default=False,
+                        help='Cross-validate scoring')
+    args = parser.parse_args(argv)
+    X, y, _ = data_loader.get_features_and_labels(filename=args.file)
+    skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
-if args.acc:
-    cross_val('accuracy', args.score, args.learning_curve, args.predict)
-if args.f1_macro:
-    cross_val('f1_macro', args.score, args.learning_curve, args.predict)
+    if args.acc:
+        cross_val('accuracy', X, y, skf, args.score, args.learning_curve, args.predict)
+    if args.f1_macro:
+        cross_val('f1_macro', X, y, skf, args.score, args.learning_curve, args.predict)
 
-
+if __name__ == "__main__":
+    main(sys.argv[1:])
