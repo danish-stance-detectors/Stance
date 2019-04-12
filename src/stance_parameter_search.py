@@ -14,7 +14,7 @@ output_folder = '../output/'
 parser = argparse.ArgumentParser(description='Hyper parameter search for stance classification models')
 parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
                     help='Relative input file path holding train data')
-parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
+parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                     help='Number of folds for cross validation (default=5)')
 args = parser.parse_args()
 
