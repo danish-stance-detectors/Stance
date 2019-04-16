@@ -118,11 +118,15 @@ def cosine_similarity(one, other):
     else:
         return 0.  # no similarity if one set contains 0 words
 
-
+most_sim_cache = {}
 def most_similar_word(word):
+    if word in most_sim_cache:
+        return most_sim_cache[word]
     global wv_model
     if wv_model and word in wv_model.vocab:
-        return wv_model.similar_by_word(word)
+        most_sim = wv_model.similar_by_word(word)
+        most_sim_cache[word] = most_sim
+        return most_sim
     return [(word, 1)]
 
 def main(argv):

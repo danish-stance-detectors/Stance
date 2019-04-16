@@ -33,19 +33,33 @@ def preprocess(filename, sub_sample, super_sample):
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for i, branch in enumerate(branches):
-                    dataset.add_submission_branch(branch, sub_sample=sub_sample, super_sample=super_sample)
-    print('Done')
-    print('Number of data points:', dataset.size())
+                    dataset.add_submission_branch(branch, sub_sample=sub_sample)
+    print('Done\n')
     dataset.print_status_report()
-    return dataset
+    print()
+    print('Making train test split')
+    train, test = dataset.train_test_split()
+    print('Done\n')
+    if super_sample:
+        print('Super sampling...')
+        train = dataset.super_sample(train, word_to_replace=super_sample)
+        print('Done\n')
+        print('Dataset after super sampling:')
+        print('Total:')
+        dataset.print_status_report()
+        print('Train:')
+        dataset.print_status_report(train)
+        print('Test:')
+        dataset.print_status_report(test)
+        print()
+    return dataset, train, test
 
 
-def create_features(dataset, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
-    if not dataset:
+def create_features(feature_extractor, data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    if not feature_extractor or not data:
         return
     print('Extracting and creating feature vectors')
-    feature_extractor = FeatureExtractor(dataset)
-    data = feature_extractor.create_feature_vectors(wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos)
+    data = feature_extractor.create_feature_vectors(data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos)
     print('Done')
     return data
 
@@ -93,14 +107,16 @@ def main(argv):
             outputfile += '_%s' % arg
             if type(attr) is int:
                 outputfile += '%d' % attr
-    outputfile += '.csv'
 
     word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
-    dataset = preprocess(annotated_folder, args.sub, args.sup)
-
-    data = create_features(dataset, (args.w2v or args.fasttext),
+    dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
+    feature_extractor = FeatureExtractor(dataset)
+    train_features = create_features(feature_extractor, train, (args.w2v or args.fasttext),
                            args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
-    write_preprocessed(data, outputfile)
+    test_features = create_features(feature_extractor, test, (args.w2v or args.fasttext),
+                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+    write_preprocessed(train_features, outputfile + '_train.csv')
+    write_preprocessed(test_features, outputfile + '_test.csv')
 
 
 if __name__ == "__main__":

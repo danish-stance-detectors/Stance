@@ -32,9 +32,9 @@ class FeatureExtractor:
         self.dataset.add_annotation(annotation)
         return self.create_feature_vector(annotation, False, False, False, False, False, False, False, False)
 
-    def create_feature_vectors(self, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    def create_feature_vectors(self, data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vectors = []
-        for annotation in self.dataset.iterate_annotations():
+        for annotation in data:
             instance = self.create_feature_vector(
                 annotation, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos
             )

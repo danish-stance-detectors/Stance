@@ -1,6 +1,7 @@
 from nltk import word_tokenize
 import re, copy
 import word_embeddings
+from sklearn.model_selection import train_test_split
 
 url_tag = 'URLURLURL'
 quote_tag = 'REFREFREF'
@@ -100,7 +101,7 @@ class RedditAnnotation:
         regex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
         return regex.sub(url_tag, text)
 
-    def alter_id_and_text(self, threshold=0.8, words_to_replace=1, early_stop=True, sort_by_sim=False):
+    def alter_id_and_text(self, threshold=0.8, words_to_replace=2, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
         best_candidates = []
@@ -115,7 +116,7 @@ class RedditAnnotation:
                 best_candidates.append((idx, sim_word, sim))
             if early_stop and len(best_candidates) == words_to_replace:
                 break
-        if sort_by_sim:
+        if not early_stop:
             best_candidates.sort(key=lambda tup: tup[2])
         for idx, token_new, _ in best_candidates[:words_to_replace]:
             self.tokens[idx] = token_new
@@ -142,6 +143,9 @@ def compute_similarity(annotation, previous, source, branch_tokens, is_source=Fa
 class RedditDataset:
     def __init__(self):
         self.annotations = {}
+        self.anno_to_branch_tokens = {}
+        self.anno_to_prev = {}
+        self.anno_to_source = {}
         self.submissions = []
         self.last_submission = lambda: len(self.submissions) - 1
         # mapping from property to tuple: (min, max)
@@ -177,7 +181,7 @@ class RedditDataset:
     def add_reddit_submission(self, source):
         self.submissions.append(RedditSubmission(RedditAnnotation(source, is_source=True)))
 
-    def add_submission_branch(self, branch, sub_sample=False, super_sample=None):
+    def add_submission_branch(self, branch, sub_sample=False):
         annotation_branch = []
         branch_tokens = []
         class_comments = 0
@@ -197,26 +201,66 @@ class RedditDataset:
         source = self.submissions[self.last_submission()].source
         prev = source
         for annotation in annotation_branch:
-            compute_similarity(annotation, prev, source, branch_tokens)
-            prev = annotation
             if annotation.comment_id not in self.annotations:  # Skip repeated annotations
+                compute_similarity(annotation, prev, source, branch_tokens)
                 self.analyse_annotation(annotation)  # Analyse relevant annotations
                 self.annotations[annotation.comment_id] = annotation
+                self.anno_to_branch_tokens[annotation.comment_id] = branch_tokens
+                self.anno_to_prev[annotation.comment_id] = prev
+                self.anno_to_source[annotation.comment_id] = source
+            prev = annotation
         self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)  # This might be unnecessary
 
-        if super_sample:
-            prev = source
-            for annotation in annotation_branch:
-                if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
-                    annotation_copy = copy.deepcopy(annotation)
-                    annotation_copy.alter_id_and_text(words_to_replace=super_sample, early_stop=True)
-                    compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
-                    if annotation_copy.comment_id not in self.annotations:  # Skip repeated annotations
-                        self.analyse_annotation(annotation_copy)  # Analyse relevant annotations
-                        self.annotations[annotation_copy.comment_id] = annotation_copy
-                prev = annotation
+        # if super_sample:
+        #     prev = source
+        #     for annotation in annotation_branch:
+        #         if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
+        #             annotation_copy = copy.deepcopy(annotation)
+        #             annotation_copy.alter_id_and_text(words_to_replace=super_sample, early_stop=True)
+        #             compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
+        #             if annotation_copy.comment_id not in self.annotations:  # Skip repeated annotations
+        #                 self.analyse_annotation(annotation_copy)  # Analyse relevant annotations
+        #                 self.annotations[annotation_copy.comment_id] = annotation_copy
+        #         prev = annotation
 
-    def print_status_report(self):
+    def train_test_split(self, test_size=0.25, rand_state=42, shuffle=True, stratify=True):
+        X = []
+        y = []
+        for annotation in self.iterate_annotations():
+            X.append(annotation)
+            y.append(self.sdqc_to_int[annotation.sdqc_submission])
+        print('Splitting with test size', test_size)
+        X_train, X_test, _, _ = train_test_split(
+            X, y, test_size=test_size, random_state=rand_state, shuffle=shuffle, stratify=(y if stratify else None)
+        )
+        print('Train stats:')
+        self.print_status_report(X_train)
+        print('Test stats:')
+        self.print_status_report(X_test)
+        return X_train, X_test
+
+    def super_sample(self, annotations, word_to_replace=5, early_stop=True):
+        super_sample = []
+        for i, annotation in enumerate(annotations):
+            if not self.sdqc_to_int[annotation.sdqc_submission] == 3:
+                annotation_copy = copy.deepcopy(annotation)
+                annotation_copy.alter_id_and_text(words_to_replace=word_to_replace, early_stop=early_stop)
+                compute_similarity(
+                    annotation_copy,
+                    self.anno_to_prev[annotation.comment_id],
+                    self.anno_to_source[annotation.comment_id],
+                    self.anno_to_branch_tokens[annotation.comment_id]
+                )
+                self.analyse_annotation(annotation_copy)
+                self.annotations[annotation_copy.comment_id] = annotation_copy
+                super_sample.append(annotation_copy)
+            if i % 10 == 0:
+                print('  %d' % i)
+        annotations.extend(super_sample)
+        return annotations
+
+
+    def print_status_report(self, annotations=None):
         histogram = {
             0: 0,
             1: 0,
@@ -225,9 +269,10 @@ class RedditDataset:
         }
         ix_to_sdqc = {0: 'S', 1:'D', 2: 'Q', 3: 'C'}
         n = 0
-        for annotation in self.iterate_annotations():
+        for annotation in (self.iterate_annotations() if not annotations else annotations):
             histogram[self.sdqc_to_int[annotation.sdqc_submission]] += 1
             n += 1
+        print('Number of data points:', n)
         print('SDQC distribution:')
         for label, count in histogram.items():
             print('{}: {:4d} ({:.3f})'.format(ix_to_sdqc[label], count, float(count)/float(n)))
