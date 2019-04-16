@@ -48,9 +48,10 @@ def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=Fals
     if word2vec_format:
         print('Saving word embeddings in original C word2vec (.txt) format in {}.txt'.format(filename))
         model.wv.save_word2vec_format(os.path.join(word2vec_path, "{}.txt".format(filename)))
-    print('Saving word embeddings in {0}.kv'.format(filename))
-    model.wv.save(os.path.join(word2vec_path, "{}.kv".format(filename)))
-    print('Saved!')
+    else:
+        print('Saving word embeddings in {0}.kv'.format(filename))
+        model.wv.save(os.path.join(word2vec_path, "{}.kv".format(filename)))
+        print('Saved!')
     return model
 
 def save_fasttext(path_to_vectors, saved_filename):
@@ -128,7 +129,7 @@ def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_files', type=str, nargs='*', default=[dsl_sentences], help='Input file to train and save model for')
-    parser.add_argument('--vector_size', type=int, default=100, help='the size of a word vector')
+    parser.add_argument('-v', '--vector_size', type=int, default=100, help='the size of a word vector')
     parser.add_argument('--architecture', type=str, default='cbow', help='the architecture: "skip-gram" or "cbow"')
     parser.add_argument('--train_algorithm', type=str, default='negative', help='the training algorithm: "softmax" or "negative"')
     parser.add_argument('--workers', type=int, default=4, help='number of workers')
