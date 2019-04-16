@@ -70,6 +70,7 @@ def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
 classifiers = {
     'Logistic Regression': LogisticRegression(solver='liblinear', C=10, penalty='l1', multi_class='auto'),
     'Decision Tree': DecisionTreeClassifier(criterion="entropy", splitter='random'),
+    'RBF SVM': SVC(kernel='rbf', C=1000, gamma=0.001),
     'Linear SVM': SVC(kernel='linear', C=10),
     'Random Forest': RandomForestClassifier(criterion='entropy', n_estimators=10),
     'Majority vote': DummyClassifier(strategy='most_frequent'),
@@ -115,8 +116,10 @@ def cross_val(score_metric, X, y, skf, score=False,  plot=False):
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
-                        help='Input file holding train data. If a folder, iterates files within.')
+    parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_train.csv',
+                        help='Input file holding train data')
+    parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_test.csv',
+                        help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
     parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
@@ -128,7 +131,7 @@ def main(argv):
     parser.add_argument('-s', '--score', dest='score', action='store_true', default=False,
                         help='Cross-validate scoring')
     args = parser.parse_args(argv)
-    X, y, _ = data_loader.get_features_and_labels(filename=args.file)
+    X, y, _ = data_loader.load_train_test_data(train_file=args.train_file, test_file=args.test_file, split=False)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
     visualize_cv(skf, args.k_folds, X, y)

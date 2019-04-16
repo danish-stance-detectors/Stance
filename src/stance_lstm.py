@@ -151,7 +151,7 @@ def test(model, X_test, y_test):
 
 
 def run():
-    X_train, X_test, y_train, y_test, EMB = data_loader.get_train_test_split()
+    X_train, X_test, y_train, y_test, EMB = data_loader.load_train_test_data() # Fix input files
 
     # Hyper parameters
     EPOCHS = [10, 30, 50, 100, 200]

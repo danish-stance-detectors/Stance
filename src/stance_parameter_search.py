@@ -12,14 +12,17 @@ import data_loader
 output_folder = '../output/'
 
 parser = argparse.ArgumentParser(description='Hyper parameter search for stance classification models')
-parser.add_argument('-i', '--input_file', dest='file', default='../data/preprocessed/preprocessed.csv',
-                    help='Relative input file path holding train data')
+parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_train.csv',
+                        help='Input file holding train data')
+parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_test.csv',
+                    help='Input file holding test data')
 parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                     help='Number of folds for cross validation (default=5)')
 args = parser.parse_args()
 
-
-X_train, X_test, y_train, y_test, _ = data_loader.get_train_test_split(filename=args.file, test_size=0.25)
+X_train, X_test, y_train, y_test, _ = data_loader.load_train_test_data(
+    train_file=args.train_file, test_file=args.test_file
+)
 
 settings = [
     ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}),

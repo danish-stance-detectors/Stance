@@ -40,3 +40,15 @@ def get_train_test_split(filename=datafile, delimiter=tab, test_size=0.25):
         X, y, test_size=test_size, random_state=42, shuffle=True, stratify=y
     )
     return X_train, X_test, y_train, y_test, emb_size
+
+
+def load_train_test_data(train_file, test_file, delimiter=tab, split=True):
+    X_train, y_train, emb_size = get_features_and_labels(train_file, delimiter=delimiter)
+    X_test, y_test, _ = get_features_and_labels(test_file, delimiter=delimiter)
+    if split:
+        return X_train, X_test, y_train, y_test, emb_size
+    else:
+        #  Concatenate train and test samples
+        X_train.extend(X_test)
+        y_train.extend(y_test)
+        return X_train, y_train, emb_size
