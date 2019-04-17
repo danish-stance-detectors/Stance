@@ -86,12 +86,13 @@ def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-w2v', '--word2vec', dest='w2v', nargs='?', type=int, const=300,
-                        help='Enable word2vec word embeddings and specify vector size')
-    parser.add_argument('-ft', '--fasttext', dest='fasttext', default=False, action='store_true')
-    parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
+    parser.add_argument('-w2v', '--word2vec', nargs='?', type=int, const=300,
+                        help='Enable word2vec word embeddings and specify vector size (default: 300)')
+    parser.add_argument('-ft', '--fasttext', default=False, action='store_true',
+                        help='Enable fastText word embeddings with default vector size 300')
+    parser.add_argument('-sub', '--sub_sample', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
-    parser.add_argument('-sup', '--super_sample', dest='sup', nargs='?', type=int, const=5,
+    parser.add_argument('-sup', '--super_sample', nargs='?', type=int, const=5,
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
     parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
@@ -100,7 +101,7 @@ def main(argv):
                         help='Enable sentiment features')
     parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
                         help='Enable Reddit features')
-    parser.add_argument('-mf', '--most_frequent', dest='freq', nargs='?', type=int, const=50,
+    parser.add_argument('-mf', '--most_frequent', nargs='?', type=int, const=50,
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
@@ -116,19 +117,19 @@ def main(argv):
             if type(attr) is int:
                 outputfile += '%d' % attr
 
-    word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
-    
-    dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
+    word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
+
+    dataset, train, test = preprocess(annotated_folder, args.sub_sample, args.super_sample)
     if args.corpus:
         train.extend(test)
         write_reddit_corupus(train)
         return
 
     feature_extractor = FeatureExtractor(dataset)
-    train_features = create_features(feature_extractor, train, (args.w2v or args.fasttext),
-                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
-    test_features = create_features(feature_extractor, test, (args.w2v or args.fasttext),
-                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+    train_features = create_features(feature_extractor, train, (args.word2vec or args.fasttext),
+                           args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
+    test_features = create_features(feature_extractor, test, (args.word2vec or args.fasttext),
+                           args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
     write_preprocessed(train_features, outputfile + '_train.csv')
     write_preprocessed(test_features, outputfile + '_test.csv')
 
