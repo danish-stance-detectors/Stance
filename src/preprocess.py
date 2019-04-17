@@ -77,6 +77,12 @@ def write_preprocessed(preprocessed_data, filename):
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
     print('Done')
 
+def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.txt'):
+    with open(filename, 'w+', encoding='utf-8') as outfile:
+        for annotation in annotations:
+            for token in annotation.tokens:
+                outfile.write(token + ' ')
+            outfile.write('\n')
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -98,6 +104,8 @@ def main(argv):
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
+    parser.add_argument('-c', '--corpus', default=False, dest='corpus', action='store_true',
+                        help='Write a corpus file for Reddit data')
     args = parser.parse_args(argv)
 
     outputfile = 'preprocessed'
@@ -109,7 +117,13 @@ def main(argv):
                 outputfile += '%d' % attr
 
     word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
+    
     dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
+    if args.corpus:
+        train.extend(test)
+        write_reddit_corupus(train)
+        return
+
     feature_extractor = FeatureExtractor(dataset)
     train_features = create_features(feature_extractor, train, (args.w2v or args.fasttext),
                            args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
