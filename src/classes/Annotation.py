@@ -91,7 +91,7 @@ class RedditAnnotation:
         # Remove non-alphabetic characters and tokenize
         text_ = re.sub("[^a-zA-ZæøåÆØÅ0-9]", " ", text)  # replace with space
         # Convert all words to lower case and tokenize
-        return word_tokenize(text_.lower())
+        return word_tokenize(text_.lower(), language='danish')
 
     def filter_reddit_quotes(self, text):
         """filters text of all annotations to replace reddit quotes with 'refrefref'"""
