@@ -12,7 +12,8 @@ reddit_sentences = '../data/corpus/reddit_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
 datafolder = '../data/'
 fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300.kv')
-word2vec_data = lambda dim: os.path.join(datafolder, 'word2vec/dsl_sentences_{0}_cbow_negative.kv'.format(dim))
+word2vec_data = lambda dim: os.path.join(datafolder,
+                                         'word2vec/dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
 
 wv_model = None
 vector_size = 300
