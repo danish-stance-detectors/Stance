@@ -1,6 +1,6 @@
 import word_embeddings
 from classes.Annotation import RedditDataset
-import classes.afinn_sentiment
+from classes.afinn_sentiment import get_afinn_sentiment
 from classes.polyglot_pos import pos_tags_occurence
 import re
 
@@ -48,7 +48,7 @@ class FeatureExtractor:
         if text:
             feature_vec.extend(self.text_features(comment.text, comment.tokens))
         if sentiment:
-            feature_vec.extend(classes.afinn_sentiment.get_afinn_sentiment(comment.text))
+            feature_vec.extend(get_afinn_sentiment(comment.text))
         if lexicon:
             feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text))
         if reddit:
@@ -93,25 +93,26 @@ class FeatureExtractor:
         # dotdotdot
         hasTripDot = int('...' in text)
 
-        url_count = tokens.count('urlurlurl')
+        url_count = self.normalize(tokens.count('urlurlurl'), 'url_count')
 
-        quote_count = tokens.count('refrefref')
+        quote_count = self.normalize(tokens.count('refrefref'), 'quote_count')
         
         # longest sequence of capital letters, default empty for 0 length
         cap_sequence_max_len = len(max(re.findall(r"[A-ZÆØÅ]+", text), key=len, default=''))  # TODO: Normalize?
-
-        # TODO: Normalize the following?
+        cap_sequence_max_len = self.normalize(cap_sequence_max_len, 'cap_sequence_max_len')
+        
         # dotdotdot count
-        tripDotCount = text.count('...')
+        tripDotCount = self.normalize(text.count('...'), 'tripDotCount')
 
         # Question mark count
-        q_mark_count = text.count('?')
+        q_mark_count = self.normalize(text.count('?'), 'q_mark_count')
 
         # Exclamation mark count
-        e_mark_count = text.count('!')
+        e_mark_count = self.normalize(text.count('!'), 'e_mark_count')
 
         # Ratio of capital letters
-        cap_count = sum(1 for c in text if c.isupper())
+        cap_count = self.normalize(sum(1 for c in text if c.isupper()), 'cap_count')
+
         cap_ratio = float(cap_count) / float(len(text)) if len(text) > 0 else 0.0
         return [period,
                 e_mark,
