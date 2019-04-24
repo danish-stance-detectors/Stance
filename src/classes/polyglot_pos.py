@@ -29,6 +29,7 @@ tag_set = {
     "VERB": "verb",
     "X": "other"
 }
+N = 17  # length of tag set
 
 def tag_corpus(corpus_file, output_file):
     with open(corpus_file, 'r', encoding='utf-8') as f, open(output_file, 'w+', encoding='utf-8') as out:
@@ -51,11 +52,9 @@ def get_tag_set():
 
 def pos_tags_occurence(text):
     tags = pos_tags(text)
-    res = []
-    for tag in get_tag_set():
+    res = [0] * N
+    for i, tag in enumerate(get_tag_set()):
         if tag in tags:
-            res.append(1)
-        else:
-            res.append(0)
+            res[i] = 1
     return res
 
