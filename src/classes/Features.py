@@ -48,7 +48,7 @@ class FeatureExtractor:
         if text:
             feature_vec.append(self.text_features(comment.text, comment.tokens))
         if sentiment:
-            feature_vec.append(get_afinn_sentiment(comment.text))
+            feature_vec.append(self.normalize(get_afinn_sentiment(comment.text), 'afinn_score'))
         if lexicon:
             feature_vec.append(self.special_words_in_text(comment.tokens, comment.text))
         if reddit:
