@@ -33,38 +33,39 @@ class FeatureExtractor:
         self.dataset.add_annotation(annotation)
         return self.create_feature_vector(annotation, False, False, False, False, False, False, False, False)
 
-    def create_feature_vectors(self, data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    def create_feature_vectors(self, data, text, lexicon, sentiment, reddit, most_freq, bow, pos, wembs):
         feature_vectors = []
         for annotation in data:
             instance = self.create_feature_vector(
-                annotation, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos
+                annotation, text, lexicon, sentiment, reddit, most_freq, bow, pos, wembs
             )
             feature_vectors.append(instance)
         return feature_vectors
 
     # Extracts features from comment annotation and extends the different kind of features to eachother.
-    def create_feature_vector(self, comment, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+    def create_feature_vector(self, comment, text, lexicon, sentiment, reddit, most_freq, bow, pos, wembs):
         feature_vec = list()
         if text:
             feature_vec.append(self.text_features(comment.text, comment.tokens))
-        if sentiment:
-            feature_vec.append(self.normalize(get_afinn_sentiment(comment.text), 'afinn_score'))
         if lexicon:
             feature_vec.append(self.special_words_in_text(comment.tokens, comment.text))
+        if sentiment:
+            feature_vec.append(self.normalize(get_afinn_sentiment(comment.text), 'afinn_score'))
         if reddit:
-            feature_vec.append(self.user_features(comment))
-            feature_vec.append(self.reddit_comment_features(comment))
+            reddit_features = self.reddit_comment_features(comment)
+            reddit_features.extend(self.user_features(comment))
+            feature_vec.append(reddit_features)
         if most_freq:
             feature_vec.append(self.most_frequent_words_for_label(comment.tokens, most_freq))
         if bow:
             feature_vec.append(self.get_bow_presence(comment.tokens))
         if pos:
             feature_vec.append(pos_tags_occurence(comment.text))
-
         if wembs:
-            feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])
+            word_embs = [comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch]
             avg_wembs = word_embeddings.avg_word_emb(comment.tokens)
-            feature_vec.extend(avg_wembs)
+            word_embs.extend(avg_wembs)
+            feature_vec.append(word_embs)
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 

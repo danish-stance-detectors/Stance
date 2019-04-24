@@ -56,11 +56,12 @@ def preprocess(filename, sub_sample, super_sample):
     return dataset, train, test
 
 
-def create_features(feature_extractor, data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
+def create_features(feature_extractor, data,  text, lexicon, sentiment, reddit,
+                                        most_freq, bow, pos, wembs):
     if not feature_extractor or not data:
         return
     print('Extracting and creating feature vectors')
-    data = feature_extractor.create_feature_vectors(data, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos)
+    data = feature_extractor.create_feature_vectors(data, text, lexicon, sentiment, reddit, most_freq, bow, pos, wembs)
     print('Done')
     return data
 
@@ -185,10 +186,10 @@ def main(argv):
             return
 
         feature_extractor = FeatureExtractor(dataset)
-        train_features = create_features(feature_extractor, train, (args.word2vec or args.fasttext),
-                               args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
-        test_features = create_features(feature_extractor, test, (args.word2vec or args.fasttext),
-                               args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
+        train_features = create_features(feature_extractor, train, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
+        test_features = create_features(feature_extractor, test, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
         write_preprocessed(features, train_features, outputfile + '_train.csv')
         write_preprocessed(features, test_features, outputfile + '_test.csv')
 
