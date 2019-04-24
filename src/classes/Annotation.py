@@ -2,6 +2,7 @@ from nltk import word_tokenize
 import re, copy
 import word_embeddings
 from sklearn.model_selection import train_test_split
+from classes.afinn_sentiment import get_afinn_sentiment
 
 url_tag = 'urlurlurl'
 regex_url = re.compile(
@@ -155,7 +156,15 @@ class RedditDataset:
             'tokens_len': [0, 0],
             'avg_word_len': [0, 0],
             'upvotes': [0, 0],
-            'reply_count': [0, 0]
+            'reply_count': [0, 0],
+            'afinn_score': [0,0],
+            'url_count': [0, 0],
+            'quote_count': [0, 0],
+            'cap_sequence_max_len': [0, 0],
+            'tripDotCount': [0, 0],
+            'q_mark_count': [0, 0],
+            'e_mark_count': [0, 0],
+            'cap_count': [0, 0]
         }
         self.min_i = 0
         self.max_i = 1
@@ -282,6 +291,15 @@ class RedditDataset:
             return
         self.handle(self.min_max['karma'], annotation.user_karma)
         self.handle(self.min_max['txt_len'], len(annotation.text))
+        self.handle(self.min_max['afinn_score'], get_afinn_sentiment(annotation.text))
+        self.handle(self.min_max['url_count'], annotation.tokens.count('urlurlurl'))
+        self.handle(self.min_max['quote_count'], annotation.tokens.count('refrefref'))
+        self.handle(self.min_max['cap_sequence_max_len'], len(max(re.findall(r"[A-ZÆØÅ]+", annotation.text), key=len, default='')))
+        self.handle(self.min_max['tripDotCount'], annotation.text.count('...'))
+        self.handle(self.min_max['q_mark_count'], annotation.text.count('?'))
+        self.handle(self.min_max['e_mark_count'], annotation.text.count('!'))
+        self.handle(self.min_max['cap_count'], sum(1 for c in annotation.text if c.isupper()))
+        
         word_len = len(annotation.tokens)
         if not word_len == 0:
             self.handle(self.min_max['tokens_len'], word_len)
