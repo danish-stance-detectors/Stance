@@ -1,6 +1,7 @@
 import word_embeddings
 from classes.Annotation import RedditDataset
 import classes.afinn_sentiment
+from classes.polyglot_pos import pos_tags_occurence
 import re
 
 # Module for extracting features from comment annotations
@@ -58,8 +59,7 @@ class FeatureExtractor:
         if bow:
             feature_vec.extend(self.get_bow_presence(comment.tokens))
         if pos:
-            # TODO: Include POS tagging
-            pass
+            feature_vec.extend(pos_tags_occurence(comment.text))
 
         if wembs:
             feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])

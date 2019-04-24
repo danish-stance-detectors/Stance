@@ -3,8 +3,13 @@ import re, copy
 import word_embeddings
 from sklearn.model_selection import train_test_split
 
-url_tag = 'URLURLURL'
-quote_tag = 'REFREFREF'
+url_tag = 'urlurlurl'
+regex_url = re.compile(
+    r"([(\[]?(https?://)|(https?://www.)|(www.))(?:[a-zæøåA-ZÆØÅ]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
+)
+quote_tag = 'refrefref'
+regex_quote = re.compile(r">(.+?)\n")
+
 
 class RedditAnnotation:
         
@@ -58,7 +63,7 @@ class RedditAnnotation:
             self.is_submitter = comment_json["is_submitter"]
             self.is_deleted = comment_json["is_deleted"]
             self.reply_count = comment_json["replies"]
-            self.tokens = self.tokenize(comment_json["text"])
+            self.tokens = self.tokenize(self.text)
 
             # annotation info
             self.annotator = json["annotator"]
@@ -86,20 +91,15 @@ class RedditAnnotation:
         # Remove non-alphabetic characters and tokenize
         text_ = re.sub("[^a-zA-ZæøåÆØÅ0-9]", " ", text)  # replace with space
         # Convert all words to lower case and tokenize
-        return word_tokenize(text_.lower())
+        return word_tokenize(text_.lower(), language='danish')
 
-    # TODO: the filter methods below can also extract all urls / quotes to get count of them as features maybe?
-    # TODO: Test further
     def filter_reddit_quotes(self, text):
-        """filters text of all annotations to replace reddit quotes with 'REFREFREF'"""
-        # TODO: Doesn't seem to replace quotes? Also, do we want it? Also quotes are sometimes " "
-        return re.sub(r"^>*\n$", quote_tag, text)
+        """filters text of all annotations to replace reddit quotes with 'refrefref'"""
+        return regex_quote.sub(quote_tag, text)
 
     def filter_text_urls(self, text):
         """filters text of all annotations to replace 'URLURLURL'"""
-        # TODO: Doesn't catch www.
-        regex = re.compile(r"http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+")
-        return regex.sub(url_tag, text)
+        return regex_url.sub(url_tag, text)
 
     def alter_id_and_text(self, threshold=0.8, words_to_replace=2, early_stop=True):
         self.comment_id = self.comment_id + '_'
