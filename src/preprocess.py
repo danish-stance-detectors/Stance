@@ -5,6 +5,7 @@ from classes.Features import FeatureExtractor
 import argparse
 
 datafolder = '../data/'
+hmm_folder = os.path.join(datafolder, 'hmm/')
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 
@@ -77,6 +78,54 @@ def write_preprocessed(preprocessed_data, filename):
             csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
     print('Done')
 
+def read_hmm_data(filename):
+    if not filename:
+        return
+    
+    label_data = []
+    sdqc_to_int = {'Supporting':0, 'Denying':1, 'Querying':2, 'Commenting':3}
+    label_distribution = {'Supporting':0, 'Denying':0, 'Querying':0, 'Commenting':0}
+    rumour_count = 0
+    truth_count = 0
+    for rumour_folder in os.listdir(filename):
+        rumour_folder_path = os.path.join(filename, rumour_folder)
+        if not os.path.isdir(rumour_folder_path):
+            continue
+        for submission_json in os.listdir(rumour_folder_path):
+            submission_json_path = os.path.join(rumour_folder_path, submission_json)
+            with open(submission_json_path, "r", encoding='utf-8') as file:
+                json_obj = json.load(file)
+                sub = json_obj['redditSubmission']
+                if sub['IsRumour'] and not sub['IsIrrelevant']:
+                    print("Adding {} as rumour".format(submission_json))
+                    rumour_truth = int(sub['TruthStatus'] == 'True')
+                    rumour_count += 1
+                    truth_count += rumour_truth
+                    for branch in json_obj['branches']:
+                        branch_labels = []
+                        for comment in branch:
+                            label = comment['comment']['SDQC_Submission']
+                            label_distribution[label] += 1
+                            branch_labels.append(sdqc_to_int[label])
+                        label_data.append((rumour_truth, branch_labels))
+    
+    print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
+    print("With sdqc overall distribution: ")
+    print(label_distribution)
+    return label_data
+
+def write_hmm_data(filename, data):
+    if not data:
+        return
+    out_path = os.path.join(hmm_folder, filename)
+    print('Writing hmm vectors to', out_path)
+    with open(out_path, "w+", newline='') as out_file:
+        csv_writer = csv.writer(out_file, delimiter='\t')
+        csv_writer.writerow(['TruthStatus', 'SDQC_Labels'])
+        
+        for (truth_status, labels) in data:
+            csv_writer.writerow([truth_status, labels])
+    print('Done')
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -98,6 +147,7 @@ def main(argv):
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
+    parser.add_argument('-hmm', '--hiddenMarkovModel', default=False, dest='hmm', action='store_true', help='Get HMM features instead of stance preprocessing features')
     args = parser.parse_args(argv)
 
     outputfile = 'preprocessed'
@@ -107,16 +157,19 @@ def main(argv):
             outputfile += '_%s' % arg
             if type(attr) is int:
                 outputfile += '%d' % attr
-
-    word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
-    dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
-    feature_extractor = FeatureExtractor(dataset)
-    train_features = create_features(feature_extractor, train, (args.w2v or args.fasttext),
-                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
-    test_features = create_features(feature_extractor, test, (args.w2v or args.fasttext),
-                           args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
-    write_preprocessed(train_features, outputfile + '_train.csv')
-    write_preprocessed(test_features, outputfile + '_test.csv')
+    if args.hmm:
+        labels = read_hmm_data(annotated_folder)
+        write_hmm_data(outputfile + '.csv', labels)
+    else:
+        word_embeddings.load_saved_word_embeddings(args.w2v, args.fasttext)
+        dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
+        feature_extractor = FeatureExtractor(dataset)
+        train_features = create_features(feature_extractor, train, (args.w2v or args.fasttext),
+                            args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+        test_features = create_features(feature_extractor, test, (args.w2v or args.fasttext),
+                            args.text, args.lexicon, args.sentiment, args.reddit, args.freq, args.bow, args.pos)
+        write_preprocessed(train_features, outputfile + '_train.csv')
+        write_preprocessed(test_features, outputfile + '_test.csv')
 
 
 if __name__ == "__main__":
