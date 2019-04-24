@@ -64,17 +64,19 @@ def create_features(feature_extractor, data, wembs, text, lexicon, sentiment, re
     return data
 
 
-def write_preprocessed(preprocessed_data, filename):
+def write_preprocessed(header_features, preprocessed_data, filename):
     if not preprocessed_data:
         return
     out_path = os.path.join(preprocessed_folder, filename)
     print('Writing feature vectors to', out_path)
     with open(out_path, "w+", newline='') as out_file:
         csv_writer = csv.writer(out_file, delimiter='\t')
-        csv_writer.writerow(['comment_id', 'sdqc_parent', 'sdqc_submission', 'feature_vector'])
+        header = ['comment_id', 'sdqc_parent', 'sdqc_submission']
+        header.extend(header_features)
+        csv_writer.writerow(header)
         
         for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
-            csv_writer.writerow([id, sdqc_p, sdqc_s, vec])
+            csv_writer.writerow([id, sdqc_p, sdqc_s, *vec])
     print('Done')
 
 def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.txt'):
@@ -110,9 +112,11 @@ def main(argv):
     args = parser.parse_args(argv)
 
     outputfile = 'preprocessed'
+    features = []
     for arg in vars(args):
         attr = getattr(args, arg)
         if attr:
+            features.append(arg)
             outputfile += '_%s' % arg
             if type(attr) is int:
                 outputfile += '%d' % attr
@@ -130,8 +134,8 @@ def main(argv):
                            args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
     test_features = create_features(feature_extractor, test, (args.word2vec or args.fasttext),
                            args.text, args.lexicon, args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos)
-    write_preprocessed(train_features, outputfile + '_train.csv')
-    write_preprocessed(test_features, outputfile + '_test.csv')
+    write_preprocessed(features, train_features, outputfile + '_train.csv')
+    write_preprocessed(features, test_features, outputfile + '_test.csv')
 
 
 if __name__ == "__main__":

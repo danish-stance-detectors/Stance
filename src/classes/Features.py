@@ -46,20 +46,20 @@ class FeatureExtractor:
     def create_feature_vector(self, comment, wembs, text, lexicon, sentiment, reddit, most_freq, bow, pos):
         feature_vec = list()
         if text:
-            feature_vec.extend(self.text_features(comment.text, comment.tokens))
+            feature_vec.append(self.text_features(comment.text, comment.tokens))
         if sentiment:
-            feature_vec.extend(classes.afinn_sentiment.get_afinn_sentiment(comment.text))
+            feature_vec.append(classes.afinn_sentiment.get_afinn_sentiment(comment.text))
         if lexicon:
-            feature_vec.extend(self.special_words_in_text(comment.tokens, comment.text))
+            feature_vec.append(self.special_words_in_text(comment.tokens, comment.text))
         if reddit:
-            feature_vec.extend(self.user_features(comment))
-            feature_vec.extend(self.reddit_comment_features(comment))
+            feature_vec.append(self.user_features(comment))
+            feature_vec.append(self.reddit_comment_features(comment))
         if most_freq:
-            feature_vec.extend(self.most_frequent_words_for_label(comment.tokens, most_freq))
+            feature_vec.append(self.most_frequent_words_for_label(comment.tokens, most_freq))
         if bow:
-            feature_vec.extend(self.get_bow_presence(comment.tokens))
+            feature_vec.append(self.get_bow_presence(comment.tokens))
         if pos:
-            feature_vec.extend(pos_tags_occurence(comment.text))
+            feature_vec.append(pos_tags_occurence(comment.text))
 
         if wembs:
             feature_vec.extend([comment.sim_to_src, comment.sim_to_prev, comment.sim_to_branch])
