@@ -124,14 +124,16 @@ def main(argv):
                         help='Number of folds for cross validation (default=5)')
     parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
                         help='Enable accuracy metric')
-    parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
+    parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=True,
                         help='Enable F1 macro metric')
     parser.add_argument('-l', '--learning_curve', dest='learning_curve', action='store_true', default=False,
                         help='Enable plotting of learning curve')
-    parser.add_argument('-s', '--score', dest='score', action='store_true', default=False,
+    parser.add_argument('-s', '--score', dest='score', action='store_true', default=True,
                         help='Cross-validate scoring')
     args = parser.parse_args(argv)
-    X, y, _ = data_loader.load_train_test_data(train_file=args.train_file, test_file=args.test_file, split=False)
+    X, y, _, feature_mapping = data_loader.load_train_test_data(train_file=args.train_file,
+                                                                test_file=args.test_file, split=False)
+    X = data_loader.select_features(X, feature_mapping, text=True, lexicon=True, pos=True)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
     visualize_cv(skf, args.k_folds, X, y)

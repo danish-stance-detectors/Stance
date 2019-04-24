@@ -20,9 +20,11 @@ parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, narg
                     help='Number of folds for cross validation (default=5)')
 args = parser.parse_args()
 
-X_train, X_test, y_train, y_test, _ = data_loader.load_train_test_data(
+X_train, X_test, y_train, y_test, _, feature_mapping = data_loader.load_train_test_data(
     train_file=args.train_file, test_file=args.test_file
 )
+X_train = data_loader.select_features(X_train, feature_mapping, text=True, lexicon=True, pos=True)
+X_test = data_loader.select_features(X_test, feature_mapping, text=True, lexicon=True, pos=True)
 
 settings = [
     ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}),
