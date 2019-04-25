@@ -31,6 +31,12 @@ class MySentences:
                     if line:
                         yield line.split()
 
+    def __len__(self):
+        n = 0
+        for filename in self.filenames:
+            with open(filename, 'r', encoding='utf8') as corpus:
+                n += len(corpus.readlines())
+
 def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=False, 
                         vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
     """architecture: 'skim-gram' or 'cbow'. train_algorithm: 'softmax' or 'negative'"""
@@ -76,11 +82,18 @@ def load_word_embeddings_bin(filename, algorithm='fasttext'):
     print('loading model...')
     global wv_model
     if(algorithm == 'fasttext'):
-        wv_model = FastText.load_fasttext_format(filename, encoding='utf8')
+        wv_model = FastText.load_facebook_model(filename)
     elif(algorithm == 'word2vec'):
         wv_model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
     print('Done!')
     return wv_model
+
+def load_and_train_fasttext(corpus_file_path, filename):
+    ft_model = load_word_embeddings_bin(filename)
+    sentences = MySentences(corpus_file_path)
+    ft_model.build_vocab(sentences, update=True)
+    ft_model.train(sentences=sentences, total_examples=sentences.__len__, epochs=self.iter)
+
 
 def avg_word_emb(tokens):
     global wv_model
