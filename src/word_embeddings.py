@@ -11,6 +11,7 @@ dsl_sentences = '../data/corpus/dsl_sentences.txt'
 reddit_sentences = '../data/corpus/reddit_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
 datafolder = '../data/'
+fasttext_model = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
 fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300.kv')
 word2vec_data = lambda dim: os.path.join(datafolder,
                                          'word2vec/dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
@@ -82,17 +83,24 @@ def load_word_embeddings_bin(filename, algorithm='fasttext'):
     print('loading model...')
     global wv_model
     if(algorithm == 'fasttext'):
-        wv_model = FastText.load_facebook_model(filename)
+        wv_model = FastText.load_fasttext_format(filename)
     elif(algorithm == 'word2vec'):
         wv_model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
     print('Done!')
     return wv_model
 
-def load_and_train_fasttext(corpus_file_path, filename):
-    ft_model = load_word_embeddings_bin(filename)
+def load_and_train_fasttext(corpus_file_path):
+    ft_model = load_word_embeddings_bin(fasttext_model)
     sentences = MySentences(corpus_file_path)
+    print('Building vocab')
     ft_model.build_vocab(sentences, update=True)
+    print('Done')
+    print('Training...')
     ft_model.train(sentences=sentences, total_examples=sentences.__len__, epochs=self.iter)
+    print('Done')
+    print('Saving word vectors')
+    ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_reddit.kv'))
+    print('Done')
 
 
 def avg_word_emb(tokens):
@@ -146,23 +154,27 @@ def most_similar_word(word):
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_files', type=str, nargs='*', default=[dsl_sentences, reddit_sentences],
-                        help='Input file to train and save model for')
-    parser.add_argument('-v', '--vector_size', type=int, default=100, help='the size of a word vector')
+    parser.add_argument('--w2v_train', action='store_true', default=False,
+                        help='Train and save word vectors with word2vec')
+    parser.add_argument('-v', '--vector_size', type=int, default=300, help='the size of a word vector')
     parser.add_argument('--architecture', type=str, default='cbow', help='the architecture: "skip-gram" or "cbow"')
     parser.add_argument('--train_algorithm', type=str, default='negative', help='the training algorithm: "softmax" or "negative"')
     parser.add_argument('--workers', type=int, default=4, help='number of workers')
     parser.add_argument('--word2vec_format', action='store_true', default=False, help='Store in the original C word2vec (.txt) format')
+    parser.add_argument('--fasttext_train', action='store_true', default=False,
+                        help='Train a fastText model on a corpus (Default: Reddit corpus) and save word vectors')
     args = parser.parse_args(argv)
 
-    input_files = args.input_files
     vector_size = args.vector_size
     architecture = args.architecture
     train_algorithm = args.train_algorithm
     word2vec_format = args.word2vec_format
     workers = args.workers
-    train_save_word2vec(input_files, word2vec_format=word2vec_format , vector_size=vector_size, 
+    if args.w2v_train:
+        train_save_word2vec([dsl_sentences, reddit_sentences], word2vec_format=word2vec_format , vector_size=vector_size,
                         architecture=architecture, train_algorithm=train_algorithm, workers=workers)
+    if args.fasttext_train:
+        load_and_train_fasttext(reddit_sentences)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
