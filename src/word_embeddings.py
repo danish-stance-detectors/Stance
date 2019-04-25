@@ -37,6 +37,7 @@ class MySentences:
         for filename in self.filenames:
             with open(filename, 'r', encoding='utf8') as corpus:
                 n += len(corpus.readlines())
+        return n
 
 def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=False, 
                         vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
@@ -96,10 +97,10 @@ def load_and_train_fasttext(corpus_file_path):
     ft_model.build_vocab(sentences, update=True)
     print('Done')
     print('Training...')
-    ft_model.train(sentences=sentences, total_examples=sentences.__len__, epochs=self.iter)
+    ft_model.train(sentences=sentences, total_examples=sentences.__len__(), epochs=self.iter)
     print('Done')
     print('Saving word vectors')
-    ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_reddit.kv'))
+    ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_dsl_reddit.kv'))
     print('Done')
 
 
@@ -174,7 +175,7 @@ def main(argv):
         train_save_word2vec([dsl_sentences, reddit_sentences], word2vec_format=word2vec_format , vector_size=vector_size,
                         architecture=architecture, train_algorithm=train_algorithm, workers=workers)
     if args.fasttext_train:
-        load_and_train_fasttext(reddit_sentences)
+        load_and_train_fasttext([dsl_sentences, reddit_sentences])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
