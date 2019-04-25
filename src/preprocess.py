@@ -43,7 +43,7 @@ def preprocess(filename, sub_sample, super_sample):
     print('Done\n')
     if super_sample:
         print('Super sampling...')
-        train = dataset.super_sample(train, word_to_replace=super_sample)
+        train = dataset.super_sample(train, pct_words_to_replace=super_sample)
         print('Done\n')
         print('Dataset after super sampling:')
         print('Total:')
@@ -141,7 +141,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-sub', '--sub_sample', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
-    parser.add_argument('-sup', '--super_sample', nargs='?', type=int, const=5,
+    parser.add_argument('-sup', '--super_sample', nargs='?', type=int, const=0.25,
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
     parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',

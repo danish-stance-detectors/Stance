@@ -102,17 +102,23 @@ class RedditAnnotation:
         """filters text of all annotations to replace 'URLURLURL'"""
         return regex_url.sub(url_tag, text)
 
-    def alter_id_and_text(self, threshold=0.8, words_to_replace=2, early_stop=True):
+    def alter_id_and_text(self, threshold=0.8, pct_words_to_replace=0.25, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
+        words_to_replace = int(len(self.tokens)*pct_words_to_replace)
         best_candidates = []
         for idx in range(len(self.tokens)):
             token_old = self.tokens[idx]
             if token_old == quote_tag.lower() or token_old == url_tag.lower():
                 continue
-            sim_word, sim = word_embeddings.most_similar_word(token_old)[0]
-            if sim_word == token_old:
-                continue
+            top_two = word_embeddings.most_similar_word(token_old)[:2]
+            if top_two[0][0].lower() == token_old:
+                if len(top_two) == 1:  # if language model failed to find similar words
+                    continue
+                sim_word, sim = top_two[1]  # if it's the same word, choose the second best
+            else:
+                sim_word, sim = top_two[0]  # otherwise use the most similar word
+            sim_word = sim_word.lower()
             if sim > threshold:
                 best_candidates.append((idx, sim_word, sim))
             if early_stop and len(best_candidates) == words_to_replace:
@@ -121,7 +127,11 @@ class RedditAnnotation:
             best_candidates.sort(key=lambda tup: tup[2])
         for idx, token_new, _ in best_candidates[:words_to_replace]:
             self.tokens[idx] = token_new
-
+        sim_sum = 0
+        for _, _, sim in best_candidates:
+            sim_sum += sim
+        avg_sim = sim_sum/len(best_candidates)
+        return avg_sim
 
 class RedditSubmission:
     def __init__(self, source):
@@ -220,18 +230,6 @@ class RedditDataset:
             prev = annotation
         self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)  # This might be unnecessary
 
-        # if super_sample:
-        #     prev = source
-        #     for annotation in annotation_branch:
-        #         if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # not commenting class
-        #             annotation_copy = copy.deepcopy(annotation)
-        #             annotation_copy.alter_id_and_text(words_to_replace=super_sample, early_stop=True)
-        #             compute_similarity(annotation_copy, prev, source, branch_tokens)  # compare to original branch
-        #             if annotation_copy.comment_id not in self.annotations:  # Skip repeated annotations
-        #                 self.analyse_annotation(annotation_copy)  # Analyse relevant annotations
-        #                 self.annotations[annotation_copy.comment_id] = annotation_copy
-        #         prev = annotation
-
     def train_test_split(self, test_size=0.25, rand_state=42, shuffle=True, stratify=True):
         X = []
         y = []
@@ -248,23 +246,32 @@ class RedditDataset:
         self.print_status_report(X_test)
         return X_train, X_test
 
-    def super_sample(self, annotations, word_to_replace=5, early_stop=True):
+    def super_sample(self, annotations, pct_words_to_replace, early_stop=True):
         super_sample = []
-        for i, annotation in enumerate(annotations):
-            if not self.sdqc_to_int[annotation.sdqc_submission] == 3:
-                annotation_copy = copy.deepcopy(annotation)
-                annotation_copy.alter_id_and_text(words_to_replace=word_to_replace, early_stop=early_stop)
-                compute_similarity(
-                    annotation_copy,
-                    self.anno_to_prev[annotation.comment_id],
-                    self.anno_to_source[annotation.comment_id],
-                    self.anno_to_branch_tokens[annotation.comment_id]
-                )
-                self.analyse_annotation(annotation_copy)
-                self.annotations[annotation_copy.comment_id] = annotation_copy
-                super_sample.append(annotation_copy)
-            if i % 10 == 0:
-                print('  %d' % i)
+        with open('super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
+            for i, annotation in enumerate(annotations):
+                if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # Only look at SDQ
+                    annotation_copy = copy.deepcopy(annotation)
+                    avg_sim = annotation_copy.alter_id_and_text(
+                        pct_words_to_replace=pct_words_to_replace,
+                        early_stop=early_stop
+                    )
+                    replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
+                    outfile.write('old: ' + ' '.join(annotation.tokens) + '\n')
+                    outfile.write('new: ' + ' '.join(annotation_copy.tokens) + '\n')
+                    outfile.write('avg replacement sim: %.2f\n' % avg_sim)
+                    outfile.write('sentence cosine sim: %.2f\n\n' % replacement_sim)
+                    compute_similarity(
+                        annotation_copy,
+                        self.anno_to_prev[annotation.comment_id],
+                        self.anno_to_source[annotation.comment_id],
+                        self.anno_to_branch_tokens[annotation.comment_id]
+                    )
+                    self.analyse_annotation(annotation_copy)
+                    self.annotations[annotation_copy.comment_id] = annotation_copy
+                    super_sample.append(annotation_copy)
+                if i % 10 == 0:
+                    print('  %d' % i)
         annotations.extend(super_sample)
         return annotations
 
