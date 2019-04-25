@@ -3,6 +3,7 @@ import model_stats
 import numpy as np
 from sklearn.model_selection import train_test_split
 
+#data, emb_size_max = data_loader.get_hmm_data(filename='../data/hmm/preprocessed_hmm_no_branch.csv')
 data, emb_size_max = data_loader.get_hmm_data()
 
 y = [x[0] for x in data]
