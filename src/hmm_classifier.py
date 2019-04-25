@@ -24,6 +24,7 @@ train_sample_count = len(X_train_lengts)
 # print(X_train)
 
 hmm_model = hmm.GaussianHMM(n_components=2)
+hmm_model.fit(X_train, X_train_lengts)
 
 for branch in X_train:
     samples = len(branch)
@@ -56,4 +57,4 @@ predicts = hmm_model.predict(X_test, lengths=X_test_lengths)
 # print(len(predicts.tolist()))
 # print(len(y_test))
 model_stats.print_confusion_matrix(y_test, pred, [0,1])
-#print(predicts)
+print(predicts)
