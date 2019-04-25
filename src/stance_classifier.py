@@ -12,6 +12,7 @@ import argparse
 import os
 import sys
 import data_loader
+import model_stats
 
 output_folder = '../output/'
 
@@ -113,6 +114,11 @@ def cross_val(score_metric, X, y, skf, score=False,  plot=False):
                 print(s)
                 outfile.write(s + '\n')
 
+def cross_predict(X, y, skf):
+    for name, clf in classifiers.items():
+        predicted = cross_val_predict(clf, X, y, cv=skf)
+        model_stats.plot_confusion_matrix(y, predicted, title='%s Confusion matrix - no normalization' % name,
+                                          save_to_filename='%s_cm.png' % (output_folder + name))
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -130,14 +136,19 @@ def main(argv):
                         help='Enable plotting of learning curve')
     parser.add_argument('-s', '--score', dest='score', action='store_true', default=True,
                         help='Cross-validate scoring')
+    parser.add_argument('-p', '--predict', action='store_true', default=False,
+                        help='Cross-validate prediction')
+
     args = parser.parse_args(argv)
     X, y, _, feature_mapping = data_loader.load_train_test_data(train_file=args.train_file,
                                                                 test_file=args.test_file, split=False)
     X = data_loader.select_features(X, feature_mapping, text=True, lexicon=False, pos=False)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
 
-    visualize_cv(skf, args.k_folds, X, y)
+    # visualize_cv(skf, args.k_folds, X, y)
     cross_val('accuracy' if args.acc else 'f1_macro', X, y, skf, args.score, args.learning_curve)
+    if args.predict:
+        cross_predict(X, y, skf)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

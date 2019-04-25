@@ -157,14 +157,14 @@ class FeatureExtractor:
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
         return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
 
-    def most_frequent_words_for_label(self, tokens, n_most=50):
+    def most_frequent_words_for_label(self, tokens, n_most):
         # self.annotations.make_frequent_words() must have been called for this to work
         
         vec = []
 
         histograms = self.dataset.get_frequent_words(n_most)
         for sdqc_id, histogram in histograms.items():
-            for count, freq_token in histogram:
+            for freq_token in histogram:
                 vec.append(int(freq_token in tokens))
  
         return vec
