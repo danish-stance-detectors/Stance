@@ -1,7 +1,8 @@
-import os, json, csv, sys
+import os, json, csv, sys, re
 import word_embeddings
 from classes.Annotation import RedditDataset
 from classes.Features import FeatureExtractor
+from nltk import word_tokenize, sent_tokenize
 import argparse
 import datetime
 import time
@@ -11,6 +12,7 @@ hmm_folder = os.path.join(datafolder, 'hmm/')
 preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'annotated/')
 
+punctuation = re.compile('[^a-zA-ZæøåÆØÅ0-9]')
 
 def preprocess(filename, sub_sample, super_sample):
     if not filename:
@@ -188,9 +190,14 @@ def write_hmm_data(filename, data):
 def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.txt'):
     with open(filename, 'w+', encoding='utf-8') as outfile:
         for annotation in annotations:
-            for token in annotation.tokens:
-                outfile.write(token + ' ')
-            outfile.write('\n')
+            sentences = sent_tokenize(annotation.text.lower(), language='danish')
+            sentence_tokens = [word_tokenize(t, language='danish') for t in sentences]
+
+            for tokens in sentence_tokens:
+                for token in tokens:
+                    if token and not punctuation.match(token):
+                        outfile.write(token + ' ')
+                outfile.write('\n')
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
