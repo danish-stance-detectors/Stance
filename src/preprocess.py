@@ -3,6 +3,8 @@ import word_embeddings
 from classes.Annotation import RedditDataset
 from classes.Features import FeatureExtractor
 import argparse
+import datetime
+import time
 
 datafolder = '../data/'
 hmm_folder = os.path.join(datafolder, 'hmm/')
@@ -102,6 +104,7 @@ def read_hmm_data(filename):
                 if sub['IsRumour'] and not sub['IsIrrelevant']:
                     print("Adding {} as rumour".format(submission_json))
                     rumour_truth = int(sub['TruthStatus'] == 'True')
+                    print(rumour_truth)
                     rumour_count += 1
                     truth_count += rumour_truth
                     for branch in json_obj['branches']:
@@ -111,6 +114,58 @@ def read_hmm_data(filename):
                             label_distribution[label] += 1
                             branch_labels.append(sdqc_to_int[label])
                         label_data.append((rumour_truth, branch_labels))
+    
+    print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
+    print("With sdqc overall distribution: ")
+    print(label_distribution)
+    return label_data
+
+def read_hmm_data_no_branches(filename):
+    if not filename:
+        print("Cannot run method read_hmm_data_no_branches without filename parameter")
+        return
+    
+    label_data = []
+
+    sdqc_to_int = {'Supporting':0, 'Denying':1, 'Querying':2, 'Commenting':3}
+    label_distribution = {'Supporting':0, 'Denying':0, 'Querying':0, 'Commenting':0}
+    rumour_count = 0
+    truth_count = 0
+    for rumour_folder in os.listdir(filename):
+        rumour_folder_path = os.path.join(filename, rumour_folder)
+        if not os.path.isdir(rumour_folder_path):
+            continue
+        for submission_json in os.listdir(rumour_folder_path):
+            submission_json_path = os.path.join(rumour_folder_path, submission_json)
+            with open(submission_json_path, "r", encoding='utf-8') as file:
+                json_obj = json.load(file)
+                sub = json_obj['redditSubmission']
+                if sub['IsRumour'] and not sub['IsIrrelevant']:
+                    print("Adding {} as rumour".format(submission_json))
+                    
+                    distinct_comments = dict()
+                    rumour_truth = int(sub['TruthStatus'] == 'True')
+                    rumour_count += 1
+                    truth_count += rumour_truth
+                    for branch in json_obj['branches']:
+                        branch_labels = []
+                        for comment in branch:
+
+                            label = comment['comment']['SDQC_Submission']
+                            created = comment['comment']['created']
+                            comment_id = comment['comment']['comment_id']
+                            
+                            time_stamp = time.mktime(time.strptime(created, "%Y-%m-%dT%H:%M:%S"))
+                            distinct_comments[comment_id] = (sdqc_to_int[label], time_stamp)
+
+                            label_distribution[label] += 1
+                            branch_labels.append(sdqc_to_int[label])
+                    
+                    # sort them by time
+                    comments_by_time = sorted(distinct_comments.values(), key=lambda x: x[1])
+
+                    # discard time stamps for now
+                    label_data.append((rumour_truth, [x[0] for x in comments_by_time]))
     
     print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
     print("With sdqc overall distribution: ")
@@ -159,6 +214,7 @@ def main(argv):
     parser.add_argument('-ft', '--fasttext', default=False, action='store_true',
                         help='Enable fastText word embeddings with default vector size 300')
     parser.add_argument('-hmm', '--hiddenMarkovModel', default=False, dest='hmm', action='store_true', help='Get HMM features instead of stance preprocessing features')
+    parser.add_argument('-br', '--branch', default=False, dest='branch', action='store_true', help='Get hmm features in branches')
     parser.add_argument('-c', '--corpus', default=False, dest='corpus', action='store_true',
                         help='Write a corpus file for Reddit data')
     args = parser.parse_args(argv)
@@ -174,7 +230,13 @@ def main(argv):
                 outputfile += '%d' % attr
 
     if args.hmm:
-        labels = read_hmm_data(annotated_folder)
+        labels = []
+        if args.branch:
+            labels = read_hmm_data(annotated_folder)
+        else:
+            labels = read_hmm_data_no_branches(annotated_folder)
+            outputfile += '_no_branch'
+
         write_hmm_data(outputfile + '.csv', labels)
     else:
         word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
