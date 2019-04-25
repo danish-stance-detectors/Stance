@@ -32,6 +32,9 @@ def get_instances(filename=datafile, delimiter=tab):
         n_features += len(feature_vec)
     return instances, n_features, feature_mapping
 
+def get_features():
+    return {'text': False, 'lexicon': False,
+                    'sentiment': False, 'reddit': False, 'most_freq': False, 'bow': False, 'pos': False, 'wembs': False}
 
 def select_features(data, feature_mapping, text=False, lexicon=False,
                     sentiment=False, reddit=False, most_freq=False, bow=False, pos=False, wembs=False):
