@@ -139,10 +139,6 @@ def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-w2v', '--word2vec', nargs='?', type=int, const=300,
-                        help='Enable word2vec word embeddings and specify vector size (default: 300)')
-    parser.add_argument('-ft', '--fasttext', default=False, action='store_true',
-                        help='Enable fastText word embeddings with default vector size 300')
     parser.add_argument('-sub', '--sub_sample', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
     parser.add_argument('-sup', '--super_sample', nargs='?', type=int, const=5,
@@ -154,10 +150,14 @@ def main(argv):
                         help='Enable sentiment features')
     parser.add_argument('-r', '--reddit', dest='reddit', default=False, action='store_true',
                         help='Enable Reddit features')
-    parser.add_argument('-mf', '--most_frequent', nargs='?', type=int, const=50,
+    parser.add_argument('-mf', '--most_frequent', nargs='?', type=int, const=100,
                         help='Enable most frequent words per class features')
     parser.add_argument('-b', '--bow', default=False, dest='bow', action='store_true', help='Enable BOW features')
     parser.add_argument('-p', '--pos', default=False, dest='pos', action='store_true', help='Enable POS features')
+    parser.add_argument('-w2v', '--word2vec', nargs='?', type=int, const=300,
+                        help='Enable word2vec word embeddings and specify vector size (default: 300)')
+    parser.add_argument('-ft', '--fasttext', default=False, action='store_true',
+                        help='Enable fastText word embeddings with default vector size 300')
     parser.add_argument('-hmm', '--hiddenMarkovModel', default=False, dest='hmm', action='store_true', help='Get HMM features instead of stance preprocessing features')
     parser.add_argument('-c', '--corpus', default=False, dest='corpus', action='store_true',
                         help='Write a corpus file for Reddit data')

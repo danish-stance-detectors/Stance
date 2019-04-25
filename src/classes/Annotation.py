@@ -355,13 +355,29 @@ class RedditDataset:
 
     def get_frequent_words(self, take_count):
         histogram = {}
+        word_count = {}
         for idx in range(len(self.freq_histogram)):
             keys = [(self.freq_histogram[idx][key], key) for key in self.freq_histogram[idx].keys()]
             keys.sort()
             keys.reverse()
 
             histogram[idx] = keys[:take_count]
-        return histogram
+
+            for (freq, word) in histogram[idx]:
+                if word in word_count:
+                    word_count[word] = word_count[word] + 1
+                else:
+                    word_count[word] = 1
+
+        unique_histograms = {0: [], 1: [], 2: [], 3: []}
+
+        for key, values in histogram.items():
+            for (freq, word) in values:
+                if word_count[word] == 4:
+                    continue
+                unique_histograms[key].append(word)
+
+        return unique_histograms
 
     def iterate_annotations(self):
         for anno_id, annotation in self.annotations.items():
