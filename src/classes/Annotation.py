@@ -8,6 +8,7 @@ url_tag = 'urlurlurl'
 regex_url = re.compile(
     r"([(\[]?(https?://)|(https?://www.)|(www.))(?:[a-zæøåA-ZÆØÅ]|[0-9]|[$-_@.&+]|[!*(),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+"
 )
+punctuation = re.compile('[^a-zA-ZæøåÆØÅ0-9]')
 quote_tag = 'refrefref'
 regex_quote = re.compile(r">(.+?)\n")
 
@@ -89,10 +90,14 @@ class RedditAnnotation:
         self.user_has_verified_email = comment_json["user"]["has_verified_email"]
 
     def tokenize(self, text):
-        # Remove non-alphabetic characters and tokenize
-        text_ = re.sub("[^a-zA-ZæøåÆØÅ0-9]", " ", text)  # replace with space
         # Convert all words to lower case and tokenize
-        return word_tokenize(text_.lower(), language='danish')
+        text_tokens = word_tokenize(text.lower(), language='danish')
+        tokens = []
+        # Remove non-alphabetic characters, not contained in abbreviations
+        for token in text_tokens:
+            if not punctuation.match(token):
+                tokens.append(token)
+        return tokens
 
     def filter_reddit_quotes(self, text):
         """filters text of all annotations to replace reddit quotes with 'refrefref'"""
