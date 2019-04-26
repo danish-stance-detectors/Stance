@@ -12,7 +12,7 @@ reddit_sentences = '../data/corpus/reddit_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
 datafolder = '../data/'
 fasttext_model = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300.kv')
+fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300_dsl_reddit.kv')
 word2vec_data = lambda dim: os.path.join(datafolder,
                                          'word2vec/dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
 
@@ -97,7 +97,7 @@ def load_and_train_fasttext(corpus_file_path):
     ft_model.build_vocab(sentences, update=True)
     print('Done')
     print('Training...')
-    ft_model.train(sentences=sentences, total_examples=sentences.__len__(), epochs=self.iter)
+    ft_model.train(sentences=sentences, total_examples=sentences.__len__(), epochs=ft_model.epochs)
     print('Done')
     print('Saving word vectors')
     ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_dsl_reddit.kv'))
