@@ -3,6 +3,7 @@ import re, copy
 import word_embeddings
 from sklearn.model_selection import train_test_split
 from classes.afinn_sentiment import get_afinn_sentiment
+from parse_synonyms import load_synonyms
 
 url_tag = 'urlurlurl'
 regex_url = re.compile(
@@ -11,6 +12,8 @@ regex_url = re.compile(
 punctuation = re.compile('[^a-zA-ZæøåÆØÅ0-9]')
 quote_tag = 'refrefref'
 regex_quote = re.compile(r">(.+?)\n")
+
+synonyms = load_synonyms()
 
 
 class RedditAnnotation:
@@ -107,15 +110,29 @@ class RedditAnnotation:
         """filters text of all annotations to replace 'URLURLURL'"""
         return regex_url.sub(url_tag, text)
 
-    def alter_id_and_text(self, threshold=0.8, pct_words_to_replace=0.25, early_stop=True):
+    def alter_id_and_text(self, threshold=0.7, words_to_replace=5, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
-        words_to_replace = int(len(self.tokens)*pct_words_to_replace)
         best_candidates = []
         for idx in range(len(self.tokens)):
+            if early_stop and len(best_candidates) == words_to_replace:
+                break
             token_old = self.tokens[idx]
             if token_old == quote_tag.lower() or token_old == url_tag.lower():
                 continue
+            if token_old in synonyms:
+                token_synonyms = synonyms[token_old]
+                found = False
+                for token_synonym in token_synonyms:
+                    # if ' ' in token_synonym:
+                    #     TODO: Handle synonyms with multiple words
+                    if word_embeddings.in_vocab(token_synonym):
+                        sim = word_embeddings.word_vector_similarity(token_old, token_synonym)
+                        best_candidates.append((idx, token_synonym, sim))
+                        found = True
+                        break
+                if found:
+                    continue
             top_two = word_embeddings.most_similar_word(token_old)[:2]
             if top_two[0][0].lower() == token_old:
                 if len(top_two) == 1:  # if language model failed to find similar words
@@ -126,17 +143,18 @@ class RedditAnnotation:
             sim_word = sim_word.lower()
             if sim > threshold:
                 best_candidates.append((idx, sim_word, sim))
-            if early_stop and len(best_candidates) == words_to_replace:
-                break
         if not early_stop:
             best_candidates.sort(key=lambda tup: tup[2])
         for idx, token_new, _ in best_candidates[:words_to_replace]:
             self.tokens[idx] = token_new
-        sim_sum = 0
-        for _, _, sim in best_candidates:
-            sim_sum += sim
-        avg_sim = sim_sum/len(best_candidates)
-        return avg_sim
+        if len(best_candidates) > 0:
+            sim_sum = 0
+            for _, _, sim in best_candidates:
+                sim_sum += sim
+            avg_sim = sim_sum/len(best_candidates)
+            return avg_sim, len(best_candidates)
+        else:
+            return 0.0, 0
 
 class RedditSubmission:
     def __init__(self, source):
@@ -187,6 +205,7 @@ class RedditDataset:
         self.karma_min = 0
         # dictionary at idx #num is used for label #num, example: support at 0
         self.freq_histogram = [dict(), dict(), dict(), dict()]
+        self.unique_freq_histogram = {}
         self.bow = set()
         self.freq_tri_gram = [dict(), dict(), dict(), dict()]
         self.sdqc_to_int = {
@@ -256,16 +275,19 @@ class RedditDataset:
         with open('super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
             for i, annotation in enumerate(annotations):
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # Only look at SDQ
+                    words_to_replace = int(len(annotation.tokens) * pct_words_to_replace)
                     annotation_copy = copy.deepcopy(annotation)
-                    avg_sim = annotation_copy.alter_id_and_text(
-                        pct_words_to_replace=pct_words_to_replace,
+                    avg_sim, n_replacements = annotation_copy.alter_id_and_text(
+                        words_to_replace=words_to_replace,
                         early_stop=early_stop
                     )
-                    replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
+                    if not n_replacements > int(words_to_replace/2):
+                        continue
+                    # replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
                     outfile.write('old: ' + ' '.join(annotation.tokens) + '\n')
                     outfile.write('new: ' + ' '.join(annotation_copy.tokens) + '\n')
-                    outfile.write('avg replacement sim: %.2f\n' % avg_sim)
-                    outfile.write('sentence cosine sim: %.2f\n\n' % replacement_sim)
+                    outfile.write('avg replacement sim: %.2f\n\n' % avg_sim)
+                    # outfile.write('sentence cosine sim: %.2f\n\n' % replacement_sim)
                     compute_similarity(
                         annotation_copy,
                         self.anno_to_prev[annotation.comment_id],
@@ -366,6 +388,8 @@ class RedditDataset:
         
 
     def get_frequent_words(self, take_count):
+        if self.unique_freq_histogram:
+            return self.unique_freq_histogram
         histogram = {}
         word_count = {}
         for idx in range(len(self.freq_histogram)):
@@ -388,6 +412,8 @@ class RedditDataset:
                 if word_count[word] == 4:
                     continue
                 unique_histograms[key].append(word)
+
+        self.unique_freq_histogram = unique_histograms
 
         return unique_histograms
 

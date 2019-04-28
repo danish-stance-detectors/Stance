@@ -152,6 +152,25 @@ def most_similar_word(word):
         return most_sim
     return [(word, 1)]
 
+word_sim_cache = {}
+def word_vector_similarity(w1, w2):
+    if (w1, w2) in word_sim_cache:
+        return word_sim_cache[(w1, w2)]
+    if (w2, w1) in word_sim_cache:
+        return word_sim_cache[(w2, w1)]
+    global wv_model
+    if wv_model and w1 in wv_model.vocab and w2 in wv_model.vocab:
+        sim = wv_model.similarity(w1, w2)
+        word_sim_cache[(w1, w2)] = sim
+        word_sim_cache[(w2, w1)] = sim
+        return sim
+    return 0
+
+def in_vocab(word):
+    if wv_model and word in wv_model.vocab:
+        return True
+    return False
+
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()

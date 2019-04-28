@@ -9,11 +9,11 @@
 import re
 
 
-def get_synonyms():
+def load_synonyms():
     syn_dict = {}
     vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?)|(/\w*)')
 
-    with open('ddo-synonyms.csv', 'r', encoding='utf8') as infile:
+    with open('../data/corpus/ddo-synonyms.csv', 'r', encoding='utf8') as infile:
         for line in infile:
             # lines are in the format:
             # headword + TAB + a comma-separated list of synonyms
@@ -28,7 +28,6 @@ def get_synonyms():
                     syn_dict[headword] = [synonym]
     return syn_dict
 
-d = get_synonyms()
-with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
-    for headword, synonyms in d.items():
-        outfile.write('%s: %s\n' % (headword, ', '.join(synonyms)))
+# with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
+#     for headword, synonyms in load_synonyms().items():
+#         outfile.write('%s:%s\n' % (headword, ','.join(synonyms)))
