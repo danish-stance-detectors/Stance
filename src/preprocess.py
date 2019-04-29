@@ -197,6 +197,7 @@ def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.
                 tokens_clean = []
                 for token in tokens:
                     if token and not punctuation.match(token):
+                        token = re.sub(r'\.\.$', '', token)
                         tokens_clean.append(token)
                 if not tokens_clean:
                     continue
