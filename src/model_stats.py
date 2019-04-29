@@ -12,9 +12,13 @@ def print_confusion_matrix(labels_true, labels_pred, act_labels):
     sdqc_acc = cm.diagonal()
     acc = sk.accuracy_score(labels_true, labels_pred)
     f1 = sk.f1_score(labels_true, labels_pred, average='macro')
+    precision = sk.precision_score(labels_true, labels_pred)
+    recall = sk.recall_score(labels_true, labels_pred)
     print("SDQC acc:", sdqc_acc)
     print("Accuracy: %.5f" % acc )
     print("F1-macro:", f1)
+    print("precision:", precision)
+    print("recall:", recall)
 
 def plot_confusion_matrix(y_true, y_pred,
                           normalize=False,
