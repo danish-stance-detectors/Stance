@@ -33,29 +33,29 @@ def get_instances(filename=datafile, delimiter=tab):
     return instances, n_features, feature_mapping
 
 def get_features():
-    return {'text': False, 'lexicon': False,
-                    'sentiment': False, 'reddit': False, 'most_freq': False, 'bow': False, 'pos': False, 'wembs': False}
+    return {'text': True, 'lexicon': True,
+                    'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}
 
-def select_features(data, feature_mapping, text=False, lexicon=False,
-                    sentiment=False, reddit=False, most_freq=False, bow=False, pos=False, wembs=False):
+
+def select_features(data, feature_mapping, config_map):
     filtered_data = []
     for instance in data:
         selected_features = []
-        if text:
+        if config_map['text']:
             selected_features.extend(instance[feature_mapping['text']])
-        if sentiment:
+        if config_map['sentiment']:
             selected_features.extend(instance[feature_mapping['sentiment']])
-        if lexicon:
+        if config_map['lexicon']:
             selected_features.extend(instance[feature_mapping['lexicon']])
-        if reddit:
+        if config_map['reddit']:
             selected_features.extend(instance[feature_mapping['reddit']])
-        if most_freq:
+        if config_map['most_freq']:
             selected_features.extend(instance[feature_mapping['most_frequent']])
-        if bow:
+        if config_map['bow']:
             selected_features.extend(instance[feature_mapping['bow']])
-        if pos:
+        if config_map['pos']:
             selected_features.extend(instance[feature_mapping['pos']])
-        if wembs:
+        if config_map['wembs']:
             if feature_mapping['word2vec']:
                 selected_features.extend(instance[feature_mapping['word2vec']])
             else:

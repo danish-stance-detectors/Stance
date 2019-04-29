@@ -12,7 +12,7 @@ reddit_sentences = '../data/corpus/reddit_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
 datafolder = '../data/'
 fasttext_model = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300.kv')
+fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300_dsl_reddit.kv')
 word2vec_data = lambda dim: os.path.join(datafolder,
                                          'word2vec/dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
 
@@ -37,6 +37,7 @@ class MySentences:
         for filename in self.filenames:
             with open(filename, 'r', encoding='utf8') as corpus:
                 n += len(corpus.readlines())
+        return n
 
 def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=False, 
                         vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
@@ -96,10 +97,10 @@ def load_and_train_fasttext(corpus_file_path):
     ft_model.build_vocab(sentences, update=True)
     print('Done')
     print('Training...')
-    ft_model.train(sentences=sentences, total_examples=sentences.__len__, epochs=self.iter)
+    ft_model.train(sentences=sentences, total_examples=sentences.__len__(), epochs=ft_model.epochs)
     print('Done')
     print('Saving word vectors')
-    ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_reddit.kv'))
+    ft_model.wv.save(os.path.join(fasttext_path, 'fasttext_da_300_dsl_reddit.kv'))
     print('Done')
 
 
@@ -151,6 +152,25 @@ def most_similar_word(word):
         return most_sim
     return [(word, 1)]
 
+word_sim_cache = {}
+def word_vector_similarity(w1, w2):
+    if (w1, w2) in word_sim_cache:
+        return word_sim_cache[(w1, w2)]
+    if (w2, w1) in word_sim_cache:
+        return word_sim_cache[(w2, w1)]
+    global wv_model
+    if wv_model and w1 in wv_model.vocab and w2 in wv_model.vocab:
+        sim = wv_model.similarity(w1, w2)
+        word_sim_cache[(w1, w2)] = sim
+        word_sim_cache[(w2, w1)] = sim
+        return sim
+    return 0
+
+def in_vocab(word):
+    if wv_model and word in wv_model.vocab:
+        return True
+    return False
+
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()
@@ -174,7 +194,7 @@ def main(argv):
         train_save_word2vec([dsl_sentences, reddit_sentences], word2vec_format=word2vec_format , vector_size=vector_size,
                         architecture=architecture, train_algorithm=train_algorithm, workers=workers)
     if args.fasttext_train:
-        load_and_train_fasttext(reddit_sentences)
+        load_and_train_fasttext([dsl_sentences, reddit_sentences])
 
 if __name__ == "__main__":
     main(sys.argv[1:])
