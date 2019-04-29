@@ -173,6 +173,13 @@ def compute_similarity(annotation, previous, source, branch_tokens, is_source=Fa
         annotation.sim_to_src = word_embeddings.cosine_similarity(annotation.tokens, source.tokens)
         annotation.sim_to_prev = word_embeddings.cosine_similarity(annotation.tokens, previous.tokens)
 
+def read_lexicon(file_path):
+    """Loads lexicon file given path. Assumes file has one word per line"""
+    with open(file_path, "r", encoding='utf8') as lexicon_file:
+        return set([line.strip().lower() for line in lexicon_file.readlines()])
+
+def count_lexicon_occurence(words, lexion):
+    return sum([1 if word in lexion else 0 for word in words])
 
 class RedditDataset:
     def __init__(self):
@@ -197,7 +204,11 @@ class RedditDataset:
             'tripDotCount': [0, 0],
             'q_mark_count': [0, 0],
             'e_mark_count': [0, 0],
-            'cap_count': [0, 0]
+            'cap_count': [0, 0],
+            'swear_count': [0, 0],
+            'negation_count': [0, 0],
+            'positive_smiley_count': [0, 0],
+            'negative_smiley_count': [0, 0]
         }
         self.min_i = 0
         self.max_i = 1
@@ -214,6 +225,14 @@ class RedditDataset:
             "Querying": 2,
             "Commenting": 3
         }
+
+        self.positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
+        self.negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
+        self.swear_words = read_lexicon('../data/lexicon/swear_words.txt')
+        swear_words_en = read_lexicon('../data/lexicon/swear_words_en.txt')
+        for word in swear_words_en:
+            self.swear_words.add(word)
+        self.negation_words = read_lexicon('../data/lexicon/negation_words.txt')
 
     def add_annotation(self, annotation):
         """Add to self.annotations. Should only be uses for testing purposes"""
@@ -333,6 +352,12 @@ class RedditDataset:
         self.handle(self.min_max['q_mark_count'], annotation.text.count('?'))
         self.handle(self.min_max['e_mark_count'], annotation.text.count('!'))
         self.handle(self.min_max['cap_count'], sum(1 for c in annotation.text if c.isupper()))
+        self.handle(self.min_max['swear_count'], count_lexicon_occurence(annotation.tokens, self.swear_words))
+        self.handle(self.min_max['negation_count'], count_lexicon_occurence(annotation.tokens, self.negation_words))
+        self.handle(self.min_max['positive_smiley_count'], count_lexicon_occurence(annotation.text.split(),
+                                                                                   self.positive_smileys))
+        self.handle(self.min_max['negative_smiley_count'], count_lexicon_occurence(annotation.text.split(),
+                                                                                   self.negative_smileys))
         
         word_len = len(annotation.tokens)
         if not word_len == 0:

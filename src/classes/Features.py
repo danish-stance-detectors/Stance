@@ -6,6 +6,7 @@ import re
 
 # Module for extracting features from comment annotations
 
+sarcasm_token = re.compile(r'/[sS][^A-ZÆØÅa-zæøå0-9]')
 
 class FeatureExtractor:
 
@@ -15,13 +16,7 @@ class FeatureExtractor:
             self.dataset = RedditDataset()
         else:
             self.dataset = dataset
-
-        self.swear_words = []
-        self.negative_smileys = []
-        self.positive_smileys = []
-        self.negation_words = []
         self.bow_words = set()
-
         self.sdqc_to_int = {
             "Supporting": 0,
             "Denying": 1,
@@ -52,9 +47,7 @@ class FeatureExtractor:
         if sentiment:
             feature_vec.append(self.normalize(get_afinn_sentiment(comment.text), 'afinn_score'))
         if reddit:
-            reddit_features = self.reddit_comment_features(comment)
-            reddit_features.extend(self.user_features(comment))
-            feature_vec.append(reddit_features)
+            feature_vec.append(self.reddit_comment_features(comment))
         if most_freq:
             feature_vec.append(self.most_frequent_words_for_label(comment.tokens, most_freq))
         if bow:
@@ -72,101 +65,63 @@ class FeatureExtractor:
         return comment.comment_id, parent_sdqc, sub_sdqc, feature_vec
 
     def text_features(self, text, tokens):
-        # number of chars
+        # **Binary occurrence features**
+        period = int('.' in text)
+        e_mark = int('!' in text)
+        q_mark = int('?' in text or any(word.startswith('hv') for word in text.split()))
+        hasTripDot = int('...' in text)
+
+        # **(Normalized) count features**
         txt_len = self.normalize(len(text), 'txt_len') if len(text) > 0 else 0
+        url_count = self.normalize(tokens.count('urlurlurl'), 'url_count')
+        quote_count = self.normalize(tokens.count('refrefref'), 'quote_count')
+        # longest sequence of capital letters, default empty for 0 length
+        cap_sequence_max_len = len(max(re.findall(r"[A-ZÆØÅ]+", text), key=len, default=''))
+        cap_sequence_max_len = self.normalize(cap_sequence_max_len, 'cap_sequence_max_len')
+        tripDotCount = self.normalize(text.count('...'), 'tripDotCount')
+        q_mark_count = self.normalize(text.count('?'), 'q_mark_count')
+        e_mark_count = self.normalize(text.count('!'), 'e_mark_count')
+        # Ratio of capital letters
+        cap_count = self.normalize(sum(1 for c in text if c.isupper()), 'cap_count')
+        cap_ratio = float(cap_count) / float(len(text)) if len(text) > 0 else 0.0
         # number of words
         tokens_len = 0
         avg_word_len = 0
         if len(tokens) > 0:
             tokens_len = self.normalize(len(tokens), 'tokens_len')
             avg_word_len_true = sum([len(word) for word in tokens]) / len(tokens)
-            avg_word_len = self.normalize(avg_word_len_true,'avg_word_len')
+            avg_word_len = self.normalize(avg_word_len_true, 'avg_word_len')
+        return [period, e_mark, q_mark, hasTripDot, url_count, quote_count, tripDotCount, q_mark_count,
+                e_mark_count, cap_ratio, txt_len, tokens_len, avg_word_len, cap_sequence_max_len]
 
-        # Period (.)
-        period = int('.' in text)
-        # Exclamation mark (!)
-        e_mark = int('!' in text)
-        # Question mark(?)
-        q_mark = int('?' in text or any(word.startswith('hv') for word in text.split()))
-        # Edit in text
-        edited = int('Edit:' in text)
-
-        # dotdotdot
-        hasTripDot = int('...' in text)
-
-        url_count = self.normalize(tokens.count('urlurlurl'), 'url_count')
-
-        quote_count = self.normalize(tokens.count('refrefref'), 'quote_count')
-        
-        # longest sequence of capital letters, default empty for 0 length
-        cap_sequence_max_len = len(max(re.findall(r"[A-ZÆØÅ]+", text), key=len, default=''))  # TODO: Normalize?
-        cap_sequence_max_len = self.normalize(cap_sequence_max_len, 'cap_sequence_max_len')
-        
-        # dotdotdot count
-        tripDotCount = self.normalize(text.count('...'), 'tripDotCount')
-
-        # Question mark count
-        q_mark_count = self.normalize(text.count('?'), 'q_mark_count')
-
-        # Exclamation mark count
-        e_mark_count = self.normalize(text.count('!'), 'e_mark_count')
-
-        # Ratio of capital letters
-        cap_count = self.normalize(sum(1 for c in text if c.isupper()), 'cap_count')
-
-        cap_ratio = float(cap_count) / float(len(text)) if len(text) > 0 else 0.0
-        return [period,
-                e_mark,
-                q_mark,
-                hasTripDot,
-                url_count,
-                quote_count,
-                tripDotCount,
-                q_mark_count,
-                e_mark_count,
-                cap_ratio,
-                txt_len,
-                tokens_len,
-                avg_word_len,
-                cap_sequence_max_len]
-
-    def user_features(self, comment):
-        karma_norm = self.normalize(comment.user_karma, 'karma')
-        return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee), int(comment.user_has_verified_email)]
-
-    # TODO: find special word cases
     def special_words_in_text(self, tokens, text):
-        if not self.positive_smileys:
-            self.positive_smileys = read_lexicon('../data/lexicon/positive_smileys.txt')
-        if not self.negative_smileys:
-            self.negative_smileys = read_lexicon('../data/lexicon/negative_smileys.txt')
-        if not self.swear_words:
-            self.swear_words = read_lexicon('../data/lexicon/swear_words.txt')
-        if not self.negation_words:
-            self.negation_words = read_lexicon('../data/lexicon/negation_words.txt')
+        swear_count = self.count_lexicon_occurence(tokens, self.dataset.swear_words)
+        negation_count = self.count_lexicon_occurence(tokens, self.dataset.negation_words)
+        positive_smiley_count = self.count_lexicon_occurence(text.split(), self.dataset.positive_smileys)
+        negative_smiley_count = self.count_lexicon_occurence(text.split(), self.dataset.negative_smileys)
 
-        swear_count = self.count_lexicon_occurence(tokens, self.swear_words)
-        negation_count = self.count_lexicon_occurence(tokens, self.negation_words)
-        positive_smiley_count = self.count_lexicon_occurence(text.split(), self.positive_smileys)
-        negative_smiley_count =  self.count_lexicon_occurence(text.split(), self.negative_smileys)
-
-        return [swear_count, negation_count, positive_smiley_count, negative_smiley_count]  # TODO: Normalize
+        return [
+            self.normalize(swear_count, 'swear_count'),
+            self.normalize(negation_count, 'negation_count'),
+            self.normalize(positive_smiley_count, 'positive_smiley_count'),
+            self.normalize(negative_smiley_count, 'negative_smiley_count')]
 
     def reddit_comment_features(self, comment):
+        karma_norm = self.normalize(comment.user_karma, 'karma')
+        edited = int('edit:' in comment.text.lower())
+        sarcasm = 1 if sarcasm_token.search(comment.text) else 0
         upvotes_norm = self.normalize(comment.upvotes, 'upvotes')
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
-        return [upvotes_norm, reply_count_norm, int(comment.is_submitter)]
+        return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee),
+                int(comment.user_has_verified_email), upvotes_norm, reply_count_norm,
+                int(comment.is_submitter), edited, sarcasm]
 
     def most_frequent_words_for_label(self, tokens, n_most):
-        # self.annotations.make_frequent_words() must have been called for this to work
-        
         vec = []
-
         histograms = self.dataset.get_frequent_words(n_most)
         for sdqc_id, histogram in histograms.items():
             for freq_token in histogram:
                 vec.append(int(freq_token in tokens))
- 
         return vec
 
     # Gets BOW presence (binary) for tokens
@@ -180,17 +135,13 @@ class FeatureExtractor:
         return sum([1 if word in lexion else 0 for word in words])
 
     def normalize(self, x_i, prop):
+        if x_i == 0:
+            return 0
         min_x = self.dataset.get_min(prop)
         max_x = self.dataset.get_max(prop)
         if max_x-min_x != 0:
             return (x_i-min_x)/(max_x-min_x)
         
         return x_i
-
-
-def read_lexicon(file_path):  # TODO: Maybe make class method?
-    """Loads lexicon file given path. Assumes file has one word per line"""
-    with open(file_path, "r", encoding='utf8') as lexicon_file:
-        return [line.strip().lower() for line in lexicon_file.readlines()]
 
     ### END OF HELPER METHODS ###
