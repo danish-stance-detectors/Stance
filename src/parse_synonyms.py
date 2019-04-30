@@ -32,7 +32,7 @@ def find_paren_alternatives(line):
             final_versions.append(version)
     return final_versions
 
-def find_slash_alternatives(line):  # TODO: Hande multiple in one sentence
+def find_slash_alternatives(line): 
     tokens = line.split()
     alternatives = []
     pos = 0
@@ -48,8 +48,15 @@ def find_slash_alternatives(line):  # TODO: Hande multiple in one sentence
         left = ' '.join(tokens[:pos])
         right = ' '.join(tokens[pos+1:])
         for alternative in alternatives:
-            lines.append('%s %s %s' % (left, alternative, right))
-    return lines
+            lines.append(('%s %s %s' % (left, alternative, right)).strip())
+    final_alternatives = []
+    for line in lines:
+        if '/' in line:
+            new_alternatives = find_slash_alternatives(line)
+            final_alternatives.extend(new_alternatives)
+        else:
+            final_alternatives.append(line)
+    return final_alternatives
 
 def find_alternatives(line):
     if '(' and ')' in line:
