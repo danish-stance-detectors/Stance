@@ -210,7 +210,7 @@ def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-sub', '--sub_sample', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
-    parser.add_argument('-sup', '--super_sample', nargs='?', type=int, const=0.25,
+    parser.add_argument('-sup', '--super_sample', nargs='?', type=float, const=0.25,
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
     parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
