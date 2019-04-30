@@ -9,8 +9,9 @@
 import re
 
 all_vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?|(/\w*))')  # (..) or '..' or '/'
-#vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?)')  # (..) or '..'
+# vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?)')  # (..) or '..'
 dots = re.compile(r'(\s?\.\.\s?)|(,\s)')
+
 
 def find_paren_alternatives(line):
     versions = []
@@ -58,6 +59,7 @@ def find_slash_alternatives(line):
             final_alternatives.append(line)
     return final_alternatives
 
+
 def find_alternatives(line):
     if '(' and ')' in line:
         versions = find_paren_alternatives(line)
@@ -68,6 +70,7 @@ def find_alternatives(line):
     if '/' in line:
         return find_slash_alternatives(line)
     return [line]  # none found
+
 
 def load_synonyms():
     syn_dict = {}
@@ -88,6 +91,7 @@ def load_synonyms():
     return syn_dict
 
 
-with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
-    for h, s in load_synonyms().items():
-        outfile.write('%s:%s\n' % (h, ';'.join(s)))
+def write_out_parsed_synonyms():
+    with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
+        for h, s in load_synonyms().items():
+            outfile.write('%s:%s\n' % (h, ';'.join(s)))
