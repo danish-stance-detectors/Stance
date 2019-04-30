@@ -14,7 +14,7 @@ datafolder = '../data/'
 fasttext_model = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
 fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_dsl_sentences_reddit_sentences_300_cbow_negative.kv')
 word2vec_data = lambda dim: os.path.join(datafolder,
-                                         'word2vec/w2v_dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
+                                         'word2vec/word2vec_dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
 save_path = lambda algo: word2vec_path if algo == 'word2vec' else fasttext_path
 
 wv_model = None
