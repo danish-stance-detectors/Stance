@@ -10,7 +10,7 @@ import re
 
 all_vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?|(/\w*))')  # (..) or '..' or '/'
 # vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?)')  # (..) or '..'
-dots = re.compile(r'(\s?\.\.\s?)|(,\s)')
+dots = re.compile(r'(\s?\.\.\s?)') # |(,\s)
 
 
 def find_paren_alternatives(line):
@@ -21,7 +21,7 @@ def find_paren_alternatives(line):
         left = line[:lpar].strip()
         right = line[rpar+1:].strip()
         body = line[lpar+1:rpar].strip()
-        body = dots.sub('', body).rstrip(',').strip()
+        body = dots.sub('', body).strip() # .rstrip(',')
         versions.append(('%s %s' % (left, right)).strip())
         versions.append(('%s %s %s' % (left, body, right)).strip())
     final_versions = []
@@ -88,10 +88,20 @@ def load_synonyms():
                         syn_dict[headword].append(synonym)
                     else:
                         syn_dict[headword] = [synonym]
-    return syn_dict
+    syn_dict_final = {}
+    for h, s in syn_dict.items():
+        syn_dict_final[h] = s
+        if re.search(r',\s[^.+]', h):
+            if ', ..' in h:
+                print('Comma fail')
+                continue
+            v2 = h.replace(',', '')
+            syn_dict_final[v2] = s
+    return syn_dict_final
 
 
 def write_out_parsed_synonyms():
     with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
         for h, s in load_synonyms().items():
             outfile.write('%s:%s\n' % (h, ';'.join(s)))
+write_out_parsed_synonyms()
