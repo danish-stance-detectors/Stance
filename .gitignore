@@ -8,7 +8,6 @@ data/semeval_rumour_data/semeval2017-test-data
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
-output/*
 !output/README.md
 
 
