@@ -1,10 +1,8 @@
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, RandomizedSearchCV
-from sklearn.metrics import classification_report, confusion_matrix
 import numpy as np
-import matplotlib.pyplot as plt
 from scipy.stats import randint as sp_randint
 from scipy.stats import expon as sp_expon
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -44,9 +42,11 @@ settings = [
 ]
 
 settings_rand = [
-    ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': sp_expon(scale=.1), 'C': sp_randint(1, 1000),
-                        'class_weight': ['balanced', None]}),
-    # ('linear-svm', SVC(), {'kernel': ['linear'], 'C': sp_randint(1, 1000), 'class_weight': ['balanced', None]}),
+    # ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': sp_expon(scale=.1), 'C': sp_randint(1, 1000),
+    #                     'class_weight': ['balanced', None]}),
+    ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
+                                 'class_weight': ['balanced', None], 'max_iter': [100000],
+                                 'tol': sp_expon(scale=1e-4)}),
     # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
     #                                     'max_depth': [3, None], "min_samples_split": sp_randint(2, 11),
     #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
