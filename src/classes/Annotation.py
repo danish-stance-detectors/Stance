@@ -1,5 +1,5 @@
 from nltk import word_tokenize
-import re, copy
+import re, copy, random
 import word_embeddings
 from sklearn.model_selection import train_test_split
 from classes.afinn_sentiment import get_afinn_sentiment
@@ -14,7 +14,7 @@ quote_tag = 'refrefref'
 regex_quote = re.compile(r">(.+?)\n")
 
 synonyms = load_synonyms()
-
+rand = random.Random(42)
 
 class RedditAnnotation:
         
@@ -110,7 +110,23 @@ class RedditAnnotation:
         """filters text of all annotations to replace 'URLURLURL'"""
         return regex_url.sub(url_tag, text)
 
-    def alter_id_and_text(self, threshold=0.7, words_to_replace=5, early_stop=True):
+    def alter_id_and_text(self, words_to_replace=5, early_stop=True):
+        self.comment_id = self.comment_id + '_'
+        replacements = 0
+        old_text = self.text
+        new_text = ''
+        for headwords, syns in synonyms.items():
+            if early_stop and replacements == words_to_replace:
+                break
+            if headwords in self.text:  # TODO: Regex check if word is contained
+                new_text = old_text.replace(headwords, syns[rand.randint(0, len(syns))])
+                replacements += 1
+        self.text = new_text
+        self.tokens = self.tokenize(self.text)
+        return 0.0, replacements
+
+
+    def alter_id_and_text2(self, threshold=0.7, words_to_replace=5, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
         best_candidates = []
