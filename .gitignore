@@ -5,7 +5,6 @@ data/annotated/**/*.json
 data/preprocessed/*.csv
 data/semeval_rumour_data/semeval2017-task8-dataset
 data/semeval_rumour_data/semeval2017-test-data
-data/semeval_rumour_data/semeval2017-test-labels
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
