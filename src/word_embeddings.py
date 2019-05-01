@@ -12,12 +12,14 @@ reddit_sentences = '../data/corpus/reddit_sentences.txt'
 wiki_sentences = '../../Data/Wiki_Corpus/wiki_sentences.txt'
 datafolder = '../data/'
 fasttext_model = os.path.join(datafolder, 'fasttext/cc.da.300.bin')
-fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_da_300_dsl_reddit.kv')
+fasttext_data = os.path.join(datafolder, 'fasttext/fasttext_dsl_sentences_reddit_sentences_300_cbow_negative.kv')
 word2vec_data = lambda dim: os.path.join(datafolder,
-                                         'word2vec/dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
+                                         'word2vec/word2vec_dsl_sentences_reddit_sentences_{0}_cbow_negative.kv'.format(dim))
+save_path = lambda algo: word2vec_path if algo == 'word2vec' else fasttext_path
 
 wv_model = None
 vector_size = 300
+
 
 # memory friendly iterator
 class MySentences:
@@ -39,19 +41,23 @@ class MySentences:
                 n += len(corpus.readlines())
         return n
 
-def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=False, 
-                        vector_size=100, architecture='cbow', train_algorithm='negative', workers=4):
+
+def train_save_word_embeddings(corpus_file_path, algo, vector_dim, word2vec_format=False, save_model=False,
+                               architecture='cbow', train_algorithm='negative', workers=4):
     """architecture: 'skim-gram' or 'cbow'. train_algorithm: 'softmax' or 'negative'"""
     sentences = MySentences(corpus_file_path)
     arch = 1 if architecture=='skip-gram' else 0
     train = 1 if train_algorithm=='softmax' else 0
-    print('Training...')
-    model = Word2Vec(sentences=sentences, size=vector_size, workers=workers, sg=arch, hs=train)
+    print('Training %s with size %d' % (algo, vector_dim))
+    if algo == 'word2vec':
+        model = Word2Vec(sentences=sentences, size=vector_dim, workers=workers, sg=arch, hs=train)
+    else:  # fasttext
+        model = FastText(sentences=sentences, size=vector_dim, workers=workers, sg=arch, hs=train)
     print('Done!')
-    s = ''
+    s = algo + '_'
     for name in corpus_file_path:
         s += name.split('/')[-1].split('.')[0] + '_'
-    filename = "{0}{1}_{2}_{3}".format(s, vector_size, architecture, train_algorithm)
+    filename = "{0}{1}_{2}_{3}".format(s, vector_dim, architecture, train_algorithm)
     if save_model:
         print('Saving model in {0}.model'.format(filename))
         model.save(os.path.join(word2vec_path, "{}.model".format(filename)))
@@ -59,9 +65,10 @@ def train_save_word2vec(corpus_file_path, word2vec_format=False, save_model=Fals
         print('Saving word embeddings in original C word2vec (.txt) format in {}.txt'.format(filename))
         model.wv.save_word2vec_format(os.path.join(word2vec_path, "{}.txt".format(filename)))
     print('Saving word embeddings in {0}.kv'.format(filename))
-    model.wv.save(os.path.join(word2vec_path, "{}.kv".format(filename)))
+    model.wv.save(os.path.join(save_path(algo), "{}.kv".format(filename)))
     print('Saved!')
     return model
+
 
 def save_fasttext(path_to_vectors, saved_filename):
     model = load_word_embeddings_bin(path_to_vectors)
@@ -80,6 +87,7 @@ def load_saved_word_embeddings(w2v, fasttext):
         wv_model = KeyedVectors.load(fasttext_data)
     return wv_model
 
+
 def load_word_embeddings_bin(filename, algorithm='fasttext'):
     print('loading model...')
     global wv_model
@@ -89,6 +97,7 @@ def load_word_embeddings_bin(filename, algorithm='fasttext'):
         wv_model = KeyedVectors.load_word2vec_format(filename, encoding='utf8', binary=True)
     print('Done!')
     return wv_model
+
 
 def load_and_train_fasttext(corpus_file_path):
     ft_model = load_word_embeddings_bin(fasttext_model)
@@ -108,7 +117,7 @@ def avg_word_emb(tokens):
     global wv_model
     if not wv_model:
         return None
-    vec = np.zeros(vector_size) # word embedding
+    vec = np.zeros(vector_size)  # word embedding
     # make up for varying lengths with zero-padding
     n = len(tokens)
     if n == 0:
@@ -119,6 +128,7 @@ def avg_word_emb(tokens):
             vec += wv_model[token]
     # Average word embeddings
     return (vec/n).tolist()
+
 
 def cosine_similarity(one, other):
     global wv_model
@@ -141,6 +151,7 @@ def cosine_similarity(one, other):
     else:
         return 0.  # no similarity if one set contains 0 words
 
+
 most_sim_cache = {}
 def most_similar_word(word):
     if word in most_sim_cache:
@@ -151,6 +162,7 @@ def most_similar_word(word):
         most_sim_cache[word] = most_sim
         return most_sim
     return [(word, 1)]
+
 
 word_sim_cache = {}
 def word_vector_similarity(w1, w2):
@@ -166,35 +178,39 @@ def word_vector_similarity(w1, w2):
         return sim
     return 0
 
+
 def in_vocab(word):
     if wv_model and word in wv_model.vocab:
         return True
     return False
 
+
 def main(argv):
     # arguments setting 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--w2v_train', action='store_true', default=False,
-                        help='Train and save word vectors with word2vec')
+    parser.add_argument('--train_save', type=str, nargs=1,
+                        help='Train and save word vectors with "word2vec" or "fasttext"')
     parser.add_argument('-v', '--vector_size', type=int, default=300, help='the size of a word vector')
     parser.add_argument('--architecture', type=str, default='cbow', help='the architecture: "skip-gram" or "cbow"')
     parser.add_argument('--train_algorithm', type=str, default='negative', help='the training algorithm: "softmax" or "negative"')
     parser.add_argument('--workers', type=int, default=4, help='number of workers')
     parser.add_argument('--word2vec_format', action='store_true', default=False, help='Store in the original C word2vec (.txt) format')
-    parser.add_argument('--fasttext_train', action='store_true', default=False,
+    parser.add_argument('--fasttext_load_train', action='store_true', default=False,
                         help='Train a fastText model on a corpus (Default: Reddit corpus) and save word vectors')
     args = parser.parse_args(argv)
 
-    vector_size = args.vector_size
+    vector_dim = args.vector_size
     architecture = args.architecture
     train_algorithm = args.train_algorithm
     word2vec_format = args.word2vec_format
     workers = args.workers
-    if args.w2v_train:
-        train_save_word2vec([dsl_sentences, reddit_sentences], word2vec_format=word2vec_format , vector_size=vector_size,
-                        architecture=architecture, train_algorithm=train_algorithm, workers=workers)
-    if args.fasttext_train:
+    if args.train_save:
+        train_save_word_embeddings([dsl_sentences, reddit_sentences], algo=args.train_save[0],
+                                   vector_dim=vector_dim, word2vec_format=word2vec_format,
+                                   architecture=architecture, train_algorithm=train_algorithm, workers=workers)
+    if args.fasttext_load_train:
         load_and_train_fasttext([dsl_sentences, reddit_sentences])
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])

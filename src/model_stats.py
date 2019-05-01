@@ -4,15 +4,15 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix
 
 
-def cm_acc_f1(labels_true, labels_pred, labels):
-    cm = sk.confusion_matrix(labels_true, labels_pred, labels=labels)
+def cm_acc_f1(labels_true, labels_pred):
+    cm = sk.confusion_matrix(labels_true, labels_pred)
     acc = sk.accuracy_score(labels_true, labels_pred)
     f1 = sk.f1_score(labels_true, labels_pred, average='macro')
     return cm, acc, f1
 
 
-def print_confusion_matrix(labels_true, labels_pred, act_labels):
-    cm, acc, f1 = cm_acc_f1(labels_true, labels_pred, act_labels)
+def print_confusion_matrix(labels_true, labels_pred):
+    cm, acc, f1 = cm_acc_f1(labels_true, labels_pred)
     print("Confusion matrix:")
     print("  S  D  Q  C")
     print(cm)
