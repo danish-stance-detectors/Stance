@@ -48,21 +48,21 @@ settings_rand = [
                                  'class_weight': ['balanced', None], 'max_iter': [100000],
                                  'tol': sp_expon(scale=1e-4)}),
     # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-    #                                     'max_depth': [3, None], "min_samples_split": sp_randint(2, 11),
+    #                                     'max_depth': sp_randint(2, 50), "min_samples_split": sp_randint(2, 11),
     #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
     #                                     'presort': [True]}),
     # ('logistic-regression', LogisticRegression(), {'solver': ['liblinear', 'saga'], 'penalty':['l1', 'l2'],
     #                                                'class_weight': ['balanced', None],
     #                                                'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
     # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 2000), 'criterion': ['entropy', 'gini'],
-    #                                              'max_depth': [3, None], 'max_features': ['auto', 'log2', None],
+    #                                              'max_depth': sp_randint(2, 50), 'max_features': ['auto', 'log2', None],
     #                                              "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
     #                                              'class_weight': ['balanced_subsample', None]})
 ]
 
 scorer = 'f1_macro'
-
-skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
+folds = args.k_folds
+skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=42)
 features = data_loader.get_features()
 feature_names = features.keys()
 
@@ -70,69 +70,79 @@ grid_search = args.grid  # whether to use GridSearchCV or RandomizedSearchCV
 rand_iter = args.rand_samples  # number of random samples to use
 
 for name, estimator, tuned_parameters in (settings_rand if not grid_search else settings):
-    start = time.time()
     filepath = os.path.join(output_folder, name)
     if not os.path.exists(filepath):
         os.makedirs(filepath)
     print("# Tuning hyper-parameters on F1 macro for %s" % name)
-    with open('%s/overall_parameter_stats.txt' % filepath, 'w+', newline='') as statsfile:
-        csv_writer = csv.writer(statsfile)
-        csv_writer.writerow(['f1_macro', 'acc', 'parameters', 'features'])
-        for feature_name in feature_names:
-            if not features[feature_name]:
-                continue
-            print('Leaving %s feature out' % feature_name)
-            features[feature_name] = False
-            X_train_ = data_loader.select_features(X_train, feature_mapping, features)
-            X_test_ = data_loader.select_features(X_test, feature_mapping, features)
-            with open('%s/parameters_%s.txt' % (filepath, feature_name), 'w+') as outfile:
-                if not grid_search:
-                    clf = RandomizedSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
-                else:
-                    clf = GridSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
-                clf.fit(X_train_, y_train)
+    stats_filename = '%s/parameter_stats_iter%d_k%d.txt' % (filepath, rand_iter, folds)
+    if not os.path.exists(stats_filename):
+        with open(stats_filename, 'w+', newline='') as statsfile:
+            csv_writer = csv.writer(statsfile)
+            csv_writer.writerow(['f1_macro', 'acc', 'parameters', 'features'])
+    for feature_name in feature_names:
+        if not features[feature_name]:
+            continue
+        if feature_name == 'all':
+            print('Running with all features enabled')
+        else:
+            print('Leaving %s features out' % feature_name)
+        features[feature_name] = False
+        X_train_ = data_loader.select_features(X_train, feature_mapping, features)
+        X_test_ = data_loader.select_features(X_test, feature_mapping, features)
+        start = time.time()
+        with open('%s/params_%s_iter%d_k%d.txt' % (filepath, feature_name, rand_iter, folds), 'w+') as outfile, \
+                open(stats_filename, 'a', newline='') as statsfile:
+            csv_writer = csv.writer(statsfile)
+            if not grid_search:
+                clf = RandomizedSearchCV(
+                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
+                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
+                )
+            else:
+                clf = GridSearchCV(
+                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
+                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
+                )
+            clf.fit(X_train_, y_train)
 
-                s = "Best parameters set found on development set for F1 macro:"
+            s = "Best parameters set found on development set for F1 macro:"
+            print(s)
+            outfile.write(s + '\n')
+            print()
+            s = "%0.3f for %r" % (clf.best_score_, clf.best_params_)
+            print(s)
+            outfile.write(s + '\n')
+            print()
+            s = "Grid scores on development set:"
+            print(s)
+            outfile.write(s + '\n')
+            print()
+            results = clf.cv_results_
+            means = results['mean_test_score']
+            stds = results['std_test_score']
+            for mean, std, params in zip(means, stds, clf.cv_results_['params']):
+                s = "%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params)
                 print(s)
                 outfile.write(s + '\n')
-                print()
-                s = "%0.3f for %r" % (clf.best_score_, clf.best_params_)
-                print(s)
-                outfile.write(s + '\n')
-                print()
-                s = "Grid scores on development set:"
-                print(s)
-                outfile.write(s + '\n')
-                print()
-                results = clf.cv_results_
-                means = results['mean_test_score']
-                stds = results['std_test_score']
-                for mean, std, params in zip(means, stds, clf.cv_results_['params']):
-                    s = "%0.3f (+/-%0.03f) for %r" % (mean, std * 2, params)
-                    print(s)
-                    outfile.write(s + '\n')
-                print()
+            print()
 
-                outfile.write('Classification report for results on evaluation set:' + '\n')
-                print("Classification report for results on evaluation set:")
-                y_true, y_pred = y_test, clf.predict(X_test_)
-                # s = classification_report(y_true, y_pred)
-                cm, acc, f1 = cm_acc_f1(y_true, y_pred)
-                outfile.write(np.array2string(cm))
-                outfile.write('\n')
-                print('acc: %.5f' % acc)
-                outfile.write('acc: %.5f\n' % acc)
-                print('f1 macro: %f' % f1)
-                outfile.write('f1 macro: %f\n\n' % f1)
-                print()
-                csv_writer.writerow([f1, acc, clf.best_params_, features])
+            outfile.write('Classification report for results on evaluation set:' + '\n')
+            print("Classification report for results on evaluation set:")
+            y_true, y_pred = y_test, clf.predict(X_test_)
+            # s = classification_report(y_true, y_pred)
+            cm, acc, f1 = cm_acc_f1(y_true, y_pred)
+            outfile.write(np.array2string(cm))
+            outfile.write('\n')
+            print('acc: %.5f' % acc)
+            outfile.write('acc: %.5f\n' % acc)
+            print('f1 macro: %f' % f1)
+            outfile.write('f1 macro: %f\n\n' % f1)
+            print()
+            csv_writer.writerow([f1, acc, clf.best_params_, features])
+        if not feature_name == 'all':
             features[feature_name] = True
-    end = time.time()
+        end = time.time()
+        print('Done with %s features' % feature_name)
+        print('Took %.1f seconds' % (end - start))
     print('Done with', name)
-    print('Took %.1f seconds' % (end - start))
+

@@ -34,7 +34,7 @@ def get_instances(filename=datafile, delimiter=tab):
     return instances, n_features, feature_mapping
 
 def get_features():
-    return {'text': True, 'lexicon': True,
+    return {'all': True, 'text': True, 'lexicon': True,
                     'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}
 
 
