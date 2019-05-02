@@ -1,0 +1,21 @@
+Best parameters set found on development set for F1 macro:
+0.337 for {'C': 668, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'crammer_singer', 'tol': 0.0001152101676774736}
+Grid scores on development set:
+0.324 (+/-0.039) for {'C': 965, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 0.00016856811312816216}
+0.332 (+/-0.026) for {'C': 15, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 0.00010004598391148811}
+0.329 (+/-0.024) for {'C': 898, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 0.00019755175018270008}
+0.337 (+/-0.016) for {'C': 47, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'crammer_singer', 'tol': 0.00021501700779906347}
+0.323 (+/-0.021) for {'C': 498, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 7.774599530658133e-05}
+0.324 (+/-0.042) for {'C': 352, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 7.097567660467951e-05}
+0.328 (+/-0.020) for {'C': 923, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 2.2035494035001705e-05}
+0.324 (+/-0.007) for {'C': 700, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 0.00010589362993002269}
+0.337 (+/-0.021) for {'C': 668, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'crammer_singer', 'tol': 0.0001152101676774736}
+0.328 (+/-0.033) for {'C': 73, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr', 'tol': 6.399431150231106e-05}
+Classification report for results on evaluation set:
+[[ 23  18   7  20]
+ [ 15  29   3  28]
+ [  5   2   5   8]
+ [104 134  30 321]]
+acc: 0.50266
+f1 macro: 0.314301
+

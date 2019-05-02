@@ -1,5 +1,5 @@
 from nltk import word_tokenize
-import re, copy
+import re, copy, random
 import word_embeddings
 from sklearn.model_selection import train_test_split
 from classes.afinn_sentiment import get_afinn_sentiment
@@ -14,7 +14,7 @@ quote_tag = 'refrefref'
 regex_quote = re.compile(r">(.+?)\n")
 
 synonyms = load_synonyms()
-
+rand = random.Random(42)
 
 class RedditAnnotation:
         
@@ -110,7 +110,37 @@ class RedditAnnotation:
         """filters text of all annotations to replace 'URLURLURL'"""
         return regex_url.sub(url_tag, text)
 
-    def alter_id_and_text(self, threshold=0.7, words_to_replace=5, early_stop=True):
+    def alter_id_and_text(self, words_to_replace=5, early_stop=True):
+        self.comment_id = self.comment_id + '_'
+        replacements = 0
+        old_text = self.text
+        new_text = old_text
+        # used_synonyms = []
+        for headwords, syns in synonyms.items():
+            if early_stop and replacements >= words_to_replace:
+                break
+            # if headwords in used_synonyms:
+            #     continue
+            m = re.search(r'(\b%s\b)' % headwords, old_text, flags=re.I)
+            if m:
+                candidate = m.group(1)
+                repl = syns[rand.randint(0, len(syns)-1)]
+                if candidate.isupper():
+                    repl = repl.upper()
+                elif candidate[0].isupper():
+                    c = repl[0].upper()
+                    repl = c + (repl[1:] if len(repl) > 1 else '')
+                # used_synonyms.append(repl)
+                new_text, rep_n = re.subn(r'\b%s\b' % headwords, repl, new_text, flags=re.I)
+                replacements += rep_n
+            # if headwords in self.text:
+            #     new_text = old_text.replace(headwords, syns[rand.randint(0, len(syns))])
+        self.text = new_text
+        self.tokens = self.tokenize(self.text)
+        return 0.0, replacements
+
+
+    def alter_id_and_text2(self, threshold=0.7, words_to_replace=5, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
         best_candidates = []
@@ -291,7 +321,7 @@ class RedditDataset:
 
     def super_sample(self, annotations, pct_words_to_replace, early_stop=True):
         super_sample = []
-        with open('super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
+        with open('../output/super-sampling/super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
             for i, annotation in enumerate(annotations):
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # Only look at SDQ
                     words_to_replace = int(len(annotation.tokens) * pct_words_to_replace)
@@ -302,10 +332,10 @@ class RedditDataset:
                     )
                     if not n_replacements > int(words_to_replace/2):
                         continue
-                    # replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
-                    outfile.write('old: ' + ' '.join(annotation.tokens) + '\n')
-                    outfile.write('new: ' + ' '.join(annotation_copy.tokens) + '\n')
-                    outfile.write('avg replacement sim: %.2f\n\n' % avg_sim)
+                    replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
+                    outfile.write('old: ' + annotation.text + '\n')
+                    outfile.write('new: ' + annotation_copy.text + '\n')
+                    outfile.write('similarity: %.2f\n\n' % replacement_sim)
                     # outfile.write('sentence cosine sim: %.2f\n\n' % replacement_sim)
                     compute_similarity(
                         annotation_copy,

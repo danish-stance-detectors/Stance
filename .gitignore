@@ -9,8 +9,9 @@ data/pheme_data/pheme-rumour-scheme-dataset/
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
-output/*
 !output/README.md
+data/corpus/**
+!data/corpus/README.md
 
 
 # Byte-compiled / optimized / DLL files
@@ -339,10 +340,11 @@ dmypy.json
 
 ### VisualStudioCode ###
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+src/.vscode/*
+#!.vscode/settings.json
+#!.vscode/tasks.json
+#!.vscode/launch.json
+#!.vscode/extensions.json
 
 ### VisualStudioCode Patch ###
 # Ignore all local history of files
