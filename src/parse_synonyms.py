@@ -9,7 +9,6 @@
 import re
 
 all_vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?|(/\w*))')  # (..) or '..' or '/'
-# vars = re.compile(r'(\s?\([^)]*\)\s?)|(\s?\.\.\s?)')  # (..) or '..'
 dots = re.compile(r'(\s?\.\.\s?)') # |(,\s)
 
 
@@ -21,7 +20,7 @@ def find_paren_alternatives(line):
         left = line[:lpar].strip()
         right = line[rpar+1:].strip()
         body = line[lpar+1:rpar].strip()
-        body = dots.sub('', body).strip() # .rstrip(',')
+        body = dots.sub('', body).strip()
         versions.append(('%s %s' % (left, right)).strip())
         versions.append(('%s %s %s' % (left, body, right)).strip())
     final_versions = []
@@ -51,6 +50,7 @@ def find_slash_alternatives(line):
         for alternative in alternatives:
             lines.append(('%s %s %s' % (left, alternative, right)).strip())
     final_alternatives = []
+    # duplicate sentences with ',' and strip them for commas
     for line in lines:
         if '/' in line:
             new_alternatives = find_slash_alternatives(line)
@@ -101,7 +101,6 @@ def load_synonyms():
 
 
 def write_out_parsed_synonyms():
-    with open('synonyms.txt', 'w+', encoding='utf8') as outfile:
+    with open('../output/synonyms.txt', 'w+', encoding='utf8') as outfile:
         for h, s in load_synonyms().items():
             outfile.write('%s:%s\n' % (h, ';'.join(s)))
-write_out_parsed_synonyms()
