@@ -114,13 +114,27 @@ class RedditAnnotation:
         self.comment_id = self.comment_id + '_'
         replacements = 0
         old_text = self.text
-        new_text = ''
+        new_text = old_text
+        # used_synonyms = []
         for headwords, syns in synonyms.items():
-            if early_stop and replacements == words_to_replace:
+            if early_stop and replacements >= words_to_replace:
                 break
-            if headwords in self.text:  # TODO: Regex check if word is contained
-                new_text = old_text.replace(headwords, syns[rand.randint(0, len(syns))])
-                replacements += 1
+            # if headwords in used_synonyms:
+            #     continue
+            m = re.search(r'(\b%s\b)' % headwords, old_text, flags=re.I)
+            if m:
+                candidate = m.group(1)
+                repl = syns[rand.randint(0, len(syns)-1)]
+                if candidate.isupper():
+                    repl = repl.upper()
+                elif candidate[0].isupper():
+                    c = repl[0].upper()
+                    repl = c + (repl[1:] if len(repl) > 1 else '')
+                # used_synonyms.append(repl)
+                new_text, rep_n = re.subn(r'\b%s\b' % headwords, repl, new_text, flags=re.I)
+                replacements += rep_n
+            # if headwords in self.text:
+            #     new_text = old_text.replace(headwords, syns[rand.randint(0, len(syns))])
         self.text = new_text
         self.tokens = self.tokenize(self.text)
         return 0.0, replacements
@@ -318,10 +332,10 @@ class RedditDataset:
                     )
                     if not n_replacements > int(words_to_replace/2):
                         continue
-                    # replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
-                    outfile.write('old: ' + ' '.join(annotation.tokens) + '\n')
-                    outfile.write('new: ' + ' '.join(annotation_copy.tokens) + '\n')
-                    outfile.write('avg replacement sim: %.2f\n\n' % avg_sim)
+                    replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
+                    outfile.write('old: ' + annotation.text + '\n')
+                    outfile.write('new: ' + annotation_copy.text + '\n')
+                    outfile.write('similarity: %.2f\n\n' % replacement_sim)
                     # outfile.write('sentence cosine sim: %.2f\n\n' % replacement_sim)
                     compute_similarity(
                         annotation_copy,
