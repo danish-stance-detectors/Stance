@@ -2,8 +2,6 @@ import csv
 from sklearn.model_selection import train_test_split
 
 datafile = '../data/preprocessed/preprocessed.csv'
-hmm_datafile = '../data/hmm/preprocessed_hmm.csv'
-semeval_hmm_data = '../data/hmm/semeval_rumours_train.csv'
 tab = '\t'
 
 def get_instances(filename=datafile, delimiter=tab):
@@ -91,40 +89,3 @@ def load_train_test_data(train_file, test_file, delimiter=tab, split=True):
         X_train.extend(X_test)
         y_train.extend(y_test)
         return X_train, y_train, n_features, feature_mapping
-
-def get_hmm_data(filename=hmm_datafile, delimiter=tab):
-    data = []
-    max_branch_len = 0
-    with open(filename) as file:
-        has_header = csv.Sniffer().has_header(file.read(1024))
-        file.seek(0) # Rewind
-        csvreader = csv.reader(file, delimiter=delimiter)
-        if has_header:
-            next(csvreader) # Skip header row
-        for row in csvreader:
-            truth_status = int(row[0])
-            values = row[1].strip("[").strip("]").split(',')
-            instance_vec = [float(i.strip()) for i in values]
-            data.append((truth_status, instance_vec))
-            max_branch_len = max(max_branch_len, len(instance_vec))
-    
-    return data, max_branch_len
-
-def get_semeval_hmm_data(datafile=semeval_hmm_data, delimiter=tab):
-    data = []
-    max_branch_len = 0
-    with open(datafile) as file:
-        has_header = csv.Sniffer().has_header(file.read(1024))
-        file.seek(0) # Rewind
-        csvreader = csv.reader(file, delimiter=delimiter)
-        if has_header:
-            next(csvreader) # Skip header row
-        for row in csvreader:
-            event = row[0]
-            truth_status = int(row[1])
-            values = row[2].strip("[").strip("]").split(',')
-            instance_vec = [float(i.strip()) for i in values]
-            data.append((event, truth_status, instance_vec))
-            max_branch_len = max(max_branch_len, len(instance_vec))
-    
-    return data, max_branch_len
