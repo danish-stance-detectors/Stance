@@ -1,4 +1,5 @@
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, RandomizedSearchCV
+from sklearn.metrics import classification_report
 import numpy as np
 from scipy.stats import randint as sp_randint
 from scipy.stats import expon as sp_expon
@@ -78,7 +79,7 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
     if not os.path.exists(stats_filename):
         with open(stats_filename, 'w+', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
-            csv_writer.writerow(['f1_macro', 'acc', 'parameters', 'features'])
+            csv_writer.writerow(['estimator', 'f1_macro', 'acc', 'LOO feature', 'parameters', 'features'])
     for feature_name in feature_names:
         if not features[feature_name]:
             continue
@@ -129,16 +130,17 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
             outfile.write('Classification report for results on evaluation set:' + '\n')
             print("Classification report for results on evaluation set:")
             y_true, y_pred = y_test, clf.predict(X_test_)
-            # s = classification_report(y_true, y_pred)
+            outfile.write(classification_report(y_true, y_pred))
+            outfile.write('\n')
             cm, acc, f1 = cm_acc_f1(y_true, y_pred)
             outfile.write(np.array2string(cm))
             outfile.write('\n')
-            print('acc: %.5f' % acc)
-            outfile.write('acc: %.5f\n' % acc)
-            print('f1 macro: %f' % f1)
-            outfile.write('f1 macro: %f\n\n' % f1)
+            print('acc: %.4f' % acc)
+            outfile.write('acc: %.4f\n' % acc)
+            print('f1 macro: %.4f' % f1)
+            outfile.write('f1 macro: %.4f\n\n' % f1)
             print()
-            csv_writer.writerow([f1, acc, clf.best_params_, features])
+            csv_writer.writerow([name, '%.4f' % f1, '%.4f' % acc, feature_name, clf.best_params_, features])
         if not feature_name == 'all':
             features[feature_name] = True
         end = time.time()
