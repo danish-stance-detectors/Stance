@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.356 for {'C': 395, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Grid scores on development set:
+0.334 (+/-0.017) for {'C': 648, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.329 (+/-0.024) for {'C': 767, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.328 (+/-0.024) for {'C': 765, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.337 (+/-0.017) for {'C': 644, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.330 (+/-0.023) for {'C': 906, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.343 (+/-0.038) for {'C': 285, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.346 (+/-0.025) for {'C': 26, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.346 (+/-0.019) for {'C': 319, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.332 (+/-0.016) for {'C': 531, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.356 (+/-0.003) for {'C': 395, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.18      0.29      0.23        68
+           1       0.34      0.40      0.37        75
+           2       0.14      0.15      0.15        20
+           3       0.85      0.77      0.80       589
+
+   micro avg       0.67      0.67      0.67       752
+   macro avg       0.38      0.40      0.39       752
+weighted avg       0.72      0.67      0.69       752
+
+[[ 20  11   1  36]
+ [  7  30   2  36]
+ [  6   1   3  10]
+ [ 76  47  15 451]]
+acc: 0.6702
+f1 macro: 0.3855
+
