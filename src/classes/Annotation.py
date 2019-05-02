@@ -321,7 +321,7 @@ class RedditDataset:
 
     def super_sample(self, annotations, pct_words_to_replace, early_stop=True):
         super_sample = []
-        with open('super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
+        with open('../output/super-sampling/super_sample_stats.txt', 'w+', encoding='utf8') as outfile:
             for i, annotation in enumerate(annotations):
                 if not self.sdqc_to_int[annotation.sdqc_submission] == 3:  # Only look at SDQ
                     words_to_replace = int(len(annotation.tokens) * pct_words_to_replace)
