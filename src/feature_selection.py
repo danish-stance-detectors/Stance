@@ -7,6 +7,7 @@ import numpy as np
 import random
 import argparse
 import data_loader
+import matplotlib.pyplot as plt
 import sys
 
 rand = random.Random(42)
@@ -32,9 +33,21 @@ print(len(X[0]))
 def eleminate_low_variance_features(threshold, X):
     selector = VarianceThreshold(threshold)
     X_ = selector.fit_transform(X)
-    print('t: %.4f\tn:%d' % (threshold, len(X_[0])))
-for t in  np.linspace(0, 0.01, 11):
-    eleminate_low_variance_features(t, X)
+    n = len(X_[0])
+    print('t: %.4f\tn:%d' % (threshold, n))
+    return n
+thresholds = np.linspace(0, 0.01, 21)
+feature_lengths = []
+for t in  thresholds:
+    n = eleminate_low_variance_features(t, X)
+    feature_lengths.append(n)
+
+# Plot number of features VS. cross-validation scores
+plt.figure()
+plt.xlabel("Variance threshold")
+plt.ylabel("Number of features selected")
+plt.plot(thresholds, feature_lengths)
+plt.show()
 
 # X = np.array(X)
 # y = np.array(y)
