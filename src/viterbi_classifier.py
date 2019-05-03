@@ -13,19 +13,30 @@ def main(argv):
     
     parser = argparse.ArgumentParser(description='Rumour veracity classification via hmm')
     parser.add_argument('-loo', '--LeaveOneOut', default=False, dest='loo', action='store_true', help='Do leave one out testing on pheme dataset')
+    parser.add_argument('-ph', '--pheme', default=False, dest='pheme', action='store_true', help='Train and test on pheme dataset')
+    parser.add_argument('-pd', '--print_dist', default=False, dest='print_dist', action='store_true', help='print event distribution')
     parser.add_argument('-da', '--danish', default=False, action='store_true', help='Train and test solely on danish rumour data')
     parser.add_argument('-cmt', '--comment', default=False, action='store_true', help='Use hmm features from comment trees. Only has effect for danish data.')
-    parser.add_argument('-f', '--data file path', dest='file', default='../data/hmm/hmm_data_comment_trees.csv', help='Input folder holding annotated data')
+    parser.add_argument('-fdk', '--data file path danish', dest='file_dk', default='../data/hmm/preprocessed_hmm.csv', help='Danish rumour data')
+    parser.add_argument('-fen', '--data file path english', dest='file_en', default='../data/hmm/semeval_rumours_train_pheme.csv', help='English rumour data')
     parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
+    parser.add_argument('-ml', '--minumum branch length', dest='min_len', default=1, help='Minimum branch lengths included in training')
+    parser.add_argument('-en_da', '--eng_train_da_test', default=False, dest='en_da', action='store_true', help='Train on english data and test on danish data')
+    
+
     args = parser.parse_args(argv)
     
     if args.loo:
-        Loo_event_test(args.file)
+        Loo_event_test(args.file_en, int(args.min_len), args.print_dist)
     elif args.danish:
-        train_test_danish(file_name=args.file)
+        train_test_danish(file_name=args.file_dk, min_length=int(args.min_len))
+    elif args.en_da:
+        train_eng_test_danish(args.file_en, args.file_dk, int(args.min_len))
+    elif args.pheme:
+        train_test_pheme(args.file_en, int(args.min_len))
 
 # partition data into events
-def loadEvents(data, print_dist=False):
+def loadEvents(data, print_dist=False, min_len=1):
     events = dict()
     for event, truth, vec in data:
         if event not in events:
@@ -37,10 +48,21 @@ def loadEvents(data, print_dist=False):
         print("\n")
         print("Conversations per event:")
         for k, v in events.items():
-            print("Event: {}\t conversations: {}".format(k, len(v)))
+            true_cnt = len([x for x in v if x[0] == 1])
+            false_cnt = len(v) - true_cnt
+            print("Event: {}\t conversations: {} with True {} / False {}".format(k, len(v), true_cnt, false_cnt))
 
         print("\n")
+        
+        print("Conversations per event with atleast {} in len:".format(min_len))
+        for k, v in events.items():
+            tmp_v = [x for x in v if len(x[1]) >= min_len]
+            true_cnt = len([x for x in tmp_v if x[0] == 1])
+            false_cnt = len(tmp_v) - true_cnt
+            print("Event: {}\t conversations: {} with True {} / False {}".format(k, len(tmp_v), true_cnt, false_cnt))
     
+        print("\n")
+
     return events
 
 # partition data dependin on label
@@ -48,6 +70,9 @@ def get_x_y(data, min_len):
     data = [x for x in data if len(x[1]) >= min_len]
     data_true = [x for x in data if x[0] == 1]
     data_false = [x for x in data if x[0] == 0]
+
+    assert (len(data_true) + len(data_false)) == len(data), "data lost in get_x_y true false partitioning, {} while org was {}".format(len(data_true) + len(data_false), len(data))
+
     y_t = [x[0] for x in data_true]
     X_t = [x[1] for x in data_true]
     y_f = [x[0] for x in data_false]
@@ -80,7 +105,7 @@ def apply_random_prob(clf, components):
 def train_models(data, min_len=10, iter=10, components=1, init_random=False):
     # True and false training data
     X_t, y_t, X_f, y_f = get_x_y(data, min_len)
-    
+
     # lengths of each branch
     X_t_len = [len(x) for x in X_t]
     X_f_len = [len(x) for x in X_f]
@@ -121,21 +146,27 @@ def predict(X, clf_true, clf_false):
 
 # Leaves one event out for testing and trains on the others
 # does so for each event
-def Loo_event_test():
-    
+def Loo_event_test(file_en, min_length, print_distribution):
     # load data
-    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename='../data/hmm/hmm_data_comment_trees.csv')
-    danish_data_X = [x[1] for x in danish_data]
-    danish_data_y = [x[0] for x in danish_data]
-    
-    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename='../data/hmm/semeval_rumours_train_pheme.csv')
+    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
     data_train_y_X = [(x[1], x[2]) for x in data_train]
 
-    events = loadEvents(data_train)
+    events = loadEvents(data_train, print_dist=print_distribution, min_len=min_length)
     event_list = [(k,v) for k,v in events.items()]
     
     print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
     for i in range(len(event_list)):
+        
+        test_event, test_vec = event_list[i]
+
+        train = [vec for e, vec in event_list if e != test_event]
+        train = flatten(train)
+       
+        test_vec = [x for x in test_vec if len(x[1]) >= min_length]
+        # partition test data and y
+        y_test = [x[0] for x in test_vec] 
+        X_test = [x[1] for x in test_vec]
+        X_test_len = [len(x) for x in X_test]
         
         for s in range(1, 16):
             best_acc = 0.0
@@ -143,19 +174,12 @@ def Loo_event_test():
 
             # try out different random configurations
             for c in range(1):
-                test_event, test_vec = event_list[i]
-
-                train = [vec for e, vec in event_list if e != test_event]
-                train = flatten(train)
                 
-                clf_true, clf_false = train_models(train, components=s, init_random=True)
-
-                # partition test data and y
-                y_test = [x[0] for x in test_vec]
-                X_test = [x[1] for x in test_vec]
-                X_test_len = [len(x) for x in X_test]
+                clf_true, clf_false = train_models(train, components=s, init_random=True, min_len=min_length)
                 
                 predicts = predict(X_test, clf_true, clf_false)
+
+                assert len(y_test) == len(predicts), "The length of y_test does not match number of predictions"
 
                 # print result
                 _, acc_t, f1_t = model_stats.cm_acc_f1(y_test, predicts)
@@ -165,8 +189,16 @@ def Loo_event_test():
                     best_acc = acc_t
                     best_f1 = f1_t
             print("%-20s%-10s%10.2f%10.2f" % (test_event, s, best_acc, best_f1))
+
+def train_eng_test_danish(file_en, file_da, min_length=1):    
+    # load data
+    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
+    danish_data_X = [x[1] for x in danish_data]
+    danish_data_y = [x[0] for x in danish_data]
     
-    print("Testing on danish data")
+    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
+    data_train_y_X = [(x[1], x[2]) for x in data_train]
+
     for s in range(1,16):
         best_acc = 0.0
         best_f1 = 0.0
@@ -174,7 +206,7 @@ def Loo_event_test():
         # try out different random configurations
         for c in range(1):
             # test on danish data
-            clf_true, clf_false = train_models(data_train_y_X, components=s, init_random=True)
+            clf_true, clf_false = train_models(data_train_y_X, components=s, init_random=True, min_len=min_length)
             da_predicts = predict(danish_data_X, clf_true, clf_false)
 
             _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
@@ -184,7 +216,37 @@ def Loo_event_test():
                 best_f1 = f1_t_da
         print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))
 
-def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv'):
+def train_test_pheme(file_name, min_length=1):
+    
+    print("Testing on english data")
+
+    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_name)
+    data_train = [x for x in data_train if len(x[2]) >= min_length]
+    data_train_y = [x[1] for x in data_train]
+    data_train_X = [x[2] for x in data_train]
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        data_train_X, data_train_y, test_size=0.2, stratify=data_train_y)
+    
+    train_y_x = list(zip(y_train, X_train))
+
+    for s in range(1,16):
+        best_acc = 0.0
+        best_f1 = 0.0
+
+        # try out different random configurations
+        for c in range(10):
+            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=min_length)
+            predicts = predict(X_test, clf_true, clf_false)
+
+            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
+            
+            if f1_t_da > best_f1:
+                best_acc = acc_t_da
+                best_f1 = f1_t_da
+        print("%-20s%-10s%10.2f%10.2f" % ('pheme', s, best_acc, best_f1))      
+
+def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_length=1):
 
     print("Testing on danish data")
 
@@ -194,7 +256,7 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv'):
     danish_data_y = [x[0] for x in danish_data]
     
     X_train, X_test, y_train, y_test = train_test_split(
-        danish_data_X, danish_data_y, test_size=0.2, random_state=42, stratify=danish_data_y)
+        danish_data_X, danish_data_y, test_size=0.10, random_state=42, stratify=danish_data_y)
     
     train_y_x = list(zip(y_train, X_train))
 
@@ -205,7 +267,7 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv'):
         # try out different random configurations
         for c in range(1):
             # test on danish data
-            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=1)
+            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=min_length)
             da_predicts = predict(X_test, clf_true, clf_false)
 
             _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
