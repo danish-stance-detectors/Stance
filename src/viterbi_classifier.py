@@ -1,120 +1,49 @@
 import data_loader
+import hmm_data_loader
 import model_stats
+import sys
+import argparse
+
 import numpy as np
 from sklearn.model_selection import train_test_split
 from hmmlearn import hmm
 
-# data, emb_size_max = data_loader.get_hmm_data(filename='../data/hmm/semeval_rumours.csv')
-# semeval_dev_data, _ = data_loader.get_hmm_data(filename='../data/hmm/semeval_rumours_dev.csv')
-# semeval_dungs, _ = data_loader.get_hmm_data(filename='../data/hmm/semeval_rumours_dungs_unv.csv')
-danish_data, emb_size_da = data_loader.get_hmm_data(filename='../data/hmm/preprocessed_hmm_no_branch.csv')
 
-data_train, _ = data_loader.get_semeval_hmm_data()
-#data, emb_size_max = data_loader.get_hmm_data()
-#data.extend(danish_data)
-
-def calculate_probabilities(X, y, print_p=False):
-    start_probs = { 
-        0 : y.count(0) / len(y), 
-        1 : y.count(1) / len(y)
-    }
-
-    transition_probs = {
-        0 : { 0: 0, 1: 0, 2: 0, 3 : 0},
-        1 : { 0: 0, 1: 0, 2: 0, 3 : 0},
-        2 : { 0: 0, 1: 0, 2: 0, 3 : 0},
-        3 : { 0: 0, 1: 0, 2: 0, 3 : 0}
-    }
-
-    emmision_probs = {
-        0 : { 0: 0, 1: 0, 2: 0, 3 : 0},
-        1 : { 0: 0, 1: 0, 2: 0, 3 : 0}
-    }
-
-    emmission_prob_count = { 0: 0, 1: 1}
-
-    for (b_i, branch) in enumerate(X):
-        for (i, label) in enumerate(branch):
-            if i > 0:
-                transition_probs[branch[i-1]][label] += 1
-            emmision_probs[y[b_i]][label] += 1
-            emmission_prob_count[y[b_i]] += 1    
-
-    for (label, t_prob) in transition_probs.items():
-        total = sum([count for (label, count) in t_prob.items()])
-        for i in range(4):
-            t_prob[i] /= total
-
-    for (label, em_prob) in emmision_probs.items():
-        for i in range(4):
-            em_prob[i] /= emmission_prob_count[label]
-    if print_p:
-        print(start_probs)
-
-        print("transition probabilities\n")
-        for (label, t_prob) in transition_probs.items():
-            print("{}\t{}".format(label, t_prob))
-
-        print("Emission probabilities\n")
-        for (label, em_prob) in emmision_probs.items():
-            print("{}\t{}".format(label, em_prob))
+def main(argv):
     
-    return start_probs, transition_probs, emmision_probs
+    parser = argparse.ArgumentParser(description='Rumour veracity classification via hmm')
+    parser.add_argument('-loo', '--LeaveOneOut', default=False, dest='loo', action='store_true', help='Do leave one out testing on pheme dataset')
+    parser.add_argument('-da', '--danish', default=False, action='store_true', help='Train and test solely on danish rumour data')
+    parser.add_argument('-cmt', '--comment', default=False, action='store_true', help='Use hmm features from comment trees. Only has effect for danish data.')
+    parser.add_argument('-f', '--data file path', dest='file', default='../data/hmm/hmm_data_comment_trees.csv', help='Input folder holding annotated data')
+    parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
+    args = parser.parse_args(argv)
+    
+    if args.loo:
+        Loo_event_test(args.file)
+    elif args.danish:
+        train_test_danish(file_name=args.file)
 
-# Code heavily inspired by wikipedia impl for viterbi
-def viterbi(hid_states, obs, start_probs, trans_probs, em_probs):
-    V = [{}]
-    # v_ = V[0]
-    # o_ = em_probs[0][3]
-    for st in hid_states:
-        V[0][st] = { 'prob' : start_probs[st] * em_probs[st][obs[0]],
-                     'prev' : None }
+# partition data into events
+def loadEvents(data, print_dist=False):
+    events = dict()
+    for event, truth, vec in data:
+        if event not in events:
+            events[event] = []
         
-    for t in range(1, len(obs)):
-        V.append({})
-
-        for st in hid_states:
-            max_tr_prob = V[t-1][hid_states[0]]['prob']*trans_probs[hid_states[0]][st]
-            prev_st_selected = hid_states[0]
-            for prev_st in hid_states[1:]:
-                tr_prob = V[t-1][prev_st]['prob']*trans_probs[prev_st][st]
-                if tr_prob > max_tr_prob:
-                    max_tr_prob = tr_prob
-                    prev_st_selected = prev_st
-                    
-            max_prob = max_tr_prob * em_probs[st][obs[t]]
-            V[t][st] = {'prob': max_prob, 'prev': prev_st_selected}
-
-    opt = []
-    max_prob = max([value['prob'] for value in V[-1].values()])
-    previous = None
-    # Get most probable state and its backtrack
-    for st, data in V[-1].items():
-        if data['prob'] == max_prob:
-            opt.append(st)
-            previous = st
-            break
-    # Follow the backtrack till the first observation
-    for t in range(len(V) - 2, -1, -1):
-        opt.insert(0, V[t + 1][previous]['prev'])
-        previous = V[t + 1][previous]['prev']
+        events[event].append((truth, vec))
     
-    #print("The steps of states are {} with highest probability of {}".format(opt, max_prob))
-    return max_prob
+    if print_dist:
+        print("\n")
+        print("Conversations per event:")
+        for k, v in events.items():
+            print("Event: {}\t conversations: {}".format(k, len(v)))
 
-events = dict()
-for event, truth, vec in data_train:
-    if event not in events:
-        events[event] = []
+        print("\n")
     
-    events[event].append((truth, vec))
+    return events
 
-print("\n")
-print("Conversations per event:")
-for k, v in events.items():
-    print("Event: {}\t conversations: {}".format(k, len(v)))
-
-print("\n")
+# partition data dependin on label
 def get_x_y(data, min_len):
     data = [x for x in data if len(x[1]) >= min_len]
     data_true = [x for x in data if x[0] == 1]
@@ -126,106 +55,166 @@ def get_x_y(data, min_len):
 
     return X_t, y_t, X_f, y_f
 
+# flatten lambda to pass to hmm
 flatten = lambda l: [item for sublist in l for item in sublist]
 
-def Loo_event_test(events):
+def apply_random_prob(clf, components):
+    start_prob = np.random.rand(components)
+    start_prob /= start_prob.sum()
+
+    trans_prob = np.random.rand(components, components)
+    trans_prob /= trans_prob.sum()
+
+    emission_prob = np.random.rand(components, 4)
+    emission_prob /= emission_prob.sum()
+
+    # Check that probability values sum to (nearly) 1
+    assert start_prob.sum() - 1 < 1e-4, 'start probability does not sum to 1, but {}'.format(start_prob.sum())
+    assert trans_prob.sum() - 1 < 1e-4, 'transition probability does not sum to 1, but {}'.format(trans_prob.sum())
+    assert emission_prob.sum() - 1 < 1e-4, 'emission probability does not sum to 1, but {}'.format(emission_prob.sum())
+
+    clf.startprob_ = start_prob
+    clf.transmat_ = trans_prob
+    clf.emissionprob_ = emission_prob
+
+def train_models(data, min_len=10, iter=10, components=1, init_random=False):
+    # True and false training data
+    X_t, y_t, X_f, y_f = get_x_y(data, min_len)
+    
+    # lengths of each branch
+    X_t_len = [len(x) for x in X_t]
+    X_f_len = [len(x) for x in X_f]
+    
+    # reshape to flat arrays
+    X_t = np.array(flatten(X_t)).reshape(-1, 1)
+    X_f = np.array(flatten(X_f)).reshape(-1, 1)
+
+    # Init models
+    clf_true = hmm.GaussianHMM(n_components=components)
+    clf_false = hmm.GaussianHMM(n_components=components)
+
+    # If init random, initialize and apply random start, emission and transition probabilities
+    if init_random:
+        apply_random_prob(clf_true, components)
+        apply_random_prob(clf_false, components)
+    
+    # fit models
+    clf_true = clf_true.fit(X_t, lengths=X_t_len)
+    clf_false = clf_false.fit(X_f, lengths=X_f_len)
+
+    return clf_true, clf_false
+
+def predict(X, clf_true, clf_false):
+    predicts = []
+    for branch in X:
+        # get len of branch and reshape it
+        b_len = len(branch)
+        branch = np.array(branch).reshape(-1, 1)
+
+        # score branch on each model
+        prop_t = clf_true.score(branch, lengths=[b_len])
+        prop_f = clf_false.score(branch, lengths=[b_len])
+
+        # if true model has higher probability, append 1 otherwise 0
+        predicts.append(int(prop_t > prop_f))
+    return predicts
+
+# Leaves one event out for testing and trains on the others
+# does so for each event
+def Loo_event_test():
+    
+    # load data
+    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename='../data/hmm/hmm_data_comment_trees.csv')
+    danish_data_X = [x[1] for x in danish_data]
+    danish_data_y = [x[0] for x in danish_data]
+    
+    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename='../data/hmm/semeval_rumours_train_pheme.csv')
+    data_train_y_X = [(x[1], x[2]) for x in data_train]
+
+    events = loadEvents(data_train)
     event_list = [(k,v) for k,v in events.items()]
     
-    print("%-20s%5s%5s" % ('event', 'accuracy', 'f1'))
+    print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
     for i in range(len(event_list)):
         
-        test_event, test_vec = event_list[i]
+        for s in range(1, 16):
+            best_acc = 0.0
+            best_f1 = 0.0
 
-        train = [vec for e, vec in event_list if e != test_event]
-        train = [item for sublist in train for item in sublist]
-        
-        # True and false training data
-        X_t, y_t, X_f, y_f = get_x_y(train, 1)
+            # try out different random configurations
+            for c in range(1):
+                test_event, test_vec = event_list[i]
 
+                train = [vec for e, vec in event_list if e != test_event]
+                train = flatten(train)
+                
+                clf_true, clf_false = train_models(train, components=s, init_random=True)
 
-        # print(X_t)
+                # partition test data and y
+                y_test = [x[0] for x in test_vec]
+                X_test = [x[1] for x in test_vec]
+                X_test_len = [len(x) for x in X_test]
+                
+                predicts = predict(X_test, clf_true, clf_false)
 
-        # lengths
-        X_t_len = [len(x) for x in X_t]
-        X_f_len = [len(x) for x in X_f]
-        
-        # X_train = np.reshape(X_train, (-1, 1))
-        X_t = np.array(flatten(X_t)).reshape(-1, 1)#np.reshape(X_t, (-1, 1))
-        X_f = np.array(flatten(X_f)).reshape(-1, 1)
+                # print result
+                _, acc_t, f1_t = model_stats.cm_acc_f1(y_test, predicts)
+                
+                # save results from model with best f1 score
+                if f1_t > best_f1:
+                    best_acc = acc_t
+                    best_f1 = f1_t
+            print("%-20s%-10s%10.2f%10.2f" % (test_event, s, best_acc, best_f1))
+    
+    print("Testing on danish data")
+    for s in range(1,16):
+        best_acc = 0.0
+        best_f1 = 0.0
 
-        clf_true = hmm.GaussianHMM(n_components=1, n_iter=100, random_state=42).fit(X_t, lengths=X_t_len)
-        clf_false = hmm.GaussianHMM(n_components=1, n_iter=100, random_state=42).fit(X_f, lengths=X_f_len)
+        # try out different random configurations
+        for c in range(1):
+            # test on danish data
+            clf_true, clf_false = train_models(data_train_y_X, components=s, init_random=True)
+            da_predicts = predict(danish_data_X, clf_true, clf_false)
 
-        y_test = [x[0] for x in test_vec]
-        X_test = [x[1] for x in test_vec]
-        X_test_len = [len(x) for x in X_test]
-        
-        predicts = []
-        # X_test = np.array(flatten(X_test)).reshape(-1, 1)
-        for branch in X_test:
-            b_len = len(branch)
-            branch = np.array(branch).reshape(-1, 1)
-
-            prop_t = clf_true.score(branch, lengths=[b_len])
-            prop_f = clf_false.score(branch, lengths=[b_len])
-
-            # print(prop_t)
+            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
             
-            # print(prop_f)
-            # prop_t = prop_t_a[np.argmax(prop_t_a[len(prop_t_a)-1, :])]
-            # prop_f = prop_f_a[np.argmax(prop_f_a[len(prop_f_a)-1, :])]
-            predicts.append(int(prop_t > prop_f))
-            # print(np.argmax(prop_t_a[b_len-1]))
-            # print(np.argmax(prop_f_a[b_len-1]))
+            if f1_t_da > best_f1:
+                best_acc = acc_t_da
+                best_f1 = f1_t_da
+        print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))
 
-        # prop_t, predicts_t = clf_true.decode(np.array(X_test[0]).reshape(-1, 1), lengths=X_test_len[0])#, lengths=X_test_len)
-        # prop_f, predicts_f = clf_false.decode(X_test, lengths=X_test_len)
-        
-        # print(prop_t)
+def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv'):
 
-        # print(len(predicts_t))
-        # print(len(y_test))
-        # print(predicts_t)
-        # print(predicts_f)
-        
-        # predicts = []
-        # for branch in X_test:
-        #     pred_f_prob = viterbi([0], branch, start_probs, transition_probs, emmision_probs)
-        #     pred_t_prob = viterbi([1], branch, start_probs, transition_probs, emmision_probs)
-        #     predicts.append(int(pred_t_prob > pred_f_prob))
-        _, acc_t, f1_t = model_stats.cm_acc_f1(y_test, predicts, [0,1])
-        # _, acc_f, f1_f = model_stats.cm_acc_f1(y_test, predicts_f, [0,1])
-        print("%-20s%-10.2f%-10.2f" % (test_event, acc_t, f1_t))
-        # print("%-20s%-10s%-10.2f%-10.2f" % (test_event, "false", acc_f, f1_f))
-        # print(train)
+    print("Testing on danish data")
 
-Loo_event_test(events)
+    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)
 
-# X_train, y_train = get_x_y(data_train, 1)
-# X_dev, y_dev = get_x_y(data_dev, 1)
-# print(len(X_train))
+    danish_data_X = [x[1] for x in danish_data]
+    danish_data_y = [x[0] for x in danish_data]
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        danish_data_X, danish_data_y, test_size=0.2, random_state=42, stratify=danish_data_y)
+    
+    train_y_x = list(zip(y_train, X_train))
 
-# start_probs, transition_probs, emmision_probs = calculate_probabilities(X_train, y_train)
+    for s in range(1,16):
+        best_acc = 0.0
+        best_f1 = 0.0
 
-# predicts = []
-# for branch in X_dev:
-#     pred_f_prob = viterbi([0], branch, start_probs, transition_probs, emmision_probs)
-#     pred_t_prob = viterbi([1], branch, start_probs, transition_probs, emmision_probs)
-#     #print("Probability for false: {}\t true: {}".format(pred_f_prob, pred_t_prob))
-#     predicts.append(int(pred_t_prob > pred_f_prob))
+        # try out different random configurations
+        for c in range(1):
+            # test on danish data
+            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=1)
+            da_predicts = predict(X_test, clf_true, clf_false)
 
-# model_stats.print_confusion_matrix(y_dev, predicts, [0,1])
-
-# print("semeval training, danish test:\n")
-# y_danish = [x[0] for x in danish_data]
-# X_danish = [x[1] for x in danish_data]
-
-# danish_predicts = []
-
-# for branch in X_danish:
-#     pred_f_prob = viterbi([0], branch, start_probs, transition_probs, emmision_probs)
-#     pred_t_prob = viterbi([1], branch, start_probs, transition_probs, emmision_probs)
-
-#     danish_predicts.append(int(pred_t_prob > pred_f_prob))
-
-# model_stats.print_confusion_matrix(y_danish, danish_predicts, [0,1])
+            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
+            
+            if f1_t_da > best_f1:
+                best_acc = acc_t_da
+                best_f1 = f1_t_da
+        print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
+    
+    
+if __name__ == "__main__":
+    main(sys.argv[1:])

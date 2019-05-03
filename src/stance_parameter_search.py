@@ -45,16 +45,16 @@ settings = [
 settings_rand = [
     # ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': sp_expon(scale=.1), 'C': sp_randint(1, 1000),
     #                     'class_weight': ['balanced', None]}),
-    ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
-                                 'class_weight': ['balanced', None], 'max_iter': [100000],
-                                 'tol': sp_expon(scale=1e-4)}),
+    # ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
+    #                              'class_weight': ['balanced', None], 'max_iter': [100000],
+    #                              'tol': sp_expon(scale=1e-4)}),
     # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
     #                                     'max_depth': sp_randint(2, 50), "min_samples_split": sp_randint(2, 11),
     #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
     #                                     'presort': [True]}),
-    # ('logistic-regression', LogisticRegression(), {'solver': ['liblinear', 'saga'], 'penalty':['l1', 'l2'],
-    #                                                'class_weight': ['balanced', None],
-    #                                                'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
+    ('logistic-regression', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1', 'l2'],
+                                                   'class_weight': ['balanced', None],
+                                                   'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
     # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 2000), 'criterion': ['entropy', 'gini'],
     #                                              'max_depth': sp_randint(2, 50), 'max_features': ['auto', 'log2', None],
     #                                              "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
@@ -81,7 +81,9 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
             csv_writer = csv.writer(statsfile)
             csv_writer.writerow(['estimator', 'f1_macro', 'acc', 'LOO feature', 'parameters', 'features'])
     for feature_name in feature_names:
-        if not features[feature_name]:
+        results_filename = '%s/params_%s_iter%d_k%d.txt' % (filepath, feature_name, rand_iter, folds)
+        if not features[feature_name] or os.path.exists(results_filename):
+            print('Skipping %s since %s exists' % (feature_name, results_filename))
             continue
         if feature_name == 'all':
             print('Running with all features enabled')
@@ -91,8 +93,7 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
         X_train_ = data_loader.select_features(X_train, feature_mapping, features)
         X_test_ = data_loader.select_features(X_test, feature_mapping, features)
         start = time.time()
-        with open('%s/params_%s_iter%d_k%d.txt' % (filepath, feature_name, rand_iter, folds), 'w+') as outfile, \
-                open(stats_filename, 'a', newline='') as statsfile:
+        with open(results_filename, 'a+') as outfile, open(stats_filename, 'a', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
             if not grid_search:
                 clf = RandomizedSearchCV(
