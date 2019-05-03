@@ -1,9 +1,10 @@
 import argparse
-from sklearn.svm import SVC
+from sklearn.svm import SVC, LinearSVC
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict
+from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate
 from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
@@ -14,10 +15,10 @@ import sys
 import data_loader
 import model_stats
 
-output_folder = '../output/'
+output_folder = '../output/cross_validation/'
 
 
-def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=5, n_jobs=-1):
+def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=3, n_jobs=1):
     plt.figure()
     plt.title(title)
     if ylim:
@@ -38,7 +39,7 @@ def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, c
     plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
                      test_scores_mean + test_scores_std, alpha=0.1, color='g')
     plt.plot(train_sizes, train_scores_mean, 'o-', color='r', label="Training score")
-    plt.plot(train_sizes, test_scores_mean, 'o-', color='g', label="Cross-validation score")
+    plt.plot(train_sizes, test_scores_mean, 'o-', color='g', label="Cross-validation test score")
     plt.legend(loc='best')
     return plt
 
@@ -69,15 +70,14 @@ def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
     return ax
 
 classifiers = {
-    'Logistic Regression': LogisticRegression(solver='liblinear', C=10, penalty='l1', multi_class='auto'),
-    'Decision Tree': DecisionTreeClassifier(criterion="entropy", splitter='random'),
-    'RBF SVM': SVC(kernel='rbf', C=1000, gamma=0.001),
-    'Linear SVM': SVC(kernel='linear', C=10),
-    'Random Forest': RandomForestClassifier(criterion='entropy', n_estimators=10),
-    'Majority vote': DummyClassifier(strategy='most_frequent'),
-    'Stratified Random': DummyClassifier(strategy='stratified')
+    'logistic-regression': LogisticRegression(solver='liblinear'),
+    'tree': DecisionTreeClassifier(),
+    'rbf-svm': SVC(kernel='rbf'),
+    'linear-svm': LinearSVC(),
+    'random-forest': RandomForestClassifier(),
+    'majority-vote': DummyClassifier(strategy='most_frequent'),
+    'stratified-random': DummyClassifier(strategy='stratified')
 }
-
 
 def visualize_cv(cv, n_splits, X, y):
     fig, ax = plt.subplots()
@@ -91,7 +91,7 @@ def visualize_cv(cv, n_splits, X, y):
     plt.show()
 
     
-def cross_val_plot(score):
+def cross_val_plot(score, X, y, skf):
     filepath = os.path.join(output_folder, 'cross_val_plot')
     for name, clf in classifiers.items():
         print('Plotting learning curve for', name)
@@ -102,53 +102,84 @@ def cross_val_plot(score):
         # plt.show()
 
 
-def cross_val(score_metric, X, y, skf, score=False,  plot=False):
-    if plot:
-        cross_val_plot(score_metric)
-    if score:
-        filepath = os.path.join(output_folder, 'cross_val_scoring')
-        with open('%s_%s.txt' % (filepath, score_metric), 'w+') as outfile:
-            for name, clf in classifiers.items():
-                scores = cross_val_score(clf, X, y, cv=skf, scoring=score_metric)
-                s = "%-20s%s %0.2f (+/- %0.2f)" % (name, score_metric, scores.mean(), scores.std() * 2)
-                print(s)
-                outfile.write(s + '\n')
-
-def cross_predict(X, y, skf):
+def cross_val(X, y, skf, plot_lc, reduced_feature):
+    scoring = [
+        'f1_macro',
+        'accuracy'
+    ]
     for name, clf in classifiers.items():
+        scores = cross_validate(clf, X, y, cv=skf, scoring=scoring, n_jobs=-1, return_train_score=False)
+        s = "%-20s%s %0.2f (+/- %0.2f) %s %0.2f (+/- %0.2f)" \
+            % (name, 'f1', scores['test_f1_macro'].mean(), scores['test_f1_macro'].std() * 2,
+               'acc', scores['test_accuracy'].mean(), scores['test_accuracy'].std() * 2)
+        print(s)
+        filepath = os.path.join(output_folder, 'cross_validate_k%d' % skf.n_splits)
+        if reduced_feature:
+            filepath += '_vt'
+        with open('%s.txt' % filepath, 'a+') as outfile:
+            outfile.write(s + '\n')
+        if plot_lc:
+            print('Plotting learning curve')
+            folder = os.path.join(output_folder, name)
+            if not os.path.exists(folder):
+                os.makedirs(folder)
+            for score in scoring:
+                plot_learning_curve(clf, '%s %s' % (name, score), X, y, scoring=score, cv=skf)
+                s = os.path.join(folder, 'learning_curve_%s_k%d' % (score, skf.n_splits))
+                if reduced_feature:
+                    s += '_vt'
+                s += '.png'
+                plt.savefig(s, bbox_inches='tight')
+                print('Saved plot to', s)
+
+def cross_predict(X, y, skf, reduced_feature):
+    for name, clf in classifiers.items():
+        folder = os.path.join(output_folder, name)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         predicted = cross_val_predict(clf, X, y, cv=skf)
+        filename = os.path.join(folder, 'prediction_cm_k%d' % skf.n_splits)
+        if reduced_feature:
+            filename += '_vt'
         model_stats.plot_confusion_matrix(y, predicted, title='%s Confusion matrix - no normalization' % name,
-                                          save_to_filename='%s_cm.png' % (output_folder + name))
+                                          save_to_filename= '%s.png' % filename)
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_train.csv',
+    parser.add_argument('-x', '--train_file', dest='train_file',
+                        default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
-    parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_test.csv',
+    parser.add_argument('-y', '--test_file', dest='test_file',
+                        default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
-    parser.add_argument('-k', '--k_folds', dest='k_folds', const=5, type=int, nargs='?',
+    parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
-    parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
-                        help='Enable accuracy metric')
-    parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
-                        help='Enable F1 macro metric')
+    # parser.add_argument('-a', '--accuracy', dest='acc', action='store_true', default=False,
+    #                     help='Enable accuracy metric')
+    # parser.add_argument('-f', '--f1_macro', dest='f1_macro', action='store_true', default=False,
+    #                     help='Enable F1 macro metric')
     parser.add_argument('-l', '--learning_curve', dest='learning_curve', action='store_true', default=False,
                         help='Enable plotting of learning curve')
-    parser.add_argument('-s', '--score', dest='score', action='store_true', default=True,
-                        help='Cross-validate scoring')
+    # parser.add_argument('-s', '--score', dest='score', action='store_true', default=True,
+    #                     help='Cross-validate scoring')
     parser.add_argument('-p', '--predict', action='store_true', default=False,
                         help='Cross-validate prediction')
+    parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
+                        help='Reduce features by Variance Threshold')
 
     args = parser.parse_args(argv)
     X, y, _, feature_mapping = data_loader.load_train_test_data(train_file=args.train_file,
                                                                 test_file=args.test_file, split=False)
-    X = data_loader.select_features(X, feature_mapping, text=True, lexicon=False, pos=False)
+    config = data_loader.get_features()
+    X = data_loader.select_features(X, feature_mapping, config)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
+    if args.reduce_features:
+        X = VarianceThreshold(0.01).fit_transform(X)
 
     # visualize_cv(skf, args.k_folds, X, y)
-    cross_val('accuracy' if args.acc else 'f1_macro', X, y, skf, args.score, args.learning_curve)
+    cross_val(X, y, skf, args.learning_curve, args.reduce_features)
     if args.predict:
-        cross_predict(X, y, skf)
+        cross_predict(X, y, skf, args.reduce_features)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

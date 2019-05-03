@@ -10,6 +10,7 @@ data/pheme_data/old_version/
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
+output/**/*.png
 !output/README.md
 data/corpus/**
 !data/corpus/README.md
