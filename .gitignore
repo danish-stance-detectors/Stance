@@ -9,6 +9,7 @@ data/pheme_data/pheme-rumour-scheme-dataset/
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
+output/**/*.png
 !output/README.md
 data/corpus/**
 !data/corpus/README.md
