@@ -173,8 +173,10 @@ def main(argv):
     config = data_loader.get_features()
     X = data_loader.select_features(X, feature_mapping, config)
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
+    print(len(X[0]))
     if args.reduce_features:
-        X = VarianceThreshold(0.01).fit_transform(X)
+        X = VarianceThreshold(0.001).fit_transform(X)
+    print(len(X[0]))
 
     # visualize_cv(skf, args.k_folds, X, y)
     cross_val(X, y, skf, args.learning_curve, args.reduce_features)
