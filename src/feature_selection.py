@@ -32,8 +32,9 @@ def eleminate_low_variance_features(threshold, xx):
     selector = VarianceThreshold(threshold)
     X_ = selector.fit_transform(xx)
     n = len(X_[0])
-    print('t: %.4f\tn:%d' % (threshold, n))
     return n
+# ll = eleminate_low_variance_features(0.01, data_loader.select_features(X, feature_mapping, config_map, merge=True))
+# print(ll)
 
 def test_variance_threshold(X, plot=True):
     xx = data_loader.select_features(X, feature_mapping, config_map, merge=True)
@@ -42,6 +43,7 @@ def test_variance_threshold(X, plot=True):
     feature_lengths = []
     for t in thresholds:
         f = eleminate_low_variance_features(t, xx)
+        print('t: %.4f\tn:%d' % (t, f))
         feature_lengths.append(f)
 
     if plot:
@@ -51,7 +53,7 @@ def test_variance_threshold(X, plot=True):
         plt.ylabel("Number of features selected")
         plt.plot(thresholds, feature_lengths)
         plt.show()
-test_variance_threshold(X, plot=False)
+# test_variance_threshold(X, plot=False)
 
 def check_feature_importance():
     for feature_name in config_map.keys():
@@ -61,10 +63,16 @@ def check_feature_importance():
             continue
         config_map[feature_name] = True
         X__ = data_loader.select_features(X, feature_mapping, config_map)
+        l = len(X__[0])
+        # print(l)
         f = eleminate_low_variance_features(0.001, X__)
-        print('{:20}All:{}\tAfter:{}'.format(feature_name, len(X__[0]), f))
+        # try:
+        #     f = eleminate_low_variance_features(0.0, X__)
+        # except ValueError:
+        #     f = l
+        print('{:20}All:{}\tAfter:{}'.format(feature_name, l, f))
         config_map[feature_name] = False
-
+check_feature_importance()
 
 
 def check_feature_selection():
