@@ -27,27 +27,52 @@ X, y, n_features, feature_mapping = data_loader.load_train_test_data(
 
 config_map = data_loader.get_features()
 
-X = data_loader.select_features(X, feature_mapping, config_map)
-print(len(X[0]))
-# y = data_loader.select_features(y, feature_mapping, config_map)
-def eleminate_low_variance_features(threshold, X):
+
+def eleminate_low_variance_features(threshold, xx):
     selector = VarianceThreshold(threshold)
-    X_ = selector.fit_transform(X)
+    X_ = selector.fit_transform(xx)
     n = len(X_[0])
     print('t: %.4f\tn:%d' % (threshold, n))
     return n
-thresholds = np.linspace(0, 0.01, 21)
-feature_lengths = []
-for t in  thresholds:
-    n = eleminate_low_variance_features(t, X)
-    feature_lengths.append(n)
 
-# Plot number of features VS. cross-validation scores
-plt.figure()
-plt.xlabel("Variance threshold")
-plt.ylabel("Number of features selected")
-plt.plot(thresholds, feature_lengths)
-plt.show()
+def test_variance_threshold(X, plot=True):
+    xx = data_loader.select_features(X, feature_mapping, config_map, merge=True)
+    print(len(xx[0]))
+    thresholds = np.linspace(0, 0.01, 21)
+    feature_lengths = []
+    for t in thresholds:
+        f = eleminate_low_variance_features(t, xx)
+        feature_lengths.append(f)
+
+    if plot:
+        # Plot number of features VS. cross-validation scores
+        plt.figure()
+        plt.xlabel("Variance threshold")
+        plt.ylabel("Number of features selected")
+        plt.plot(thresholds, feature_lengths)
+        plt.show()
+test_variance_threshold(X, plot=False)
+
+def check_feature_importance():
+    for feature_name in config_map.keys():
+        config_map[feature_name] = False
+    for feature_name in config_map.keys():
+        if feature_name == 'all':
+            continue
+        config_map[feature_name] = True
+        X__ = data_loader.select_features(X, feature_mapping, config_map)
+        f = eleminate_low_variance_features(0.001, X__)
+        print('{:20}All:{}\tAfter:{}'.format(feature_name, len(X__[0]), f))
+        config_map[feature_name] = False
+
+
+
+def check_feature_selection():
+    for feature_name in config_map.keys():
+        config_map[feature_name] = False
+        X__, shape = data_loader.select_features(X, feature_mapping, config_map, merge=False)
+        print('LOO:{:20}{}'.format(feature_name, shape))
+        config_map[feature_name] = True
 
 # X = np.array(X)
 # y = np.array(y)
