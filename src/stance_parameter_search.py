@@ -1,4 +1,5 @@
 from sklearn.model_selection import GridSearchCV, StratifiedKFold, RandomizedSearchCV
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.metrics import classification_report
 import numpy as np
 from scipy.stats import randint as sp_randint
@@ -7,7 +8,7 @@ from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
-import argparse, os, csv
+import argparse, os, csv, sys
 import time
 import data_loader
 from model_stats import plot_confusion_matrix, cm_acc_f1
@@ -25,6 +26,8 @@ parser.add_argument('-g', '--grid', default=False, action='store_true',
                     help='Enable GridSearchCV, otherwise use RandomizedSearchCV')
 parser.add_argument('-n', '--rand_samples', default=10, type=int, nargs='?',
                     help='Number of random samples if using RandomizedSearchCV')
+parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
+                    help='Reduce features by Variance Threshold')
 args = parser.parse_args()
 
 X_train, X_test, y_train, y_test, _, feature_mapping = data_loader.load_train_test_data(
@@ -48,13 +51,13 @@ settings_rand = [
     # ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
     #                              'class_weight': ['balanced', None], 'max_iter': [100000],
     #                              'tol': sp_expon(scale=1e-4)}),
-    # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-    #                                     'max_depth': sp_randint(2, 50), "min_samples_split": sp_randint(2, 11),
-    #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
-    #                                     'presort': [True]}),
-    ('logistic-regression', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1', 'l2'],
-                                                   'class_weight': ['balanced', None],
-                                                   'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
+    ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
+                                        'max_depth': sp_randint(2, 50), "min_samples_split": sp_randint(2, 11),
+                                        'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
+                                        'presort': [True]}),
+    # ('logistic-regression', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1', 'l2'],
+    #                                                'class_weight': ['balanced', None],
+    #                                                'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
     # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 2000), 'criterion': ['entropy', 'gini'],
     #                                              'max_depth': sp_randint(2, 50), 'max_features': ['auto', 'log2', None],
     #                                              "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
@@ -75,13 +78,15 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
     if not os.path.exists(filepath):
         os.makedirs(filepath)
     print("# Tuning hyper-parameters on F1 macro for %s" % name)
-    stats_filename = '%s/parameter_stats_iter%d_k%d.txt' % (filepath, rand_iter, folds)
+    stats_filename = '%s/parameter_stats_iter%d_k%d' % (filepath, rand_iter, folds)
+    if args.reduce_features:
+        stats_filename += '_vt'
     if not os.path.exists(stats_filename):
         with open(stats_filename, 'w+', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
             csv_writer.writerow(['estimator', 'f1_macro', 'acc', 'LOO feature', 'parameters', 'features'])
     for feature_name in feature_names:
-        results_filename = '%s/params_%s_iter%d_k%d.txt' % (filepath, feature_name, rand_iter, folds)
+        results_filename = '%s/params_%s_iter%d_k%d' % (filepath, feature_name, rand_iter, folds)
         if not features[feature_name] or os.path.exists(results_filename):
             print('Skipping %s since %s exists' % (feature_name, results_filename))
             continue
@@ -92,8 +97,16 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
         features[feature_name] = False
         X_train_ = data_loader.select_features(X_train, feature_mapping, features)
         X_test_ = data_loader.select_features(X_test, feature_mapping, features)
+        if args.reduce_features:
+            old_len = len(X_train_[0])
+            X_train_ = VarianceThreshold(0.001).fit_transform(X_train_)
+            X_test_ = VarianceThreshold(0.001).fit_transform(X_test_)
+            new_len = len(X_train_[0])
+            print('Reduced features from %d to %d' % (old_len, new_len))
+            results_filename += '_vt%d' % old_len
         start = time.time()
-        with open(results_filename, 'a+') as outfile, open(stats_filename, 'a', newline='') as statsfile:
+        with open('%s.txt' % results_filename, 'a+') as outfile, \
+                open('%s.txt' % stats_filename, 'a', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
             if not grid_search:
                 clf = RandomizedSearchCV(
