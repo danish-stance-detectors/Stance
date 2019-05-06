@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.369 for {'C': 110, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Grid scores on development set:
+0.366 (+/-0.050) for {'C': 326, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.352 (+/-0.067) for {'C': 104, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.355 (+/-0.050) for {'C': 942, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.340 (+/-0.043) for {'C': 339, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.353 (+/-0.057) for {'C': 831, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.369 (+/-0.062) for {'C': 391, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.351 (+/-0.062) for {'C': 826, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.369 (+/-0.017) for {'C': 110, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.355 (+/-0.056) for {'C': 482, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.367 (+/-0.060) for {'C': 950, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.24      0.21      0.22        68
+           1       0.35      0.36      0.35        75
+           2       0.22      0.10      0.14        20
+           3       0.84      0.86      0.85       589
+
+   micro avg       0.73      0.73      0.73       752
+   macro avg       0.41      0.38      0.39       752
+weighted avg       0.72      0.73      0.73       752
+
+[[ 14  11   2  41]
+ [  6  27   0  42]
+ [  2   2   2  14]
+ [ 37  38   5 509]]
+acc: 0.7340
+f1 macro: 0.3908
+

@@ -6,9 +6,11 @@ data/preprocessed/*.csv
 data/semeval_rumour_data/semeval2017-task8-dataset
 data/semeval_rumour_data/semeval2017-test-data
 data/pheme_data/pheme-rumour-scheme-dataset/
+data/pheme_data/old_version/
 src/tree_pdfs/**
 data/word2vec/*
 !data/word2vec/README.md
+output/**/*.png
 !output/README.md
 data/corpus/**
 !data/corpus/README.md

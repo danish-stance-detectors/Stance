@@ -36,31 +36,35 @@ def get_features():
                     'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}
 
 
-def select_features(data, feature_mapping, config_map):
+def select_features(data, feature_mapping, config_map, merge=True):
     filtered_data = []
     for instance in data:
         selected_features = []
         if config_map['text']:
-            selected_features.extend(instance[feature_mapping['text']])
-        if config_map['sentiment']:
-            selected_features.extend(instance[feature_mapping['sentiment']])
+            selected_features.append(instance[feature_mapping['text']])
         if config_map['lexicon']:
-            selected_features.extend(instance[feature_mapping['lexicon']])
+            selected_features.append(instance[feature_mapping['lexicon']])
+        if config_map['sentiment']:
+            selected_features.append(instance[feature_mapping['sentiment']])
         if config_map['reddit']:
-            selected_features.extend(instance[feature_mapping['reddit']])
+            selected_features.append(instance[feature_mapping['reddit']])
         if config_map['most_freq']:
-            selected_features.extend(instance[feature_mapping['most_frequent']])
+            selected_features.append(instance[feature_mapping['most_frequent']])
         if config_map['bow']:
-            selected_features.extend(instance[feature_mapping['bow']])
+            selected_features.append(instance[feature_mapping['bow']])
         if config_map['pos']:
-            selected_features.extend(instance[feature_mapping['pos']])
+            selected_features.append(instance[feature_mapping['pos']])
         if config_map['wembs']:
             if feature_mapping['word2vec']:
-                selected_features.extend(instance[feature_mapping['word2vec']])
+                selected_features.append(instance[feature_mapping['word2vec']])
             else:
-                selected_features.extend(instance[feature_mapping['fasttext']])
+                selected_features.append(instance[feature_mapping['fasttext']])
+        if merge:
+            selected_features = [item for sublist in selected_features for item in sublist]
         filtered_data.append(selected_features)
-    return filtered_data
+    if merge:
+        return filtered_data
+    return filtered_data, [len(v) for v in filtered_data[0]]
 
 
 def get_features_and_labels(filename=datafile, delimiter=tab):

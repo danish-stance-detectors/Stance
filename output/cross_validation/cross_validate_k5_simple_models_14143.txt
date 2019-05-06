@@ -1,0 +1,7 @@
+logistic-regression f1 0.36 (+/- 0.06) acc 0.78 (+/- 0.01)
+tree                f1 0.32 (+/- 0.04) acc 0.70 (+/- 0.02)
+rbf-svm             f1 0.22 (+/- 0.00) acc 0.78 (+/- 0.00)
+linear-svm          f1 0.40 (+/- 0.05) acc 0.76 (+/- 0.01)
+random-forest       f1 0.27 (+/- 0.05) acc 0.78 (+/- 0.01)
+majority-vote       f1 0.22 (+/- 0.00) acc 0.78 (+/- 0.00)
+stratified-random   f1 0.26 (+/- 0.04) acc 0.63 (+/- 0.03)

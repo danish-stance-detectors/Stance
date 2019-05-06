@@ -1,0 +1,21 @@
+Best parameters set found on development set for F1 macro:
+0.311 for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 39, 'max_features': None, 'min_samples_split': 6, 'n_estimators': 1462}
+Grid scores on development set:
+0.226 (+/-0.011) for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 23, 'max_features': 'log2', 'min_samples_split': 7, 'n_estimators': 1336}
+0.244 (+/-0.016) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 49, 'max_features': 'auto', 'min_samples_split': 8, 'n_estimators': 1107}
+0.246 (+/-0.020) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 24, 'max_features': 'auto', 'min_samples_split': 7, 'n_estimators': 1061}
+0.311 (+/-0.013) for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 39, 'max_features': None, 'min_samples_split': 6, 'n_estimators': 1462}
+0.249 (+/-0.013) for {'bootstrap': False, 'class_weight': None, 'criterion': 'gini', 'max_depth': 47, 'max_features': 'auto', 'min_samples_split': 7, 'n_estimators': 53}
+0.226 (+/-0.011) for {'bootstrap': True, 'class_weight': None, 'criterion': 'gini', 'max_depth': 36, 'max_features': 'log2', 'min_samples_split': 8, 'n_estimators': 440}
+0.219 (+/-0.000) for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 2, 'max_features': 'log2', 'min_samples_split': 6, 'n_estimators': 1695}
+0.246 (+/-0.009) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 31, 'max_features': 'auto', 'min_samples_split': 3, 'n_estimators': 77}
+0.246 (+/-0.009) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 42, 'max_features': 'auto', 'min_samples_split': 10, 'n_estimators': 1827}
+0.248 (+/-0.022) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 29, 'max_features': None, 'min_samples_split': 8, 'n_estimators': 798}
+Classification report for results on evaluation set:
+[[ 10  14   3  41]
+ [ 10  18   1  46]
+ [  5   4   1  10]
+ [ 53  52  18 466]]
+acc: 0.65824
+f1 macro: 0.303346
+

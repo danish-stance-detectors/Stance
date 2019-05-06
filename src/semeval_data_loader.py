@@ -11,13 +11,17 @@ from datetime import datetime
 #training_data_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/rumoureval-data/'
 training_data_path_en = '../data/pheme_data/pheme-rumour-scheme-dataset/threads/en/'
 training_data_path_de = '../data/pheme_data/pheme-rumour-scheme-dataset/threads/de/'
+training_data_path_en_old = '../data/pheme_data/old_version/pheme-rumour-scheme-dataset/threads/en/'
+training_data_path_de_old = '../data/pheme_data/old_version/pheme-rumour-scheme-dataset/threads/de/'
 test_data_path = '../data/semeval_rumour_data/semeval2017-task8-test-labels/'
 
 training_labels_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/traindev/rumoureval-subtaskA-train.json'
 dev_labels_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/traindev/rumoureval-subtaskA-dev.json'
 test_stance_labels = '../data/semeval_rumour_data/semeval2017-task8-test-labels/subtaska.json'
-pheme_stance_labels_de = '../data/pheme-rumour-scheme-dataset/annotations/de-scheme-annotations.json'
-pheme_stance_labels_en = '../data/pheme-rumour-scheme-dataset/annotations/en-scheme-annotations.json'
+pheme_stance_labels_de = '../data/pheme_data/pheme-rumour-scheme-dataset/annotations/de-scheme-annotations.json'
+pheme_stance_labels_en = '../data/pheme_data/pheme-rumour-scheme-dataset/annotations/en-scheme-annotations.json'
+pheme_stance_labels_de_old = '../data/pheme_data/old_version/pheme-rumour-scheme-dataset/annotations/de-scheme-annotations.json'
+pheme_stance_labels_en_old = '../data/pheme_data/old_version/pheme-rumour-scheme-dataset/annotations/en-scheme-annotations.json'
 
 rumour_train_labels_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/traindev/rumoureval-subtaskB-train.json'
 rumour_dev_labels_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/traindev/rumoureval-subtaskB-dev.json'
@@ -98,10 +102,10 @@ def read_all_rumours(path, rumour_dict, stance_dict, include_all=False):
             event_data = read_conversations_in_dir(event_path, event, rumour_dict, stance_dict, min_len=1)
 
             # Event must yield atleast 5 conversations with 5 or more tweets
-            tmp_len = len([x for x in event_data if len(x[2]) > 4])
-            if tmp_len > 4 or include_all:
+            # tmp_len = len([x for x in event_data if len(x[2]) > 4])
+            # if tmp_len > 4 or include_all:
                 #event_data = [x for x in event_data if len(x[2]) >= 10]
-                data.extend(event_data)
+            data.extend(event_data)
 
     return data
 
@@ -192,13 +196,13 @@ rumour_labels.update(read_rumour_labels(rumour_dev_labels_path))
 # stance labels
 # stance_labels.update(read_stance_labels(training_labels_path))
 # stance_labels.update(read_stance_labels(dev_labels_path))
-stance_labels.update(read_pheme_labels(pheme_stance_labels_de))
-stance_labels.update(read_pheme_labels(pheme_stance_labels_en))
+# stance_labels.update(read_pheme_labels(pheme_stance_labels_de_old))
+stance_labels.update(read_pheme_labels(pheme_stance_labels_en_old))
 # stance_labels.update(read_stance_labels(test_stance_labels))
 
-rumour_data = read_all_rumours(training_data_path_en, rumour_labels, stance_labels)
-rumour_data_de = read_all_rumours(training_data_path_de, rumour_labels, stance_labels)
-rumour_data.extend(rumour_data_de)
+rumour_data = read_all_rumours(training_data_path_en_old, rumour_labels, stance_labels)
+# rumour_data_de = read_all_rumours(training_data_path_de_old, rumour_labels, stance_labels)
+# rumour_data.extend(rumour_data_de)
 #rumour_data_dev = read_all_rumours(training_data_path, rumour_labels_test, stance_labels_test)
 #rumour_data_test = read_test_rumours(test_data_path, rumour_labels_test, stance_labels_test)
 
@@ -207,4 +211,4 @@ rumour_data.extend(rumour_data_de)
 
 print("Found data for {} training rumours".format(len(rumour_data)))
 
-write_hmm_data(data_folder + 'semeval_rumours_train_pheme.csv', rumour_data)
+write_hmm_data(data_folder + 'rumours_pheme_train_dev_old.csv', rumour_data)
