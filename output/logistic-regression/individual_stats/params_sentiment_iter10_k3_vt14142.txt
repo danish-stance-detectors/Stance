@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.376 for {'C': 57, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Grid scores on development set:
+0.363 (+/-0.061) for {'C': 677, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.361 (+/-0.062) for {'C': 807, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.351 (+/-0.036) for {'C': 478, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.363 (+/-0.061) for {'C': 422, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.351 (+/-0.019) for {'C': 232, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.376 (+/-0.053) for {'C': 57, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.357 (+/-0.039) for {'C': 717, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.350 (+/-0.037) for {'C': 681, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.363 (+/-0.085) for {'C': 95, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.356 (+/-0.077) for {'C': 723, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.22      0.19      0.21        68
+           1       0.30      0.32      0.31        75
+           2       0.29      0.10      0.15        20
+           3       0.83      0.86      0.85       589
+
+   micro avg       0.72      0.72      0.72       752
+   macro avg       0.41      0.37      0.38       752
+weighted avg       0.71      0.72      0.72       752
+
+[[ 13  12   1  42]
+ [  8  24   0  43]
+ [  1   2   2  15]
+ [ 36  43   4 506]]
+acc: 0.7247
+f1 macro: 0.3773
+

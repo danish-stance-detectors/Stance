@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.366 for {'C': 121, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Grid scores on development set:
+0.355 (+/-0.075) for {'C': 859, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.352 (+/-0.079) for {'C': 872, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.342 (+/-0.056) for {'C': 704, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.364 (+/-0.059) for {'C': 160, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.364 (+/-0.059) for {'C': 188, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.356 (+/-0.046) for {'C': 679, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.366 (+/-0.058) for {'C': 121, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.360 (+/-0.079) for {'C': 218, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.363 (+/-0.059) for {'C': 619, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.363 (+/-0.058) for {'C': 981, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.24      0.21      0.22        68
+           1       0.30      0.32      0.31        75
+           2       0.29      0.10      0.15        20
+           3       0.84      0.86      0.85       589
+
+   micro avg       0.73      0.73      0.73       752
+   macro avg       0.42      0.37      0.38       752
+weighted avg       0.72      0.73      0.72       752
+
+[[ 14  12   1  41]
+ [  8  24   0  43]
+ [  1   3   2  14]
+ [ 36  41   4 508]]
+acc: 0.7287
+f1 macro: 0.3821
+
