@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.341 for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 16, 'max_features': None, 'min_samples_split': 2, 'presort': True, 'splitter': 'random'}
+Grid scores on development set:
+0.341 (+/-0.019) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 16, 'max_features': None, 'min_samples_split': 2, 'presort': True, 'splitter': 'random'}
+0.333 (+/-0.056) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 43, 'max_features': None, 'min_samples_split': 6, 'presort': True, 'splitter': 'best'}
+0.287 (+/-0.087) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 40, 'max_features': 'log2', 'min_samples_split': 6, 'presort': True, 'splitter': 'best'}
+0.314 (+/-0.042) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 19, 'max_features': None, 'min_samples_split': 8, 'presort': True, 'splitter': 'random'}
+0.321 (+/-0.029) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 26, 'max_features': None, 'min_samples_split': 6, 'presort': True, 'splitter': 'best'}
+0.270 (+/-0.008) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 46, 'max_features': 'auto', 'min_samples_split': 6, 'presort': True, 'splitter': 'random'}
+0.280 (+/-0.020) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 24, 'max_features': 'auto', 'min_samples_split': 5, 'presort': True, 'splitter': 'best'}
+0.269 (+/-0.037) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 18, 'max_features': 'auto', 'min_samples_split': 3, 'presort': True, 'splitter': 'random'}
+0.280 (+/-0.027) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 28, 'max_features': 'auto', 'min_samples_split': 10, 'presort': True, 'splitter': 'best'}
+0.271 (+/-0.043) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 29, 'max_features': 'log2', 'min_samples_split': 8, 'presort': True, 'splitter': 'best'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.19      0.13      0.16        68
+           1       0.19      0.12      0.15        75
+           2       0.12      0.15      0.14        20
+           3       0.81      0.86      0.83       589
+
+   micro avg       0.70      0.70      0.70       752
+   macro avg       0.33      0.32      0.32       752
+weighted avg       0.67      0.70      0.69       752
+
+[[  9   5   2  52]
+ [  6   9   1  59]
+ [  4   1   3  12]
+ [ 29  33  18 509]]
+acc: 0.7048
+f1 macro: 0.3179
+

@@ -1,0 +1,42 @@
+Best parameters set found on development set for F1 macro:
+0.348 for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': None, 'min_samples_split': 10, 'presort': True, 'splitter': 'best'}
+Grid scores on development set:
+0.253 (+/-0.052) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 2, 'presort': True, 'splitter': 'random'}
+0.309 (+/-0.044) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 5, 'presort': True, 'splitter': 'random'}
+0.274 (+/-0.047) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 10, 'presort': True, 'splitter': 'best'}
+0.236 (+/-0.029) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': None, 'min_samples_split': 2, 'presort': True, 'splitter': 'best'}
+0.219 (+/-0.001) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 4, 'presort': True, 'splitter': 'best'}
+0.239 (+/-0.014) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 5, 'presort': True, 'splitter': 'random'}
+0.305 (+/-0.031) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': None, 'min_samples_split': 8, 'presort': True, 'splitter': 'random'}
+0.228 (+/-0.027) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 3, 'max_features': None, 'min_samples_split': 3, 'presort': True, 'splitter': 'random'}
+0.323 (+/-0.079) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 10, 'max_features': None, 'min_samples_split': 6, 'presort': True, 'splitter': 'random'}
+0.348 (+/-0.064) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': None, 'min_samples_split': 10, 'presort': True, 'splitter': 'best'}
+0.249 (+/-0.053) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 3, 'presort': True, 'splitter': 'best'}
+0.229 (+/-0.019) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 8, 'presort': True, 'splitter': 'best'}
+0.256 (+/-0.024) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 8, 'presort': True, 'splitter': 'random'}
+0.254 (+/-0.019) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 10, 'presort': True, 'splitter': 'random'}
+0.143 (+/-0.082) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 3, 'presort': True, 'splitter': 'best'}
+0.247 (+/-0.062) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': None, 'min_samples_split': 6, 'presort': True, 'splitter': 'random'}
+0.296 (+/-0.034) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'max_features': None, 'min_samples_split': 7, 'presort': True, 'splitter': 'best'}
+0.109 (+/-0.183) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 6, 'presort': True, 'splitter': 'random'}
+0.202 (+/-0.123) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 4, 'presort': True, 'splitter': 'best'}
+0.291 (+/-0.052) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 2, 'presort': True, 'splitter': 'random'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.14      0.15      0.14        68
+           1       0.11      0.16      0.13        75
+           2       0.17      0.20      0.19        20
+           3       0.81      0.75      0.78       589
+
+   micro avg       0.62      0.62      0.62       752
+   macro avg       0.31      0.32      0.31       752
+weighted avg       0.67      0.62      0.64       752
+
+[[ 10  16   5  37]
+ [  9  12   0  54]
+ [  1   5   4  10]
+ [ 53  78  14 444]]
+acc: 0.6250
+f1 macro: 0.3100
+

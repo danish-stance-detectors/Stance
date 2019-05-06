@@ -1,0 +1,2 @@
+estimator,f1_macro,acc,folds,rand_iter,parameters,features
+rbf-svm,0.2633,0.7899,5,20,"{'C': 862, 'class_weight': None, 'gamma': 0.019522352626819117, 'kernel': 'rbf'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
