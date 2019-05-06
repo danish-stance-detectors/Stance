@@ -3,6 +3,7 @@ import hmm_data_loader
 import model_stats
 import sys
 import argparse
+from sklearn.base import BaseEstimator
 
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -22,6 +23,7 @@ def main(argv):
     parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
     parser.add_argument('-ml', '--minumum branch length', dest='min_len', default=1, help='Minimum branch lengths included in training')
     parser.add_argument('-en_da', '--eng_train_da_test', default=False, dest='en_da', action='store_true', help='Train on english data and test on danish data')
+    parser.add_argument('-mix', '--mix_train_test', default=False, dest='mix', action='store_true', help='Train and test on mix of pheme and danish data')
     
 
     args = parser.parse_args(argv)
@@ -34,6 +36,8 @@ def main(argv):
         train_eng_test_danish(args.file_en, args.file_dk, int(args.min_len))
     elif args.pheme:
         train_test_pheme(args.file_en, int(args.min_len))
+    elif args.mix:
+        train_test_mix(args.file_en, args.file_dk, int(args.min_len))
 
 # partition data into events
 def loadEvents(data, print_dist=False, min_len=1):
@@ -65,6 +69,8 @@ def loadEvents(data, print_dist=False, min_len=1):
 
     return events
 
+flatten = lambda l: [item for sublist in l for item in sublist]
+
 # partition data dependin on label
 def get_x_y(data, min_len):
     data = [x for x in data if len(x[1]) >= min_len]
@@ -80,69 +86,51 @@ def get_x_y(data, min_len):
 
     return X_t, y_t, X_f, y_f
 
-# flatten lambda to pass to hmm
-flatten = lambda l: [item for sublist in l for item in sublist]
+class HMM(BaseEstimator):
 
-def apply_random_prob(clf, components):
-    start_prob = np.random.rand(components)
-    start_prob /= start_prob.sum()
+    def __init__(self, components, iter=10):
+        self.components = components
+        self.iter = iter
+        self.flatten = lambda l: [item for sublist in l for item in sublist]
 
-    trans_prob = np.random.rand(components, components)
-    trans_prob /= trans_prob.sum()
+    def fit(self, X, y):
+        dict_y = dict()
 
-    emission_prob = np.random.rand(components, 4)
-    emission_prob /= emission_prob.sum()
+        # Partition data in labels
+        for i in range(len(X)):
+            if y[i] not in dict_y:
+                dict_y[y[i]] = []
+            
+            dict_y[y[i]].append(X[i])
+        
+        self.models = dict()
 
-    # Check that probability values sum to (nearly) 1
-    assert start_prob.sum() - 1 < 1e-4, 'start probability does not sum to 1, but {}'.format(start_prob.sum())
-    assert trans_prob.sum() - 1 < 1e-4, 'transition probability does not sum to 1, but {}'.format(trans_prob.sum())
-    assert emission_prob.sum() - 1 < 1e-4, 'emission probability does not sum to 1, but {}'.format(emission_prob.sum())
-
-    clf.startprob_ = start_prob
-    clf.transmat_ = trans_prob
-    clf.emissionprob_ = emission_prob
-
-def train_models(data, min_len=10, iter=10, components=1, init_random=False):
-    # True and false training data
-    X_t, y_t, X_f, y_f = get_x_y(data, min_len)
-
-    # lengths of each branch
-    X_t_len = [len(x) for x in X_t]
-    X_f_len = [len(x) for x in X_f]
-    
-    # reshape to flat arrays
-    X_t = np.array(flatten(X_t)).reshape(-1, 1)
-    X_f = np.array(flatten(X_f)).reshape(-1, 1)
-
-    # Init models
-    clf_true = hmm.GaussianHMM(n_components=components)
-    clf_false = hmm.GaussianHMM(n_components=components)
-
-    # If init random, initialize and apply random start, emission and transition probabilities
-    if init_random:
-        apply_random_prob(clf_true, components)
-        apply_random_prob(clf_false, components)
-    
-    # fit models
-    clf_true = clf_true.fit(X_t, lengths=X_t_len)
-    clf_false = clf_false.fit(X_f, lengths=X_f_len)
-
-    return clf_true, clf_false
-
-def predict(X, clf_true, clf_false):
-    predicts = []
-    for branch in X:
-        # get len of branch and reshape it
-        b_len = len(branch)
-        branch = np.array(branch).reshape(-1, 1)
-
-        # score branch on each model
-        prop_t = clf_true.score(branch, lengths=[b_len])
-        prop_f = clf_false.score(branch, lengths=[b_len])
-
-        # if true model has higher probability, append 1 otherwise 0
-        predicts.append(int(prop_t > prop_f))
-    return predicts
+        # Make and fit model for each label
+        for y_k, X_list in dict_y.items():
+            X_len = [len(x) for x in X_list]
+            X_tmp = np.array(flatten(X_list)).reshape(-1, 1)
+            
+            self.models[y_k] = hmm.GaussianHMM(n_components=self.components).fit(X_tmp, lengths=X_len)
+        
+        return self
+        
+    def predict(self, X):
+        predicts = []
+        for branch in X:
+            # get len of branch and reshape it
+            b_len = len(branch)
+            branch = np.array(branch).reshape(-1, 1)
+            best_y = -1
+            best_score = None
+            for y, model in self.models.items():
+                score = model.score(branch, lengths=[b_len])
+                if best_score is None or score > best_score:
+                    best_y = y
+                    best_score = score
+            
+            predicts.append(best_y)
+        
+        return predicts
 
 # Leaves one event out for testing and trains on the others
 # does so for each event
@@ -161,6 +149,8 @@ def Loo_event_test(file_en, min_length, print_distribution):
 
         train = [vec for e, vec in event_list if e != test_event]
         train = flatten(train)
+        y_train = [x[0] for x in train]
+        X_train = [x[1] for x in train]
        
         test_vec = [x for x in test_vec if len(x[1]) >= min_length]
         # partition test data and y
@@ -174,10 +164,8 @@ def Loo_event_test(file_en, min_length, print_distribution):
 
             # try out different random configurations
             for c in range(1):
-                
-                clf_true, clf_false = train_models(train, components=s, init_random=True, min_len=min_length)
-                
-                predicts = predict(X_test, clf_true, clf_false)
+                clf = HMM(s).fit(X_train, y_train)
+                predicts = clf.predict(X_test)
 
                 assert len(y_test) == len(predicts), "The length of y_test does not match number of predictions"
 
@@ -190,14 +178,21 @@ def Loo_event_test(file_en, min_length, print_distribution):
                     best_f1 = f1_t
             print("%-20s%-10s%10.2f%10.2f" % (test_event, s, best_acc, best_f1))
 
-def train_eng_test_danish(file_en, file_da, min_length=1):    
+def train_test_mix(file_en, file_da, min_length=1):    
     # load data
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
-    danish_data_X = [x[1] for x in danish_data]
-    danish_data_y = [x[0] for x in danish_data]
+    X_da = [x[1] for x in danish_data]
+    y_da = [x[0] for x in danish_data]
     
     data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
-    data_train_y_X = [(x[1], x[2]) for x in data_train]
+    y_en = [x[1] for x in data_train]
+    X_en = [x[2] for x in data_train]
+
+    X_en.extend(X_da)
+    y_en.extend(y_da)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_en, y_en, test_size=0.2, stratify=y_en)
 
     for s in range(1,16):
         best_acc = 0.0
@@ -206,8 +201,35 @@ def train_eng_test_danish(file_en, file_da, min_length=1):
         # try out different random configurations
         for c in range(1):
             # test on danish data
-            clf_true, clf_false = train_models(data_train_y_X, components=s, init_random=True, min_len=min_length)
-            da_predicts = predict(danish_data_X, clf_true, clf_false)
+            clf = HMM(s).fit(X_train, y_train)
+            predicts = clf.predict(X_test)
+
+            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
+            
+            if f1_t_da > best_f1:
+                best_acc = acc_t_da
+                best_f1 = f1_t_da
+        print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
+
+def train_eng_test_danish(file_en, file_da, min_length=1):    
+    # load data
+    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
+    danish_data_X = [x[1] for x in danish_data]
+    danish_data_y = [x[0] for x in danish_data]
+    
+    data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
+    y_train = [x[1] for x in data_train]
+    X_train = [x[2] for x in data_train]
+
+    for s in range(1,16):
+        best_acc = 0.0
+        best_f1 = 0.0
+
+        # try out different random configurations
+        for c in range(1):
+            # test on danish data
+            clf = HMM(s).fit(X_train, y_train)
+            da_predicts = clf.predict(danish_data_X)
 
             _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
             
@@ -228,16 +250,14 @@ def train_test_pheme(file_name, min_length=1):
     X_train, X_test, y_train, y_test = train_test_split(
         data_train_X, data_train_y, test_size=0.2, stratify=data_train_y)
     
-    train_y_x = list(zip(y_train, X_train))
-
     for s in range(1,16):
         best_acc = 0.0
         best_f1 = 0.0
 
         # try out different random configurations
-        for c in range(10):
-            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=min_length)
-            predicts = predict(X_test, clf_true, clf_false)
+        for c in range(1):
+            clf = HMM(s).fit(X_train, y_train)
+            predicts = clf.predict(X_test)
 
             _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
             
@@ -256,7 +276,7 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_le
     danish_data_y = [x[0] for x in danish_data]
     
     X_train, X_test, y_train, y_test = train_test_split(
-        danish_data_X, danish_data_y, test_size=0.10, random_state=42, stratify=danish_data_y)
+        danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
     
     train_y_x = list(zip(y_train, X_train))
 
@@ -266,10 +286,9 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_le
 
         # try out different random configurations
         for c in range(1):
-            # test on danish data
-            clf_true, clf_false = train_models(train_y_x, components=s, init_random=True, min_len=min_length)
-            da_predicts = predict(X_test, clf_true, clf_false)
-
+            clf = HMM(s).fit(X_train, y_train)
+            da_predicts = clf.predict(X_test)
+        
             _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
             
             if f1_t_da > best_f1:
