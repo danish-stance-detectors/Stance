@@ -1,0 +1,21 @@
+Best parameters set found on development set for F1 macro:
+0.291 for {'C': 658, 'class_weight': None, 'gamma': 0.01024210911385949, 'kernel': 'rbf'}
+Grid scores on development set:
+0.244 (+/-0.016) for {'C': 294, 'class_weight': None, 'gamma': 0.10591901330865079, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 415, 'class_weight': 'balanced', 'gamma': 0.13236167317782332, 'kernel': 'rbf'}
+0.240 (+/-0.019) for {'C': 532, 'class_weight': None, 'gamma': 0.364760839268093, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 149, 'class_weight': 'balanced', 'gamma': 0.1693865314514451, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 71, 'class_weight': None, 'gamma': 0.10249792714262769, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 453, 'class_weight': None, 'gamma': 0.0752054110132009, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 228, 'class_weight': 'balanced', 'gamma': 0.06461254316076469, 'kernel': 'rbf'}
+0.257 (+/-0.019) for {'C': 292, 'class_weight': None, 'gamma': 0.015720464044963085, 'kernel': 'rbf'}
+0.291 (+/-0.037) for {'C': 658, 'class_weight': None, 'gamma': 0.01024210911385949, 'kernel': 'rbf'}
+0.244 (+/-0.016) for {'C': 774, 'class_weight': None, 'gamma': 0.1440122942253856, 'kernel': 'rbf'}
+Classification report for results on evaluation set:
+[[  3   5   0  60]
+ [  2   9   0  64]
+ [  0   1   0  19]
+ [  1   5   0 583]]
+acc: 0.79122
+f1 macro: 0.289312
+
