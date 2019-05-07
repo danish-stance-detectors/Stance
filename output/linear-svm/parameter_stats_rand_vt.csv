@@ -1,2 +1,2 @@
 estimator,f1_macro,acc,folds,rand_iter,parameters,features
-linear-svm,0.3371,0.7021,5,20,"{'C': 342, 'class_weight': None, 'max_iter': 1000000, 'multi_class': 'crammer_singer'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
+linear-svm,0.3943,0.7234,3,20,"{'C': 492, 'class_weight': None, 'dual': False, 'max_iter': 50000}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

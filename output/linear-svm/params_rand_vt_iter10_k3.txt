@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.377 for {'C': 724, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'crammer_singer'}
+Randomized scores on development set:
+0.348 (+/-0.052) for {'C': 575, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr'}
+0.347 (+/-0.049) for {'C': 697, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr'}
+0.348 (+/-0.050) for {'C': 713, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr'}
+0.377 (+/-0.041) for {'C': 724, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'crammer_singer'}
+0.377 (+/-0.041) for {'C': 824, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'crammer_singer'}
+0.349 (+/-0.054) for {'C': 516, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr'}
+0.347 (+/-0.052) for {'C': 374, 'class_weight': 'balanced', 'max_iter': 100000, 'multi_class': 'ovr'}
+0.377 (+/-0.041) for {'C': 323, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'crammer_singer'}
+0.347 (+/-0.049) for {'C': 889, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'ovr'}
+0.377 (+/-0.041) for {'C': 833, 'class_weight': None, 'max_iter': 100000, 'multi_class': 'crammer_singer'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.25      0.26      0.26        68
+           1       0.25      0.27      0.26        75
+           2       0.00      0.00      0.00        20
+           3       0.83      0.83      0.83       589
+
+   micro avg       0.70      0.70      0.70       752
+   macro avg       0.33      0.34      0.34       752
+weighted avg       0.70      0.70      0.70       752
+
+[[ 18  13   1  36]
+ [  8  20   0  47]
+ [  1   5   0  14]
+ [ 45  42  12 490]]
+acc: 0.7021
+f1 macro: 0.3371
+

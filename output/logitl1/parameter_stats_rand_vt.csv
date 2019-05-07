@@ -1,0 +1,2 @@
+estimator,f1_macro,acc,folds,rand_iter,parameters,features
+logitl1,0.3890,0.7301,3,20,"{'C': 61, 'class_weight': 'balanced'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

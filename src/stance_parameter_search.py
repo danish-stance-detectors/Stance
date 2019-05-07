@@ -15,10 +15,12 @@ from model_stats import plot_confusion_matrix, cm_acc_f1
 
 output_folder = '../output/'
 
+rand = np.random.RandomState(42)
+
 parser = argparse.ArgumentParser(description='Hyper parameter search for stance classification models')
-parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_train.csv',
+parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
-parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_test.csv',
+parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                     help='Input file holding test data')
 parser.add_argument('-k', '--k_folds', dest='k_folds', default=3, type=int, nargs='?',
                     help='Number of folds for cross validation (default=5)')
@@ -64,27 +66,27 @@ settings = [
 ]
 
 settings_rand = [
-    # ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': sp_expon(scale=.1), 'C': sp_randint(1, 1000),
-    #                     'class_weight': ['balanced', None]}),
-    # ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
-    #                              'class_weight': ['balanced', None], 'max_iter': [1000000]}),
-    # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-    #                                     'max_depth': [3, 10, 50, 100, None], "min_samples_split": sp_randint(2, 11),
-    #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
-    #                                     'presort': [True]}),
-    ('logistic-regression', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1', 'l2'],
-                                                   'class_weight': ['balanced', None],
-                                                   'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
-    # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
-    #                                              'max_depth': [3, 10, 50, 100, None],
-    #                                              'max_features': ['auto', 'log2', None],
-    #                                              "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
-    #                                              'class_weight': ['balanced_subsample', None]})
+    ('linear-svm', LinearSVC(random_state=rand), {
+        'C': sp_randint(1, 1000), 'class_weight': ['balanced', None],
+        'max_iter': [50000], 'dual': [True, False]}),
+    ('tree', DecisionTreeClassifier(presort=True, random_state=rand), {
+        'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
+        'max_depth': [3, 10, 50, None], "min_samples_split": sp_randint(2, 11),
+        'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None]}),
+    ('logitl1', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l1'), {
+        'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
+    ('logitl2', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2'), {
+        'dual': [True, False], 'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
+    ('random-forest', RandomForestClassifier(n_jobs=-1, random_state=rand), {
+        'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
+        'max_depth': [3, 10, 50, None], 'max_features': ['auto', 'log2', None],
+        "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
+        'class_weight': ['balanced_subsample', None]})
 ]
 
 scorer = 'f1_macro'
 folds = args.k_folds
-skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=rand)
 features = data_loader.get_features()
 feature_names = features.keys()
 
@@ -113,16 +115,10 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
         with open('%s.txt' % results_filename, 'a+') as outfile, \
                 open('%s.csv' % stats_filename, 'a', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
-            if not grid_search:
-                clf = RandomizedSearchCV(
-                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
-                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                )
-            else:
-                clf = GridSearchCV(
-                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
-                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                )
+            clf = RandomizedSearchCV(
+                estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter,
+                cv=skf, iid=False, return_train_score=False, pre_dispatch='2*n_jobs', random_state=rand
+            )
             clf.fit(X_train, y_train)
 
             s = "Best parameters set found on development set for F1 macro:"
@@ -133,7 +129,7 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
             print(s)
             outfile.write(s + '\n')
             print()
-            s = "Grid scores on development set:"
+            s = "Randomized scores on development set:"
             print(s)
             outfile.write(s + '\n')
             print()
@@ -211,12 +207,12 @@ def parameter_search_LOO_features():
                 csv_writer = csv.writer(statsfile)
                 if not grid_search:
                     clf = RandomizedSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
+                        estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter,
                         cv=skf, iid=False, return_train_score=False, pre_dispatch=None
                     )
                 else:
                     clf = GridSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
+                        estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0,
                         cv=skf, iid=False, return_train_score=False, pre_dispatch=None
                     )
                 clf.fit(X_train_, y_train)

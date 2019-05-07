@@ -70,13 +70,13 @@ def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
     return ax
 
 classifiers = {
-    'logistic-regression': LogisticRegression(solver='liblinear'),
-    'tree': DecisionTreeClassifier(),
-    'rbf-svm': SVC(kernel='rbf'),
-    'linear-svm': LinearSVC(),
-    'random-forest': RandomForestClassifier(),
-    'majority-vote': DummyClassifier(strategy='most_frequent'),
-    'stratified-random': DummyClassifier(strategy='stratified')
+    'logistic-regression': LogisticRegression(C=10, solver='liblinear', class_weight='balanced',
+                                              multi_class='auto', penalty='l1'),
+    # 'tree': DecisionTreeClassifier()
+    # 'linear-svm': LinearSVC(),
+    # 'random-forest': RandomForestClassifier(),
+    # 'majority-vote': DummyClassifier(strategy='most_frequent'),
+    # 'stratified-random': DummyClassifier(strategy='stratified')
 }
 
 def visualize_cv(cv, n_splits, X, y):

@@ -1,2 +1,2 @@
 estimator,f1_macro,acc,folds,rand_iter,parameters,features
-logistic-regression,0.3731,0.7207,5,20,"{'C': 832, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
+logistic-regression,0.3723,0.7194,3,10,"{'C': 675, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
