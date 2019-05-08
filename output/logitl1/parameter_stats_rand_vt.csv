@@ -1,0 +1,2 @@
+estimator,f1_macro,acc,folds,rand_iter,parameters,features
+logitl1,0.3655,0.7287,3,10,"{'C': 894, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
