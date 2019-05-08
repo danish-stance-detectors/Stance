@@ -303,7 +303,7 @@ class RedditDataset:
             prev = annotation
         self.submissions[self.last_submission()].add_annotation_branch(annotation_branch)  # This might be unnecessary
 
-    def train_test_split(self, test_size=0.25, rand_state=42, shuffle=True, stratify=True):
+    def train_test_split(self, test_size=0.2, rand_state=357, shuffle=True, stratify=True):
         X = []
         y = []
         for annotation in self.iterate_annotations():
@@ -330,7 +330,7 @@ class RedditDataset:
                         words_to_replace=words_to_replace,
                         early_stop=early_stop
                     )
-                    if not n_replacements > int(words_to_replace/2):
+                    if not n_replacements > (int(words_to_replace/4)*3):
                         continue
                     replacement_sim = word_embeddings.cosine_similarity(annotation.tokens, annotation_copy.tokens)
                     outfile.write('old: ' + annotation.text + '\n')
