@@ -34,24 +34,6 @@ X_train, X_test, y_train, y_test, _, feature_mapping = data_loader.load_train_te
     train_file=args.train_file, test_file=args.test_file
 )
 
-def union_reduce_then_split(x1, x2):
-    len1 = len(x1)
-    len2 = len(x2)
-    x_union = x1
-    x_union.extend(x2)
-    x_transformed = VarianceThreshold(0.001).fit_transform(x_union)
-    # support = x_transformed.get_support(indices=True)
-    # x1_transformed = []
-    # x2_transformed = []
-    # for i in support:
-    #     if 0 <= i < len1:
-    #         x1_transformed.append(x_transformed[i])
-    #     elif len1 <= i < max_len:
-    #         x2_transformed.append(x1_transformed[i])
-    #     else:
-    #         print('Transformation error')
-    return x_transformed[:len1], x_transformed[len1:]
-
 settings = [
     ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': [1e-3, 1e-4], 'C': [1, 10, 100, 1000]}),
     ('linear-svm', SVC(), {'kernel': ['linear'], 'C': [1, 10, 100, 1000]}),
@@ -72,9 +54,12 @@ settings_rand = [
     #                                     'max_depth': [3, 10, 50, 100, None], "min_samples_split": sp_randint(2, 11),
     #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
     #                                     'presort': [True]}),
-    ('logistic-regression', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1', 'l2'],
+    ('logitl1', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1'],
                                                    'class_weight': ['balanced', None],
                                                    'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
+    ('logitl2', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l2'], 'dual': [True, False],
+                                                       'class_weight': ['balanced', None],
+                                                       'C': sp_randint(1, 1000), 'multi_class': ['auto']})
     # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
     #                                              'max_depth': [3, 10, 50, 100, None],
     #                                              'max_features': ['auto', 'log2', None],
@@ -168,7 +153,7 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
 X_train_ = data_loader.select_features(X_train, feature_mapping, features)
 X_test_ = data_loader.select_features(X_test, feature_mapping, features)
 old_len = len(X_train_[0])
-X_train_, X_test_ = union_reduce_then_split(X_train_, X_test_)
+X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
 new_len = len(X_train_[0])
 print('Reduced features from %d to %d' % (old_len, new_len))
 parameter_search_rand_VT(X_train_, X_test_, y_train, y_test)
