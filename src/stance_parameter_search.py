@@ -30,6 +30,8 @@ parser.add_argument('-n', '--rand_samples', default=10, type=int, nargs='?',
                     help='Number of random samples if using RandomizedSearchCV')
 parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
                     help='Reduce features by Variance Threshold')
+parser.add_argument('-v', dest='v', action='store_true', default=False,
+                    help='Run')
 args = parser.parse_args()
 
 X_train, X_test, y_train, y_test, _, feature_mapping = data_loader.load_train_test_data(
@@ -161,17 +163,10 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
         print('Done with', name)
 
 
-X_train_ = data_loader.select_features(X_train, feature_mapping, features)
-X_test_ = data_loader.select_features(X_test, feature_mapping, features)
-old_len = len(X_train_[0])
-X_train_, X_test_ = union_reduce_then_split(X_train_, X_test_)
-new_len = len(X_train_[0])
-print('Reduced features from %d to %d' % (old_len, new_len))
-parameter_search_rand_VT(X_train_, X_test_, y_train, y_test)
-
-
 def parameter_search_LOO_features():
-    for name, estimator, tuned_parameters in (settings_rand if not grid_search else settings):
+    for name, estimator, tuned_parameters in settings_rand:
+        if not name == 'random-forest':
+            continue
         filepath = os.path.join(output_folder, name)
         if not os.path.exists(filepath):
             os.makedirs(filepath)
@@ -184,6 +179,8 @@ def parameter_search_LOO_features():
                 csv_writer = csv.writer(statsfile)
                 csv_writer.writerow(['estimator', 'f1_macro', 'acc', 'LOO feature', 'parameters', 'features'])
         for feature_name in feature_names:
+            if not (feature_name == 'pos' or feature_name == 'wembs'):
+                continue 
             results_filename = '%s/params_%s_iter%d_k%d' % (filepath, feature_name, rand_iter, folds)
             if not features[feature_name] or os.path.exists(results_filename):
                 print('Skipping %s since %s exists' % (feature_name, results_filename))
@@ -205,16 +202,10 @@ def parameter_search_LOO_features():
             with open('%s.txt' % results_filename, 'a+') as outfile, \
                     open('%s.csv' % stats_filename, 'a', newline='') as statsfile:
                 csv_writer = csv.writer(statsfile)
-                if not grid_search:
-                    clf = RandomizedSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
-                else:
-                    clf = GridSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
+                clf = RandomizedSearchCV(
+                    estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter,
+                    cv=skf, iid=False, return_train_score=False, pre_dispatch='2*n_jobs', random_state=rand
+                )
                 clf.fit(X_train_, y_train)
 
                 s = "Best parameters set found on development set for F1 macro:"
@@ -259,3 +250,13 @@ def parameter_search_LOO_features():
             print('Took %.1f seconds' % (end - start))
         print('Done with', name)
 
+if args.v:
+    parameter_search_LOO_features()
+else:
+    X_train_ = data_loader.select_features(X_train, feature_mapping, features)
+    X_test_ = data_loader.select_features(X_test, feature_mapping, features)
+    old_len = len(X_train_[0])
+    X_train_, X_test_ = union_reduce_then_split(X_train_, X_test_)
+    new_len = len(X_train_[0])
+    print('Reduced features from %d to %d' % (old_len, new_len))
+    parameter_search_rand_VT(X_train_, X_test_, y_train, y_test)

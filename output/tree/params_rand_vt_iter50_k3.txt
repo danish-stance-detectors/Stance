@@ -1,0 +1,72 @@
+Best parameters set found on development set for F1 macro:
+0.330 for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 3, 'splitter': 'best'}
+Randomized scores on development set:
+0.257 (+/-0.019) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 7, 'splitter': 'random'}
+0.204 (+/-0.022) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 8, 'splitter': 'best'}
+0.270 (+/-0.024) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': None, 'min_samples_split': 3, 'splitter': 'random'}
+0.330 (+/-0.074) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 10, 'max_features': None, 'min_samples_split': 3, 'splitter': 'best'}
+0.275 (+/-0.016) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'best'}
+0.113 (+/-0.055) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 4, 'splitter': 'best'}
+0.287 (+/-0.019) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 5, 'splitter': 'random'}
+0.242 (+/-0.061) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'random'}
+0.279 (+/-0.063) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 8, 'splitter': 'random'}
+0.319 (+/-0.006) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': None, 'min_samples_split': 4, 'splitter': 'best'}
+0.198 (+/-0.026) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 8, 'splitter': 'best'}
+0.122 (+/-0.165) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 8, 'splitter': 'random'}
+0.222 (+/-0.006) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 7, 'splitter': 'best'}
+0.261 (+/-0.017) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 9, 'splitter': 'best'}
+0.113 (+/-0.055) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 3, 'splitter': 'best'}
+0.252 (+/-0.021) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 5, 'splitter': 'best'}
+0.279 (+/-0.049) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': None, 'min_samples_split': 6, 'splitter': 'random'}
+0.226 (+/-0.021) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 5, 'splitter': 'random'}
+0.299 (+/-0.026) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 9, 'splitter': 'best'}
+0.272 (+/-0.053) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 7, 'splitter': 'random'}
+0.247 (+/-0.065) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 10, 'splitter': 'random'}
+0.242 (+/-0.061) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 2, 'splitter': 'random'}
+0.222 (+/-0.006) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 3, 'splitter': 'random'}
+0.285 (+/-0.013) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'random'}
+0.270 (+/-0.031) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 2, 'splitter': 'random'}
+0.205 (+/-0.093) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': None, 'min_samples_split': 6, 'splitter': 'random'}
+0.264 (+/-0.007) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 9, 'splitter': 'best'}
+0.308 (+/-0.039) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 2, 'splitter': 'best'}
+0.286 (+/-0.036) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 6, 'splitter': 'random'}
+0.324 (+/-0.067) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 10, 'max_features': None, 'min_samples_split': 5, 'splitter': 'best'}
+0.313 (+/-0.019) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 4, 'splitter': 'random'}
+0.252 (+/-0.061) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 6, 'splitter': 'random'}
+0.292 (+/-0.057) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 7, 'splitter': 'best'}
+0.287 (+/-0.011) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 9, 'splitter': 'random'}
+0.222 (+/-0.006) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 3, 'splitter': 'best'}
+0.226 (+/-0.023) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 10, 'splitter': 'best'}
+0.263 (+/-0.005) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 3, 'splitter': 'random'}
+0.298 (+/-0.015) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': None, 'max_features': None, 'min_samples_split': 9, 'splitter': 'random'}
+0.219 (+/-0.000) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': None, 'min_samples_split': 3, 'splitter': 'best'}
+0.222 (+/-0.006) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 8, 'splitter': 'best'}
+0.244 (+/-0.035) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 10, 'splitter': 'random'}
+0.242 (+/-0.010) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 4, 'splitter': 'random'}
+0.284 (+/-0.053) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': None, 'min_samples_split': 8, 'splitter': 'best'}
+0.284 (+/-0.053) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': None, 'min_samples_split': 3, 'splitter': 'best'}
+0.122 (+/-0.165) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 9, 'splitter': 'random'}
+0.307 (+/-0.047) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 50, 'max_features': None, 'min_samples_split': 7, 'splitter': 'random'}
+0.158 (+/-0.081) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 3, 'splitter': 'random'}
+0.330 (+/-0.017) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 3, 'splitter': 'best'}
+0.266 (+/-0.044) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 7, 'splitter': 'best'}
+0.266 (+/-0.045) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': None, 'min_samples_split': 7, 'splitter': 'best'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.13      0.13      0.13        68
+           1       0.14      0.16      0.15        75
+           2       0.15      0.20      0.17        20
+           3       0.81      0.78      0.80       589
+
+   micro avg       0.65      0.65      0.65       752
+   macro avg       0.31      0.32      0.31       752
+weighted avg       0.66      0.65      0.66       752
+
+[[  9   6   2  51]
+ [ 13  12   1  49]
+ [  4   4   4   8]
+ [ 44  64  19 462]]
+acc: 0.6476
+f1 macro: 0.3127
+

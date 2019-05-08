@@ -1,0 +1,3 @@
+estimator,f1_macro,acc,LOO feature,parameters,features
+random-forest,0.3025,0.6609,pos,"{'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': None, 'max_features': None, 'min_samples_split': 9, 'n_estimators': 952}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': False, 'wembs': True}"
+random-forest,0.4201,0.6277,wembs,"{'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 6, 'n_estimators': 684}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': False}"

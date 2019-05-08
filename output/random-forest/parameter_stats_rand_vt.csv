@@ -1,2 +1,2 @@
 estimator,f1_macro,acc,folds,rand_iter,parameters,features
-random-forest,0.3385,0.7234,3,20,"{'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 2, 'n_estimators': 679}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
+random-forest,0.3725,0.5691,3,50,"{'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 9, 'n_estimators': 281}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

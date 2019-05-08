@@ -1,0 +1,72 @@
+Best parameters set found on development set for F1 macro:
+0.333 for {'C': 53, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+Randomized scores on development set:
+0.330 (+/-0.087) for {'C': 103, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.327 (+/-0.081) for {'C': 271, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.329 (+/-0.087) for {'C': 701, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.330 (+/-0.087) for {'C': 122, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.327 (+/-0.081) for {'C': 331, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.332 (+/-0.065) for {'C': 373, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.327 (+/-0.081) for {'C': 664, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.328 (+/-0.075) for {'C': 309, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.066) for {'C': 492, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.328 (+/-0.075) for {'C': 386, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.325 (+/-0.079) for {'C': 277, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.328 (+/-0.085) for {'C': 314, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.329 (+/-0.087) for {'C': 748, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.328 (+/-0.085) for {'C': 475, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.328 (+/-0.075) for {'C': 682, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.088) for {'C': 700, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.329 (+/-0.087) for {'C': 190, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.324 (+/-0.076) for {'C': 958, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.069) for {'C': 567, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.327 (+/-0.084) for {'C': 505, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.328 (+/-0.086) for {'C': 819, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.325 (+/-0.077) for {'C': 841, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.327 (+/-0.081) for {'C': 388, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.071) for {'C': 14, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.329 (+/-0.087) for {'C': 777, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.328 (+/-0.075) for {'C': 898, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.329 (+/-0.086) for {'C': 367, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.324 (+/-0.077) for {'C': 428, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.326 (+/-0.079) for {'C': 943, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.070) for {'C': 81, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.067) for {'C': 872, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.067) for {'C': 390, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.088) for {'C': 772, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.329 (+/-0.071) for {'C': 703, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.070) for {'C': 556, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.067) for {'C': 958, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.088) for {'C': 863, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.329 (+/-0.086) for {'C': 456, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.325 (+/-0.080) for {'C': 252, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.327 (+/-0.082) for {'C': 296, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.331 (+/-0.089) for {'C': 749, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.333 (+/-0.067) for {'C': 53, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.330 (+/-0.069) for {'C': 217, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.328 (+/-0.085) for {'C': 380, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.331 (+/-0.089) for {'C': 157, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.332 (+/-0.090) for {'C': 65, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.330 (+/-0.088) for {'C': 521, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.330 (+/-0.088) for {'C': 648, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.330 (+/-0.087) for {'C': 139, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.329 (+/-0.086) for {'C': 392, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.24      0.21      0.22        68
+           1       0.30      0.32      0.31        75
+           2       0.33      0.15      0.21        20
+           3       0.83      0.85      0.84       589
+
+   micro avg       0.72      0.72      0.72       752
+   macro avg       0.42      0.38      0.39       752
+weighted avg       0.71      0.72      0.72       752
+
+[[ 14  10   1  43]
+ [  6  24   0  45]
+ [  0   4   3  13]
+ [ 39  43   5 502]]
+acc: 0.7221
+f1 macro: 0.3943
+
