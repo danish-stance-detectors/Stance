@@ -11,6 +11,7 @@ import random
 import data_loader
 import hmm_data_loader
 import model_stats
+from viterbi_classifier import loadEvents
 
 def main(argv):
 
@@ -19,6 +20,8 @@ def main(argv):
     parser.add_argument('-ftest', '--file_test', help='Test file')
     parser.add_argument('-sem_tr', '--sem_data_train', action='store_true', default=False, help='Read train in semeval data format')
     parser.add_argument('-sem_te', '--sem_data_test', action='store_true', default=False, help='Read test in semeval data format')
+    parser.add_argument('-loo', '--loo', action='store_true', default=False, help='Test leave one out on 5 semeval events')
+    parser.add_argument('-mix', '--mix', action='store_true', default=False, help='Test kfold on a mix of danish an pheme data')
     parser.add_argument('-kf', '--k_folds', help='Number of folds to do in cross validation', type=int)
     parser.add_argument('-rs', '--restarts', help='Number of times to restart with new random state', type=int)
     parser.add_argument('-rand', '--rand_state', default=357, help='Specific random state', type=int)
@@ -36,13 +39,22 @@ def main(argv):
             y_test = [x[0] for x in data_test]
             X_test = [x[1] for x in data_test]
 
-            print("%-10s%10s%10s" % ('state space', 'acc', 'f1'))
-            for i in range(1, 16):
-                clf = MSHMM(2, i).fit(X, y)
-                predicts = clf.predict(X_test)
-                _, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
-                print("%-10s%10.2f%10.2f" % (i, acc, f1))
+            if args.mix and args.k_folds:
+                X.extend(X_test)
+                y.extend(y_test)
+                for i in range(1, 16):
+                    cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
+            else:
+                print("%-10s%10s%10s" % ('state space', 'acc', 'f1'))
+                for i in range(1, 16):
+                    clf = MSHMM(2, i).fit(X, y)
+                    predicts = clf.predict(X_test)
+                    _, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
+                    print("%-10s%10.2f%10.2f" % (i, acc, f1))
 
+        elif args.loo:
+            sem_data = hmm_data_loader.get_semeval_hmm_data(filename=args.file_train)
+            events = loadEvents(sem_data)
 
         else:
             if not args.k_folds:
