@@ -1,0 +1,37 @@
+Best parameters set found on development set for F1 macro:
+0.382 for {'C': 314, 'class_weight': None, 'dual': True, 'max_iter': 10000}
+Randomized scores on development set:
+0.377 (+/-0.051) for {'C': 103, 'class_weight': None, 'dual': True, 'max_iter': 10000}
+0.368 (+/-0.051) for {'C': 271, 'class_weight': 'balanced', 'dual': False, 'max_iter': 10000}
+0.376 (+/-0.050) for {'C': 701, 'class_weight': 'balanced', 'dual': True, 'max_iter': 10000}
+0.380 (+/-0.049) for {'C': 122, 'class_weight': 'balanced', 'dual': True, 'max_iter': 10000}
+0.366 (+/-0.053) for {'C': 331, 'class_weight': 'balanced', 'dual': False, 'max_iter': 10000}
+0.379 (+/-0.068) for {'C': 373, 'class_weight': None, 'dual': False, 'max_iter': 10000}
+0.374 (+/-0.069) for {'C': 664, 'class_weight': 'balanced', 'dual': False, 'max_iter': 10000}
+0.378 (+/-0.067) for {'C': 309, 'class_weight': None, 'dual': False, 'max_iter': 10000}
+0.379 (+/-0.067) for {'C': 492, 'class_weight': None, 'dual': False, 'max_iter': 10000}
+0.379 (+/-0.064) for {'C': 386, 'class_weight': None, 'dual': False, 'max_iter': 10000}
+0.367 (+/-0.053) for {'C': 277, 'class_weight': 'balanced', 'dual': False, 'max_iter': 10000}
+0.382 (+/-0.037) for {'C': 314, 'class_weight': None, 'dual': True, 'max_iter': 10000}
+0.377 (+/-0.048) for {'C': 748, 'class_weight': 'balanced', 'dual': True, 'max_iter': 10000}
+0.376 (+/-0.051) for {'C': 475, 'class_weight': 'balanced', 'dual': True, 'max_iter': 10000}
+0.378 (+/-0.069) for {'C': 682, 'class_weight': None, 'dual': False, 'max_iter': 10000}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.19      0.18      0.18        68
+           1       0.26      0.31      0.28        75
+           2       0.18      0.10      0.13        20
+           3       0.83      0.83      0.83       589
+
+   micro avg       0.70      0.70      0.70       752
+   macro avg       0.37      0.35      0.36       752
+weighted avg       0.70      0.70      0.70       752
+
+[[ 12  11   1  44]
+ [  6  23   0  46]
+ [  0   5   2  13]
+ [ 44  48   8 489]]
+acc: 0.6995
+f1 macro: 0.3564
+

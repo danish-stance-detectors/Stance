@@ -1,1 +1,0 @@
-random-forest,0.4002,0.6343,reddit,"{'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 6, 'max_features': None, 'min_samples_split': 2, 'n_estimators': 1849}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': False, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

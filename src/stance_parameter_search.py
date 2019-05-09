@@ -15,10 +15,12 @@ from model_stats import plot_confusion_matrix, cm_acc_f1
 
 output_folder = '../output/'
 
+rand = np.random.RandomState(42)
+
 parser = argparse.ArgumentParser(description='Hyper parameter search for stance classification models')
-parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/preprocessed_train.csv',
+parser.add_argument('-x', '--train_file', dest='train_file', default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
-parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/preprocessed_test.csv',
+parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                     help='Input file holding test data')
 parser.add_argument('-k', '--k_folds', dest='k_folds', default=3, type=int, nargs='?',
                     help='Number of folds for cross validation (default=5)')
@@ -28,6 +30,8 @@ parser.add_argument('-n', '--rand_samples', default=10, type=int, nargs='?',
                     help='Number of random samples if using RandomizedSearchCV')
 parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
                     help='Reduce features by Variance Threshold')
+parser.add_argument('-v', dest='v', action='store_true', default=False,
+                    help='Run')
 args = parser.parse_args()
 
 X_train, X_test, y_train, y_test, _, feature_mapping = data_loader.load_train_test_data(
@@ -46,30 +50,27 @@ settings = [
 ]
 
 settings_rand = [
-    # ('rbf-svm', SVC(), {'kernel': ['rbf'], 'gamma': sp_expon(scale=.1), 'C': sp_randint(1, 1000),
-    #                     'class_weight': ['balanced', None]}),
-    # ('linear-svm', LinearSVC(), {'C': sp_randint(1, 1000), 'multi_class': ['crammer_singer', 'ovr'],
-    #                              'class_weight': ['balanced', None], 'max_iter': [1000000]}),
-    # ('tree', DecisionTreeClassifier(), {'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-    #                                     'max_depth': [3, 10, 50, 100, None], "min_samples_split": sp_randint(2, 11),
-    #                                     'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None],
-    #                                     'presort': [True]}),
-    ('logitl1', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l1'],
-                                                   'class_weight': ['balanced', None],
-                                                   'C': sp_randint(1, 1000), 'multi_class': ['auto']}),
-    ('logitl2', LogisticRegression(), {'solver': ['liblinear'], 'penalty':['l2'], 'dual': [True, False],
-                                                       'class_weight': ['balanced', None],
-                                                       'C': sp_randint(1, 1000), 'multi_class': ['auto']})
-    # ('random-forest', RandomForestClassifier(), {'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
-    #                                              'max_depth': [3, 10, 50, 100, None],
-    #                                              'max_features': ['auto', 'log2', None],
-    #                                              "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
-    #                                              'class_weight': ['balanced_subsample', None]})
+    # ('linear-svm', LinearSVC(random_state=rand), {
+    #     'C': sp_randint(1, 1000), 'class_weight': ['balanced', None],
+    #     'max_iter': [50000], 'dual': [True, False]}),
+    ('tree', DecisionTreeClassifier(presort=True, random_state=rand), {
+        'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
+        'max_depth': [3, 10, 50, None], "min_samples_split": sp_randint(2, 11),
+        'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None]}),
+    # ('logitl1', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l1'), {
+    #     'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
+    # ('logitl2', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2'), {
+    #     'dual': [True, False], 'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
+    # ('random-forest', RandomForestClassifier(n_jobs=-1, random_state=rand), {
+    #     'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
+    #     'max_depth': [3, 10, 50, None], 'max_features': ['auto', 'log2', None],
+    #     "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
+    #     'class_weight': ['balanced_subsample', None]})
 ]
 
 scorer = 'f1_macro'
 folds = args.k_folds
-skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=42)
+skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=rand)
 features = data_loader.get_features()
 feature_names = features.keys()
 
@@ -98,16 +99,10 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
         with open('%s.txt' % results_filename, 'a+') as outfile, \
                 open('%s.csv' % stats_filename, 'a', newline='') as statsfile:
             csv_writer = csv.writer(statsfile)
-            if not grid_search:
-                clf = RandomizedSearchCV(
-                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
-                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                )
-            else:
-                clf = GridSearchCV(
-                    estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
-                    cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                )
+            clf = RandomizedSearchCV(
+                estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter,
+                cv=skf, iid=False, return_train_score=False, pre_dispatch='2*n_jobs', random_state=rand
+            )
             clf.fit(X_train, y_train)
 
             s = "Best parameters set found on development set for F1 macro:"
@@ -118,7 +113,7 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
             print(s)
             outfile.write(s + '\n')
             print()
-            s = "Grid scores on development set:"
+            s = "Randomized scores on development set:"
             print(s)
             outfile.write(s + '\n')
             print()
@@ -150,17 +145,8 @@ def parameter_search_rand_VT(X_train, X_test, y_train, y_test):
         print('Done with', name)
 
 
-X_train_ = data_loader.select_features(X_train, feature_mapping, features)
-X_test_ = data_loader.select_features(X_test, feature_mapping, features)
-old_len = len(X_train_[0])
-X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
-new_len = len(X_train_[0])
-print('Reduced features from %d to %d' % (old_len, new_len))
-parameter_search_rand_VT(X_train_, X_test_, y_train, y_test)
-
-
 def parameter_search_LOO_features():
-    for name, estimator, tuned_parameters in (settings_rand if not grid_search else settings):
+    for name, estimator, tuned_parameters in settings_rand:
         filepath = os.path.join(output_folder, name)
         if not os.path.exists(filepath):
             os.makedirs(filepath)
@@ -186,7 +172,7 @@ def parameter_search_LOO_features():
             X_test_ = data_loader.select_features(X_test, feature_mapping, features)
             if args.reduce_features:
                 old_len = len(X_train_[0])
-                X_train_, X_test_ = union_reduce_then_split(X_train_, X_test_)
+                X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
                 new_len = len(X_train_[0])
                 print('Reduced features from %d to %d' % (old_len, new_len))
                 results_filename += '_vt%d' % old_len
@@ -194,16 +180,10 @@ def parameter_search_LOO_features():
             with open('%s.txt' % results_filename, 'a+') as outfile, \
                     open('%s.csv' % stats_filename, 'a', newline='') as statsfile:
                 csv_writer = csv.writer(statsfile)
-                if not grid_search:
-                    clf = RandomizedSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0, n_iter=rand_iter,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
-                else:
-                    clf = GridSearchCV(
-                        estimator, tuned_parameters, scoring=scorer, n_jobs=--1, error_score=0,
-                        cv=skf, iid=False, return_train_score=False, pre_dispatch=None
-                    )
+                clf = RandomizedSearchCV(
+                    estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, n_iter=rand_iter, verbose=1,
+                    cv=skf, iid=False, return_train_score=False, pre_dispatch='2*n_jobs', random_state=rand
+                )
                 clf.fit(X_train_, y_train)
 
                 s = "Best parameters set found on development set for F1 macro:"
@@ -248,3 +228,13 @@ def parameter_search_LOO_features():
             print('Took %.1f seconds' % (end - start))
         print('Done with', name)
 
+if args.v:
+    parameter_search_LOO_features()
+else:
+    X_train_ = data_loader.select_features(X_train, feature_mapping, features)
+    X_test_ = data_loader.select_features(X_test, feature_mapping, features)
+    old_len = len(X_train_[0])
+    X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
+    new_len = len(X_train_[0])
+    print('Reduced features from %d to %d' % (old_len, new_len))
+    parameter_search_rand_VT(X_train_, X_test_, y_train, y_test)
