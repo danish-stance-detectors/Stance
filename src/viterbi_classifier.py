@@ -6,14 +6,16 @@ import argparse
 from sklearn.base import BaseEstimator
 
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate, train_test_split
 from hmmlearn import hmm
+from joblib import dump, load
 
 
 def main(argv):
     
     parser = argparse.ArgumentParser(description='Rumour veracity classification via hmm')
     parser.add_argument('-loo', '--LeaveOneOut', default=False, dest='loo', action='store_true', help='Do leave one out testing on pheme dataset')
+    parser.add_argument('-sv', '--save', default=False, action='store_true', help='Save model')
     parser.add_argument('-ph', '--pheme', default=False, dest='pheme', action='store_true', help='Train and test on pheme dataset')
     parser.add_argument('-pd', '--print_dist', default=False, dest='print_dist', action='store_true', help='print event distribution')
     parser.add_argument('-da', '--danish', default=False, action='store_true', help='Train and test solely on danish rumour data')
@@ -38,6 +40,8 @@ def main(argv):
         train_test_pheme(args.file_en, int(args.min_len))
     elif args.mix:
         train_test_mix(args.file_en, args.file_dk, int(args.min_len))
+    elif args.save:
+        save_model(args.file_dk, args.outfile)
 
 # partition data into events
 def loadEvents(data, print_dist=False, min_len=1):
@@ -88,9 +92,8 @@ def get_x_y(data, min_len):
 
 class HMM(BaseEstimator):
 
-    def __init__(self, components, iter=10):
+    def __init__(self, components):
         self.components = components
-        self.iter = iter
         self.flatten = lambda l: [item for sublist in l for item in sublist]
 
     def fit(self, X, y):
@@ -191,25 +194,27 @@ def train_test_mix(file_en, file_da, min_length=1):
     X_en.extend(X_da)
     y_en.extend(y_da)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_en, y_en, test_size=0.2, stratify=y_en)
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X_en, y_en, test_size=0.2, stratify=y_en)
 
     for s in range(1,16):
-        best_acc = 0.0
-        best_f1 = 0.0
+        # best_acc = 0.0
+        # best_f1 = 0.0
+        
+        cross_val(HMM(s), X_en, y_en, 3, 42, s)
 
-        # try out different random configurations
-        for c in range(1):
-            # test on danish data
-            clf = HMM(s).fit(X_train, y_train)
-            predicts = clf.predict(X_test)
+        # # try out different random configurations
+        # for c in range(1):
+        #     # test on danish data
+        #     clf = HMM(s).fit(X_train, y_train)
+        #     predicts = clf.predict(X_test)
 
-            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
+        #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
             
-            if f1_t_da > best_f1:
-                best_acc = acc_t_da
-                best_f1 = f1_t_da
-        print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
+        #     if f1_t_da > best_f1:
+        #         best_acc = acc_t_da
+        #         best_f1 = f1_t_da
+        # print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
 
 def train_eng_test_danish(file_en, file_da, min_length=1):    
     # load data
@@ -220,7 +225,7 @@ def train_eng_test_danish(file_en, file_da, min_length=1):
     data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
     y_train = [x[1] for x in data_train]
     X_train = [x[2] for x in data_train]
-
+    print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
     for s in range(1,16):
         best_acc = 0.0
         best_f1 = 0.0
@@ -272,30 +277,68 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_le
 
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)
 
-    danish_data_X = [x[1] for x in danish_data]
-    danish_data_y = [x[0] for x in danish_data]
+    X = [x[1] for x in danish_data]
+    y = [x[0] for x in danish_data]
     
-    X_train, X_test, y_train, y_test = train_test_split(
-        danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
     
-    train_y_x = list(zip(y_train, X_train))
+    # train_y_x = list(zip(y_train, X_train))
 
     for s in range(1,16):
         best_acc = 0.0
         best_f1 = 0.0
 
         # try out different random configurations
-        for c in range(1):
-            clf = HMM(s).fit(X_train, y_train)
-            da_predicts = clf.predict(X_test)
+        # for c in range(1):
+        cross_val(HMM(s), X, y, 3, 42, s)
+        #     clf = HMM(s).fit(X_train, y_train)
+        #     da_predicts = clf.predict(X_test)
         
-            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
+        #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
             
-            if f1_t_da > best_f1:
-                best_acc = acc_t_da
-                best_f1 = f1_t_da
-        print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
+        #     if f1_t_da > best_f1:
+        #         best_acc = acc_t_da
+        #         best_f1 = f1_t_da
+        # print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
     
+def save_model(file_name, out_file):
+    danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)
+
+    danish_data_X = [x[1] for x in danish_data]
+    danish_data_y = [x[0] for x in danish_data]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
+    
+    best_model = None
+    train_y_x = list(zip(y_train, X_train))
+    for s in range(1, 16):
+
+        best_acc = 0.0
+        best_f1 = 0.0
+        clf = HMM(s).fit(X_train, y_train)
+        da_predicts = clf.predict(X_test)
+    
+        _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
+        if f1_t_da > best_f1:
+            best_acc = acc_t_da
+            best_f1 = f1_t_da
+            best_model = clf
+
+    dump(best_model, out_file)
+    
+def cross_val(clf, X, y, folds, rand, i):
+    scoring = [
+        'f1_macro',
+        'accuracy'
+    ]
+    skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=rand)
+    scores = cross_validate(clf, X, y, cv=skf, scoring=scoring, n_jobs=-1, return_train_score=False)
+    s = "%-20s %-4s %-5s %s %0.2f (+/- %0.2f) %s %0.2f (+/- %0.2f)" \
+        % (i, 'rand', rand, 'f1', scores['test_f1_macro'].mean(), scores['test_f1_macro'].std() * 2,
+        'acc', scores['test_accuracy'].mean(), scores['test_accuracy'].std() * 2)
+    print(s)
     
 if __name__ == "__main__":
     main(sys.argv[1:])

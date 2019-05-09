@@ -4,6 +4,7 @@ import time
 import os
 import csv
 from datetime import datetime
+import argparse
 
 ### Data loading file for semeval label and time data ###
 
@@ -27,7 +28,19 @@ rumour_train_labels_path = '../data/semeval_rumour_data/semeval2017-task8-datase
 rumour_dev_labels_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/traindev/rumoureval-subtaskB-dev.json'
 rumour_test_labels_path = '../data/semeval_rumour_data/semeval2017-task8-test-labels/subtaskb.json'
 
+semeval_train_dev_data_path = '../data/semeval_rumour_data/semeval2017-task8-dataset/rumoureval-data/'
+semeval_test_data_path = '../data/semeval_rumour_data/semeval2017-task8-test-data/'
+
 data_folder = '../data/hmm/'
+
+# def main(argv):
+
+#     parser = argparse.ArgumentParser(description='Preprocessing of data files from pheme and semeval for rumour veracity hmm classification')
+
+#     parser.add_argument('-f', '--data file path', dest='file', default='../data/pheme_data/pheme-rumour-scheme-dataset/threads/en/', help='Input folder holding annotated data')
+#     parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
+    
+#     args = parser.parse_args(argv)
 
 # Events from which dungs 18 used rumour data from
 dungs18_events = [
@@ -109,6 +122,9 @@ def read_all_rumours(path, rumour_dict, stance_dict, include_all=False):
 
     return data
 
+
+unpack_tupples = lambda l : [x for t in l for x in t]
+
 def read_test_rumours(path, rumour_dict, stance_dict):
     return read_conversations_in_dir(path, 'test', rumour_dict, stance_dict)
 
@@ -122,7 +138,7 @@ def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
             folder = os.path.join(path, conv)
 
             src_tweet_path = ''
-            if os.path.exists("source-tweet"):
+            if os.path.exists(folder + "/source-tweet"):
                 src_tweet_path = os.path.join(folder, "source-tweet")
             else:
                 src_tweet_path = os.path.join(folder, "source-tweets")
@@ -132,7 +148,7 @@ def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
             replies.append(read_tweet_id_time(os.path.join(src_tweet_path, src_tweet), stance_dict))
 
             replies_path = ''
-            if os.path.exists("replies"):
+            if os.path.exists(folder + "/replies"):
                 replies_path = os.path.join(folder, "replies")
             else:
                 replies_path = os.path.join(folder, "reactions")
@@ -145,7 +161,22 @@ def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
                         replies.append(tweet)
             
             replies = sorted(replies, key = lambda x : x[1]) # sort replies by time ascending
-            replies = [x[0] for x in replies] # throw away time stamp
+
+            if True: # keep time
+                # normalize time
+                max_time = max([x[1] for x in replies])
+                min_time = min([x[1] for x in replies])
+                
+                for i in range(len(replies)):
+                    if (max_time - min_time) == 0:
+                        norm_time = 0.0
+                    else:
+                        norm_time = (replies[i][1] - min_time) / (max_time - min_time)
+                    replies[i] = (replies[i][0], norm_time)
+            if True: # keep times
+                replies = unpack_tupples(replies)
+            else:
+                replies = [x[0] for x in replies] # throw away time stamp
 
             if len(replies) >= min_len:
                 event_data.append((event, rumour_dict[conv], replies))
@@ -187,28 +218,32 @@ def write_hmm_data(filename, data):
 
 #rumour labels
 rumour_labels = dict()
+rumour_test_labels = dict()
 stance_labels = dict()
 
 rumour_labels.update(read_rumour_labels(rumour_train_labels_path))
 rumour_labels.update(read_rumour_labels(rumour_dev_labels_path))
-# rumour_labels.update(read_rumour_labels(rumour_test_labels_path))
+
+rumour_test_labels = read_rumour_labels(rumour_test_labels_path)
 
 # stance labels
-# stance_labels.update(read_stance_labels(training_labels_path))
-# stance_labels.update(read_stance_labels(dev_labels_path))
+stance_labels.update(read_stance_labels(training_labels_path))
+stance_labels.update(read_stance_labels(dev_labels_path))
 # stance_labels.update(read_pheme_labels(pheme_stance_labels_de_old))
-stance_labels.update(read_pheme_labels(pheme_stance_labels_en_old))
-# stance_labels.update(read_stance_labels(test_stance_labels))
+# stance_labels.update(read_pheme_labels(pheme_stance_labels_en_old))
+stance_labels.update(read_stance_labels(test_stance_labels))
 
-rumour_data = read_all_rumours(training_data_path_en_old, rumour_labels, stance_labels)
+# rumour_data = read_all_rumours(training_data_path_en_old, rumour_labels, stance_labels)
 # rumour_data_de = read_all_rumours(training_data_path_de_old, rumour_labels, stance_labels)
 # rumour_data.extend(rumour_data_de)
-#rumour_data_dev = read_all_rumours(training_data_path, rumour_labels_test, stance_labels_test)
-#rumour_data_test = read_test_rumours(test_data_path, rumour_labels_test, stance_labels_test)
+rumour_data_train= read_all_rumours(semeval_train_dev_data_path, rumour_labels, stance_labels)
+
+rumour_data_test = read_test_rumours(semeval_test_data_path, rumour_test_labels, stance_labels)
 
 #rumour_data_train.extend(rumour_data_dev)
 #rumour_data_train.extend(rumour_data_test)
 
-print("Found data for {} training rumours".format(len(rumour_data)))
+print("Found data for {} training rumours".format(len(rumour_data_train)))
 
-write_hmm_data(data_folder + 'rumours_pheme_train_dev_old.csv', rumour_data)
+write_hmm_data(data_folder + 'semeval_train_dev.csv', rumour_data_train)
+write_hmm_data(data_folder + 'semeval_test.csv', rumour_data_test)

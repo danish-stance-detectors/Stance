@@ -12,6 +12,7 @@ def main(argv):
     parser.add_argument('-hmm', '--hiddenMarkovModel', default=False, dest='hmm', action='store_true', help='Get HMM features instead of stance preprocessing features')
     parser.add_argument('-br', '--branch', default=False, action='store_true', help='Get hmm features in branches')
     parser.add_argument('-cmt', '--comment', default=False, action='store_true', help='Get hmm features in comment trees')
+    parser.add_argument('-t', '--time', default=False, action='store_true', help='Get hmm features with both stance and time')
     parser.add_argument('-f', '--data file path', dest='file', default='../data/annotated/', help='Input folder holding annotated data')
     parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
     args = parser.parse_args(argv)
@@ -19,16 +20,17 @@ def main(argv):
     data = []
     
     if args.hmm:
-        data = read_hmm_data_no_branches(args.file)
+        data = read_hmm_data_no_branches(args.file, args.time)
     elif args.branch:
-        data = read_hmm_data(args.file)
+        data = read_hmm_data(args.file, args.time)
     elif args.comment:
-        print("cmt")
-        data = read_hmm_data_cmt_trees(args.file)
+        data = read_hmm_data_cmt_trees(args.file, args.time)
     
     write_hmm_data(args.outfile, data)
-    
-def read_hmm_data(filename):
+
+unpack_tupples = lambda l : [x for t in l for x in t]
+
+def read_hmm_data(filename, keep_time):
     if not filename:
         return
     
@@ -49,7 +51,6 @@ def read_hmm_data(filename):
                 if sub['IsRumour'] and not sub['IsIrrelevant']:
                     print("Adding {} as rumour".format(submission_json))
                     rumour_truth = int(sub['TruthStatus'] == 'True')
-                    print(rumour_truth)
                     rumour_count += 1
                     truth_count += rumour_truth
                     for branch in json_obj['branches']:
@@ -57,15 +58,35 @@ def read_hmm_data(filename):
                         for comment in branch:
                             label = comment['comment']['SDQC_Submission']
                             label_distribution[label] += 1
-                            branch_labels.append(sdqc_to_int[label])
-                        label_data.append((rumour_truth, branch_labels))
+                            if keep_time:
+                                created = comment['comment']['created']
+                                time_stamp = time.mktime(time.strptime(created, "%Y-%m-%dT%H:%M:%S"))
+                                branch_labels.append((sdqc_to_int[label], time_stamp))
+                            else:
+                                branch_labels.append(sdqc_to_int[label])
+                            
+                        if keep_time:
+                            # normalize time
+                            max_time = max([x[1] for x in branch_labels])
+                            min_time = min([x[1] for x in branch_labels])
+                            
+                            for i in range(len(branch_labels)):
+                                if (max_time - min_time) == 0:
+                                    norm_time = 0.0
+                                else:
+                                    norm_time = (branch_labels[i][1] - min_time) / (max_time - min_time)
+                                branch_labels[i] = (branch_labels[i][0], norm_time)
+
+                            label_data.append((rumour_truth, unpack_tupples(branch_labels)))
+                        else:
+                            label_data.append((rumour_truth, branch_labels))
     
     print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
     print("With sdqc overall distribution: ")
     print(label_distribution)
     return label_data
 
-def read_hmm_data_no_branches(filename):
+def read_hmm_data_no_branches(filename, keep_time):
     if not filename:
         print("Cannot run method read_hmm_data_no_branches without filename parameter")
         return
@@ -108,9 +129,24 @@ def read_hmm_data_no_branches(filename):
                     
                     # sort them by time
                     comments_by_time = sorted(distinct_comments.values(), key=lambda x: x[1])
+                    
+                    if keep_time:
+                        # normalize time
+                        max_time = max([x[1] for x in comments_by_time])
+                        min_time = min([x[1] for x in comments_by_time])
+                        
+                        for i in range(len(comments_by_time)):
+                            if (max_time - min_time) == 0.0:
+                                norm_time = 0.0
+                            else:
+                                norm_time = (comments_by_time[i][1] - min_time) / (max_time - min_time)
+                            comments_by_time[i] = (comments_by_time[i][0], norm_time)
 
-                    # discard time stamps for now
-                    label_data.append((rumour_truth, [x[0] for x in comments_by_time]))
+                    if keep_time: # unpack tupples to one list
+                        label_data.append((rumour_truth, unpack_tupples(comments_by_time)))
+                    else:
+                        # discard time stamps for now
+                        label_data.append((rumour_truth, [x[0] for x in comments_by_time]))
     
     print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
     print("With sdqc overall distribution: ")
@@ -118,7 +154,7 @@ def read_hmm_data_no_branches(filename):
     return label_data
 
 # read hmm data in top level comment tree structure
-def read_hmm_data_cmt_trees(filename):
+def read_hmm_data_cmt_trees(filename, keep_time):
     if not filename:
         print("Cannot run method read_hmm_data_no_branches without filename parameter")
         return
@@ -174,7 +210,22 @@ def read_hmm_data_cmt_trees(filename):
         comments_by_time = sorted(tree.values(), key=lambda x: x[2])
         
         rumour_truth = comments_by_time[0][0]
-        label_data.append((rumour_truth, [x[1] for x in comments_by_time]))
+        if keep_time:
+            # normalize time
+            max_time = max([x[2] for x in comments_by_time])
+            min_time = min([x[2] for x in comments_by_time])
+            
+            for i in range(len(comments_by_time)):
+                if (max_time - min_time) == 0.0:
+                    norm_time = 0.0
+                else:
+                    norm_time = (comments_by_time[i][2] - min_time) / (max_time - min_time)
+                comments_by_time[i] = (comments_by_time[i][0], comments_by_time[i][1], norm_time)
+            comments_by_time = unpack_tupples([(x[1], x[2]) for x in comments_by_time])
+        else:
+            comments_by_time = unpack_tupples([x[1] for x in comments_by_time])
+            
+        label_data.append((rumour_truth, comments_by_time))
         
                     
     print("Preprocessed {} rumours of which {} were true".format(rumour_count, truth_count))
