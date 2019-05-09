@@ -1,0 +1,2 @@
+Decision Tree       f1_macro 0.31 (+/- 0.06)
+Majority vote       f1_macro 0.22 (+/- 0.00)

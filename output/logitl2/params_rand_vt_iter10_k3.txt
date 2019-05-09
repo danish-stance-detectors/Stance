@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.374 for {'C': 26, 'class_weight': 'balanced', 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Grid scores on development set:
+0.357 (+/-0.078) for {'C': 473, 'class_weight': None, 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.356 (+/-0.080) for {'C': 48, 'class_weight': None, 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.362 (+/-0.077) for {'C': 700, 'class_weight': None, 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.363 (+/-0.082) for {'C': 135, 'class_weight': None, 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.363 (+/-0.059) for {'C': 391, 'class_weight': 'balanced', 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.358 (+/-0.077) for {'C': 498, 'class_weight': None, 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.374 (+/-0.065) for {'C': 26, 'class_weight': 'balanced', 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.371 (+/-0.059) for {'C': 277, 'class_weight': 'balanced', 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.355 (+/-0.074) for {'C': 903, 'class_weight': None, 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.372 (+/-0.049) for {'C': 31, 'class_weight': 'balanced', 'dual': False, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.25      0.21      0.23        68
+           1       0.32      0.32      0.32        75
+           2       0.33      0.10      0.15        20
+           3       0.83      0.87      0.85       589
+
+   micro avg       0.74      0.74      0.74       752
+   macro avg       0.43      0.37      0.39       752
+weighted avg       0.72      0.74      0.72       752
+
+[[ 14  12   0  42]
+ [  6  24   0  45]
+ [  1   2   2  15]
+ [ 34  38   4 513]]
+acc: 0.7354
+f1 macro: 0.3879
+

@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.362 for {'C': 894, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Grid scores on development set:
+0.353 (+/-0.033) for {'C': 692, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.337 (+/-0.046) for {'C': 404, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.353 (+/-0.037) for {'C': 837, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.362 (+/-0.046) for {'C': 894, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.347 (+/-0.058) for {'C': 863, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.340 (+/-0.026) for {'C': 500, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.351 (+/-0.033) for {'C': 524, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.350 (+/-0.037) for {'C': 809, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.349 (+/-0.033) for {'C': 513, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.352 (+/-0.021) for {'C': 682, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.21      0.19      0.20        68
+           1       0.33      0.35      0.34        75
+           2       0.12      0.05      0.07        20
+           3       0.84      0.86      0.85       589
+
+   micro avg       0.73      0.73      0.73       752
+   macro avg       0.38      0.36      0.37       752
+weighted avg       0.72      0.73      0.72       752
+
+[[ 13  12   3  40]
+ [  6  26   0  43]
+ [  2   5   1  12]
+ [ 42  35   4 508]]
+acc: 0.7287
+f1 macro: 0.3655
+

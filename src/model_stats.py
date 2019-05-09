@@ -46,7 +46,8 @@ def plot_confusion_matrix(y_true, y_pred,
             title = 'Confusion matrix, without normalization'
 
     # Compute confusion matrix
-    cm = confusion_matrix(y_true, y_pred)
+    cm, acc, f1 = cm_acc_f1(y_true, y_pred)
+    # cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
     classes = [0, 1, 2, 3]
     if normalize:
@@ -84,4 +85,4 @@ def plot_confusion_matrix(y_true, y_pred,
     fig.tight_layout()
     if save_to_filename:
         plt.savefig(save_to_filename, bbox_inches='tight')
-    return ax
+    return ax, acc, f1

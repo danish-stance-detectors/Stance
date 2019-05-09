@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.377 for {'C': 93, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+Grid scores on development set:
+0.341 (+/-0.087) for {'C': 838, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.348 (+/-0.112) for {'C': 578, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.371 (+/-0.059) for {'C': 494, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.349 (+/-0.097) for {'C': 926, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.344 (+/-0.097) for {'C': 678, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.364 (+/-0.060) for {'C': 907, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.346 (+/-0.099) for {'C': 515, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.348 (+/-0.087) for {'C': 995, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+0.377 (+/-0.054) for {'C': 93, 'class_weight': 'balanced', 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}
+0.338 (+/-0.098) for {'C': 618, 'class_weight': None, 'multi_class': 'auto', 'penalty': 'l1', 'solver': 'liblinear'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.25      0.22      0.24        68
+           1       0.26      0.23      0.24        75
+           2       0.09      0.05      0.06        20
+           3       0.82      0.86      0.84       589
+
+   micro avg       0.72      0.72      0.72       752
+   macro avg       0.36      0.34      0.35       752
+weighted avg       0.70      0.72      0.71       752
+
+[[ 15   8   2  43]
+ [  8  17   1  49]
+ [  1   1   1  17]
+ [ 35  39   7 508]]
+acc: 0.7194
+f1 macro: 0.3465
+
