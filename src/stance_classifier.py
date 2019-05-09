@@ -97,21 +97,40 @@ classifiers = {
                                  criterion='gini', max_depth=10,
                                  max_features='auto', min_samples_split=6,
                                  n_estimators=700, n_jobs=-1, random_state=rand), 'wembs'),
+    'mv': DummyClassifier(strategy='most_frequent'),
+    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
+}
 
+classifiers_all = {
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
+    # 'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
+    #                                max_depth=50, max_features=None, presort=True, random_state=rand,
+    #                                min_samples_split=3, splitter='best'),
+    'svm': LinearSVC(C=500, class_weight='balanced', max_iter=50000, multi_class='crammer_singer', random_state=rand),
+    'rf': RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
+                                 criterion='entropy', max_depth=10,
+                                 max_features=None, min_samples_split=2,
+                                 n_estimators=230, n_jobs=-1, random_state=rand),
+    'mv': DummyClassifier(strategy='most_frequent'),
+    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
 classifiers_vt = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto',
-                                penalty='l1', C=60, class_weight=None),
-    'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
-                                   max_depth=50, max_features=None, presort=True, random_state=rand,
-                                   min_samples_split=3, splitter='best'),
-    'svm': LinearSVC(C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
-    'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
-                                 criterion='entropy', max_depth=3,
-                                 max_features='auto', min_samples_split=9,
-                                 n_estimators=280, n_jobs=-1, random_state=rand),
-
+    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto',
+    #                             penalty='l1', C=60, class_weight=None),
+    # 'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
+    #                                max_depth=50, max_features=None, presort=True, random_state=rand,
+    #                                min_samples_split=3, splitter='best'),
+    # 'svm': LinearSVC(C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    # 'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
+    #                              criterion='entropy', max_depth=3,
+    #                              max_features='auto', min_samples_split=9,
+    #                              n_estimators=280, n_jobs=-1, random_state=rand),
+    # 'mv': DummyClassifier(strategy='most_frequent'),
+    # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
@@ -218,12 +237,14 @@ def main(argv):
     X_train = data_loader.select_features(X_train, feature_mapping, config)
     X_test = data_loader.select_features(X_test, feature_mapping, config)
     # Merged data
-    X_all = X_train
+    X_all = []
+    X_all.extend(X_train)
     X_all.extend(X_test)
-    y_all = y_train
+    y_all = []
+    y_all.extend(y_train)
     y_all.extend(y_test)
 
-    clfs = classifiers_vt
+    clfs = classifiers_all
 
     if args.reduce_features:
         clfs = classifiers_vt
@@ -232,6 +253,7 @@ def main(argv):
         X_train, X_test = data_loader.union_reduce_then_split(X_train, X_test)
         print(len(X_train[0]))
         print(len(X_test[0]))
+        X_all = np.append(X_train, X_test, axis=0)
 
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
