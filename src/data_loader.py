@@ -1,4 +1,6 @@
 import csv
+
+from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import train_test_split
 
 datafile = '../data/preprocessed/preprocessed.csv'
@@ -93,3 +95,10 @@ def load_train_test_data(train_file, test_file, delimiter=tab, split=True):
         X_train.extend(X_test)
         y_train.extend(y_test)
         return X_train, y_train, n_features, feature_mapping
+
+def union_reduce_then_split(x1, x2):
+    split = len(x1)
+    x_union = x1
+    x_union.extend(x2)
+    x_transformed = VarianceThreshold(0.001).fit_transform(x_union)
+    return x_transformed[:split], x_transformed[split:]

@@ -1,0 +1,24 @@
+Number of data points: 2313
+SDQC distribution:
+S:  273 (0.118)
+D:  300 (0.130)
+Q:   81 (0.035)
+C: 1659 (0.717)
+
+Making train test split
+Splitting with test size 0.2
+Train stats:
+Number of data points: 1850
+SDQC distribution:
+S:  218 (0.118)
+D:  240 (0.130)
+Q:   65 (0.035)
+C: 1327 (0.717)
+Test stats:
+Number of data points: 463
+SDQC distribution:
+S:   55 (0.119)
+D:   60 (0.130)
+Q:   16 (0.035)
+C:  332 (0.717)
+Done

@@ -1,2 +1,3 @@
 estimator,f1_macro,acc,folds,rand_iter,parameters,features
 logitl2,0.3912,0.7500,3,50,"{'C': 150, 'class_weight': None, 'dual': True}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"
+logitl2,0.3879,0.7354,3,10,"{'C': 26, 'class_weight': 'balanced', 'dual': True, 'multi_class': 'auto', 'penalty': 'l2', 'solver': 'liblinear'}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

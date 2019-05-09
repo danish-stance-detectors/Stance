@@ -16,7 +16,7 @@ import data_loader
 import model_stats
 
 output_folder = '../output/cross_validation/'
-
+rand = np.random.RandomState(42)
 
 def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=3, n_jobs=1):
     plt.figure()
@@ -70,9 +70,9 @@ def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
     return ax
 
 classifiers = {
-    'logistic-regression': LogisticRegression(C=10, solver='liblinear', class_weight='balanced',
-                                              multi_class='auto', penalty='l1'),
-    # 'tree': DecisionTreeClassifier()
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand,
+                                              dual=True, penalty='l2', C=10, class_weight='balanced'),
+    # 'tree': DecisionTreeClassifier(),
     # 'linear-svm': LinearSVC(),
     # 'random-forest': RandomForestClassifier(),
     # 'majority-vote': DummyClassifier(strategy='most_frequent'),
@@ -141,16 +141,32 @@ def cross_predict(X, y, skf, reduced_feature):
         filename = os.path.join(folder, 'prediction_cm_k%d' % skf.n_splits)
         if reduced_feature:
             filename += '_vt'
-        model_stats.plot_confusion_matrix(y, predicted, title='%s Confusion matrix - no normalization' % name,
-                                          save_to_filename= '%s.png' % filename)
+        _, acc, f1 = model_stats.plot_confusion_matrix(y, predicted,
+                                                       title='%s Confusion matrix - no normalization' % name,
+                                                       save_to_filename='%s.png' % filename)
+        print('Acc: %.5f', acc)
+        print('f1: %.5f', f1)
+
+def fit_predict(X_train, X_test, y_train, y_test, clf, name):
+    folder = os.path.join(output_folder, name)
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    filename = os.path.join(folder, '%s_fit_predict_cm' % name)
+    clf.fit(X_train, y_train)
+    y_true, y_pred = y_test, clf.predict(X_test)
+    _, acc, f1 = model_stats.plot_confusion_matrix(y_true, y_pred,
+                                                   title='%s Confusion matrix - no normalization' % name,
+                                                   save_to_filename='%s.png' % filename)
+    print('Acc: %.5f' % acc)
+    print('f1: %.5f' % f1)
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -166,22 +182,33 @@ def main(argv):
                         help='Cross-validate prediction')
     parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
                         help='Reduce features by Variance Threshold')
-
     args = parser.parse_args(argv)
-    X, y, _, feature_mapping = data_loader.load_train_test_data(train_file=args.train_file,
-                                                                test_file=args.test_file, split=False)
+    # xx, yy, _, _ = data_loader.load_train_test_data(train_file=args.train_file,test_file=args.test_file, split=False)
+    # print('Total:', len(xx))
+    # S = len([s for s in yy if s == 0])
+    # D = len([d for d in yy if d == 1])
+    # Q = len([q for q in yy if q == 2])
+    # C = len([c for c in yy if c == 3])
+    # print('S: %d\tD: %d\tQ: %d\tC: %s' % (S, D, Q, C))
+    X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
+        train_file=args.train_file,test_file=args.test_file)
     config = data_loader.get_features()
-    X = data_loader.select_features(X, feature_mapping, config)
-    skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=42)
-    print(len(X[0]))
+    X_train = data_loader.select_features(X_train, feature_mapping, config)
+    X_test = data_loader.select_features(X_test, feature_mapping, config)
+    skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
+    print(len(X_train[0]))
+    print(len(X_test[0]))
     if args.reduce_features:
-        X = VarianceThreshold(0.001).fit_transform(X)
-    print(len(X[0]))
+        X_train, X_test = data_loader.union_reduce_then_split(X_train, X_test)
+    print(len(X_train[0]))
+    print(len(X_test[0]))
 
     # visualize_cv(skf, args.k_folds, X, y)
-    cross_val(X, y, skf, args.learning_curve, args.reduce_features)
+    # cross_val(X, y, skf, args.learning_curve, args.reduce_features)
     if args.predict:
-        cross_predict(X, y, skf, args.reduce_features)
+        # cross_predict(X, y, skf, args.reduce_features)
+        clf = classifiers['logit']
+        fit_predict(X_train, X_test, y_train, y_test, clf, 'logit')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

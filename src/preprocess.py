@@ -21,7 +21,9 @@ def preprocess(filename, sub_sample, super_sample):
     s = 'Loading and preprocessing data '
     if sub_sample:
         s += 'with sub sampling'
-    elif super_sample:
+    if super_sample:
+        if sub_sample:
+            s += ' and '
         s += 'with super sampling'
     print(s)
     for rumour_folder in os.listdir(filename):
@@ -106,9 +108,9 @@ def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
-    parser.add_argument('-sub', '--sub_sample', default=False, action='store_true',
+    parser.add_argument('-sub', '--sub_sample', dest='sub', default=False, action='store_true',
                         help='Sub sample by removing pure comment branches')
-    parser.add_argument('-sup', '--super_sample', nargs='?', type=float, const=0.25,
+    parser.add_argument('-sup', '--super_sample', dest='sup', nargs='?', type=float, const=0.5,
                         help='Super sample by duplicating modified SDQ comments')
     parser.add_argument('-t', '--text', dest='text', default=False, action='store_true', help='Enable text features')
     parser.add_argument('-l', '--lexicon', dest='lexicon', default=False, action='store_true',
@@ -129,19 +131,22 @@ def main(argv):
                         help='Write a corpus file for Reddit data')
     args = parser.parse_args(argv)
 
-    outputfile = 'preprocessed'
+    outputfile = 'PP'
     features = []
     for arg in vars(args):
         attr = getattr(args, arg)
         if attr:
-            features.append(arg)
+            if not (arg == 'sup' or arg == 'sub'):
+                features.append(arg)
             outputfile += '_%s' % arg
             if type(attr) is int:
                 outputfile += '%d' % attr
+            if type(attr) is float:
+                outputfile += '%d' % int(attr*100)
 
     word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
 
-    dataset, train, test = preprocess(annotated_folder, args.sub_sample, args.super_sample)
+    dataset, train, test = preprocess(annotated_folder, args.sub, args.sup)
     if args.corpus:
         train.extend(test)
         write_reddit_corupus(train)
