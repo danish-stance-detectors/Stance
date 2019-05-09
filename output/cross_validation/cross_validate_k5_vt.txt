@@ -1,1 +1,0 @@
-logistic-regression f1 0.69 (+/- 0.05) acc 0.80 (+/- 0.04)
