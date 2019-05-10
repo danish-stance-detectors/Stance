@@ -85,28 +85,25 @@ baselines = {
     'stratified-random': DummyClassifier(strategy='stratified')
 }
 
-classifiers = {
-    'logit': (LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
-              None),
+classifiers_LOO = {
+    # 'logit': (LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
+    #           None),
     'tree': (DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
                                    max_depth=50, max_features=None, presort=True, random_state=rand,
-                                   min_samples_split=3, splitter='best'), data_loader.get_features()),
-    'svm': (LinearSVC(C=160, class_weight=None, max_iter=50000, multi_class='crammer_singer',
-                      tol=3.1, random_state=rand), 'reddit'),
-    'rf': (RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
-                                 criterion='gini', max_depth=10,
-                                 max_features='auto', min_samples_split=6,
-                                 n_estimators=700, n_jobs=-1, random_state=rand), 'wembs'),
-    'mv': DummyClassifier(strategy='most_frequent'),
-    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    'random': DummyClassifier(strategy='uniform', random_state=rand)
+                                   min_samples_split=3, splitter='best'), 'lexicon'),
+    # 'svm': (LinearSVC(C=160, class_weight=None, max_iter=50000, multi_class='crammer_singer',
+    #                   tol=3.1, random_state=rand), 'reddit'),
+    # 'rf': (RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
+    #                               criterion='gini', max_depth=10,
+    #                               max_features='auto', min_samples_split=6,
+    #                               n_estimators=700, n_jobs=-1, random_state=rand), 'wembs')
 }
 
 classifiers_all = {
     'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
-    # 'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
-    #                                max_depth=50, max_features=None, presort=True, random_state=rand,
-    #                                min_samples_split=3, splitter='best'),
+    'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
+                                   max_depth=10, max_features=None, presort=True, random_state=rand,
+                                   min_samples_split=8, splitter='best'),
     'svm': LinearSVC(C=500, class_weight='balanced', max_iter=50000, multi_class='crammer_singer', random_state=rand),
     'rf': RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
                                  criterion='entropy', max_depth=10,
@@ -123,20 +120,21 @@ classifiers_vt = {
     # 'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
     #                                max_depth=50, max_features=None, presort=True, random_state=rand,
     #                                min_samples_split=3, splitter='best'),
-    # 'svm': LinearSVC(C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    'svml1': LinearSVC(penalty='l1', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    'svml2': LinearSVC(penalty='l2', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
     # 'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
     #                              criterion='entropy', max_depth=3,
     #                              max_features='auto', min_samples_split=9,
     #                              n_estimators=280, n_jobs=-1, random_state=rand),
     # 'mv': DummyClassifier(strategy='most_frequent'),
     # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    'random': DummyClassifier(strategy='uniform', random_state=rand)
+    # 'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
-def cross_val_plot(score, X, y, skf):
+def cross_val_plot(score, X, y, skf, clfs):
     filepath = os.path.join(output_folder, 'cross_val_plot')
-    for name, clf in classifiers.items():
+    for name, clf in clfs.items():
         print('Plotting learning curve for', name)
         plot_learning_curve(clf, name, X, y, scoring=score, cv=skf)
         s = '%s - %s.png' % (filepath, name)
@@ -152,7 +150,7 @@ def cross_val(X, y, clfs, skf, plot_lc, reduced_feature):
     ]
     for name, clf in clfs.items():
         scores = cross_validate(clf, X, y, cv=skf, scoring=scoring, n_jobs=-1, verbose=1,
-                                pre_dispatch='2*n_jobs', return_train_score=False)
+                                pre_dispatch='2*n_jobs', return_train_score=False, error_score='raise')
         s = "%-20s%s %0.2f (+/- %0.2f) %s %0.2f (+/- %0.2f)" \
             % (name, 'f1', scores['test_f1_macro'].mean(), scores['test_f1_macro'].std() * 2,
                'acc', scores['test_accuracy'].mean(), scores['test_accuracy'].std() * 2)
@@ -244,7 +242,7 @@ def main(argv):
     y_all.extend(y_train)
     y_all.extend(y_test)
 
-    clfs = classifiers_all
+    clfs = classifiers_vt
 
     if args.reduce_features:
         clfs = classifiers_vt
