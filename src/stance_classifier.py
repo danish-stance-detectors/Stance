@@ -86,17 +86,17 @@ baselines = {
 }
 
 classifiers_LOO = {
-    # 'logit': (LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
-    #           None),
+    'logit': (LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
+              None),
     'tree': (DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
                                    max_depth=50, max_features=None, presort=True, random_state=rand,
                                    min_samples_split=3, splitter='best'), 'lexicon'),
-    # 'svm': (LinearSVC(C=160, class_weight=None, max_iter=50000, multi_class='crammer_singer',
-    #                   tol=3.1, random_state=rand), 'reddit'),
-    # 'rf': (RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
-    #                               criterion='gini', max_depth=10,
-    #                               max_features='auto', min_samples_split=6,
-    #                               n_estimators=700, n_jobs=-1, random_state=rand), 'wembs')
+    'svm': (LinearSVC(C=160, class_weight=None, max_iter=50000, multi_class='crammer_singer',
+                      tol=3.1, random_state=rand), 'reddit'),
+    'rf': (RandomForestClassifier(bootstrap=False, class_weight='balanced_subsample',
+                                  criterion='gini', max_depth=10,
+                                  max_features='auto', min_samples_split=6,
+                                  n_estimators=700, n_jobs=-1, random_state=rand), 'wembs')
 }
 
 classifiers_all = {
@@ -115,17 +115,23 @@ classifiers_all = {
 }
 
 classifiers_vt = {
-    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto',
-    #                             penalty='l1', C=60, class_weight=None),
-    # 'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
-    #                                max_depth=50, max_features=None, presort=True, random_state=rand,
-    #                                min_samples_split=3, splitter='best'),
-    'svml1': LinearSVC(penalty='l1', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
-    'svml2': LinearSVC(penalty='l2', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
-    # 'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
-    #                              criterion='entropy', max_depth=3,
-    #                              max_features='auto', min_samples_split=9,
-    #                              n_estimators=280, n_jobs=-1, random_state=rand),
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
+    'tree': DecisionTreeClassifier(class_weight='balanced', criterion='entropy',
+                                   max_depth=50, max_features=None, presort=True, random_state=rand,
+                                   min_samples_split=3, splitter='best'),
+    'svm': LinearSVC(penalty='l2', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
+                                 criterion='entropy', max_depth=3,
+                                 max_features='auto', min_samples_split=9,
+                                 n_estimators=280, n_jobs=-1, random_state=rand),
+    'mv': DummyClassifier(strategy='most_frequent'),
+    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
+}
+
+classifiers_best = {
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=500, class_weight='balanced'),
+    'svm': LinearSVC(penalty='l2', C=500, class_weight=None, dual=False, max_iter=50000, random_state=rand),
     # 'mv': DummyClassifier(strategy='most_frequent'),
     # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
     # 'random': DummyClassifier(strategy='uniform', random_state=rand)
@@ -184,7 +190,7 @@ def cross_predict(X, y, clfs, skf, reduced_feature):
         filename = os.path.join(folder, 'prediction_cm_k%d' % skf.n_splits)
         if reduced_feature:
             filename += '_vt'
-        _, acc, f1 = model_stats.plot_confusion_matrix(y, predicted,
+        cm, acc, f1 = model_stats.plot_confusion_matrix(y, predicted,
                                                        title='%s Confusion matrix - no normalization' % name,
                                                        save_to_filename='%s.png' % filename)
         print('Acc: %.5f', acc)
@@ -198,20 +204,24 @@ def fit_predict(X_train, X_test, y_train, y_test, clf, name):
     filename = os.path.join(folder, '%s_fit_predict_cm' % name)
     clf.fit(X_train, y_train)
     y_true, y_pred = y_test, clf.predict(X_test)
-    _, acc, f1 = model_stats.plot_confusion_matrix(y_true, y_pred,
-                                                   title='%s Confusion matrix - no normalization' % name,
-                                                   save_to_filename='%s.png' % filename)
-    print('Acc: %.5f' % acc)
-    print('f1: %.5f' % f1)
+    cm, acc, f1 = model_stats.plot_confusion_matrix(y_true, y_pred,
+                                                    title='%s Confusion matrix - no normalization' % name,
+                                                    save_to_filename='%s.png' % filename)
+    with open('%s.txt' % filename, 'w+') as stats:
+        stats.write(np.array2string(cm) + '\n')
+        stats.write('Acc: %.4f\n' % acc)
+        stats.write('F1: %.4f\n' % f1)
+    print('Acc: %.4f' % acc)
+    print('f1: %.4f' % f1)
 
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -221,7 +231,7 @@ def main(argv):
                         help='Cross-validate scoring F1 macro')
     parser.add_argument('-cp', '--cv_predict', action='store_true', default=False,
                         help='Cross-validate prediction')
-    parser.add_argument('-p', '--predict', nargs=1, help='Single classifier prediction')
+    parser.add_argument('-p', '--predict', type=str, help='Single classifier prediction')
     parser.add_argument('-vskf', '--visualize_skf', action='store_true', default=False,
                         help='Cross-validate prediction')
     parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
@@ -242,10 +252,10 @@ def main(argv):
     y_all.extend(y_train)
     y_all.extend(y_test)
 
-    clfs = classifiers_vt
+    clfs = classifiers_best
 
     if args.reduce_features:
-        clfs = classifiers_vt
+        # clfs = classifiers_vt
         print(len(X_train[0]))
         print(len(X_test[0]))
         X_train, X_test = data_loader.union_reduce_then_split(X_train, X_test)
@@ -262,8 +272,8 @@ def main(argv):
     if args.cv_predict:
         cross_predict(X_all, y_all, clfs, skf, args.reduce_features)
     if args.predict:
-        clf = clfs[args.predict] if args.reduce_features else clfs[args.predict][0]
-        fit_predict(X_train, X_test, y_train, y_test, clf, 'logit')
+        clf = clfs[args.predict]
+        fit_predict(X_train, X_test, y_train, y_test, clf, args.predict)
 
 
 if __name__ == "__main__":

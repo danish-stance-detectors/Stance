@@ -85,4 +85,4 @@ def plot_confusion_matrix(y_true, y_pred,
     fig.tight_layout()
     if save_to_filename:
         plt.savefig(save_to_filename, bbox_inches='tight')
-    return ax, acc, f1
+    return cm, acc, f1
