@@ -12,6 +12,7 @@ import numpy as np
 import argparse
 import os
 import sys
+import csv
 import data_loader
 import model_stats
 
@@ -69,6 +70,59 @@ def plot_cv_indices(cv, X, y, ax, n_splits, cmap_data, cmap_cv, lw=10):
     ax.set_title('{}'.format(type(cv).__name__), fontsize=15)
     return ax
 
+def feature_LOO_cross_val(X_train, X_test, y_train, y_test, vt, features, feature_mapping, skf, clfs):
+    feature_names = features.keys()
+    scoring = [
+        'f1_macro',
+        'accuracy'
+    ]
+    y_all = []
+    y_all.extend(y_train)
+    y_all.extend(y_test)
+    folder = os.path.join(output_folder, 'LOO/')
+    if not os.path.exists(folder):
+        os.mkdir(folder)
+    for name, clf in clfs.items():
+        filepath = os.path.join(folder, name)
+        if vt:
+            filepath += '_vt'
+        if not os.path.exists(filepath):
+            with open('%s.csv' % filepath, 'w+', newline='') as statsfile:
+                csv_writer = csv.writer(statsfile)
+                csv_writer.writerow(['estimator', 'f1', 'f1_std', 'acc', 'acc_std', 'LOO feature'])
+        else:
+            continue
+        for feature_name in feature_names:
+            if not features[feature_name] :
+                print('Skipping %s' % feature_name)
+                continue
+            if feature_name == 'all':
+                print('Running with all features enabled')
+            else:
+                print('Leaving %s features out' % feature_name)
+            features[feature_name] = False
+            X_train_ = data_loader.select_features(X_train, feature_mapping, features)
+            X_test_ = data_loader.select_features(X_test, feature_mapping, features)
+            if vt:
+                old_len = len(X_train_[0])
+                X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
+                new_len = len(X_train_[0])
+                print('Reduced features from %d to %d' % (old_len, new_len))
+            X_all = []
+            X_all.extend(X_train_)
+            X_all.extend(X_test_)
+            with open('%s.csv' % filepath, 'a', newline='') as statsfile:
+                csv_writer = csv.writer(statsfile)
+                scores = cross_validate(clf, X_all, y_all, cv=skf, scoring=scoring, n_jobs=-1, verbose=1,
+                                        pre_dispatch='2*n_jobs', return_train_score=False, error_score='raise')
+                f1 = scores['test_f1_macro'].mean()
+                f1_std = scores['test_f1_macro'].std() * 2
+                acc = scores['test_accuracy'].mean()
+                acc_std = scores['test_accuracy'].std() * 2
+                print("%-20s%s %0.2f (+/- %0.2f) %s %0.2f (+/- %0.2f)" % (name, 'f1', f1, f1_std, 'acc', acc, acc_std))
+                csv_writer.writerow([name, '%.4f' % f1, '%0.2f' % f1_std, '%.4f' % acc, '%0.2f' % acc_std, feature_name])
+            features[feature_name] = True
+
 def visualize_cv(cv, n_splits, X, y):
     fig, ax = plt.subplots()
     cmap_data = plt.cm.Paired
@@ -97,6 +151,13 @@ classifiers_LOO = {
                                   criterion='gini', max_depth=10,
                                   max_features='auto', min_samples_split=6,
                                   n_estimators=700, n_jobs=-1, random_state=rand), 'wembs')
+}
+
+classifiers_simple = {
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
+    'tree': DecisionTreeClassifier(presort=True, random_state=rand),
+    'svm': LinearSVC(random_state=rand, max_iter=50000),
+    'rf': RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=rand)
 }
 
 classifiers_all = {
@@ -218,10 +279,10 @@ def fit_predict(X_train, X_test, y_train, y_test, clf, name):
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -231,6 +292,8 @@ def main(argv):
                         help='Cross-validate scoring F1 macro')
     parser.add_argument('-cp', '--cv_predict', action='store_true', default=False,
                         help='Cross-validate prediction')
+    parser.add_argument('-loo', '--loo_features', action='store_true', default=False,
+                        help='LOO features with CV')
     parser.add_argument('-p', '--predict', type=str, help='Single classifier prediction')
     parser.add_argument('-vskf', '--visualize_skf', action='store_true', default=False,
                         help='Cross-validate prediction')
@@ -242,29 +305,31 @@ def main(argv):
     )
     config = data_loader.get_features()
     # Split data
-    X_train = data_loader.select_features(X_train, feature_mapping, config)
-    X_test = data_loader.select_features(X_test, feature_mapping, config)
+    X_train_ = data_loader.select_features(X_train, feature_mapping, config)
+    X_test_ = data_loader.select_features(X_test, feature_mapping, config)
     # Merged data
     X_all = []
-    X_all.extend(X_train)
-    X_all.extend(X_test)
+    X_all.extend(X_train_)
+    X_all.extend(X_test_)
     y_all = []
     y_all.extend(y_train)
     y_all.extend(y_test)
 
-    clfs = classifiers_best
+    clfs = classifiers_simple
 
     if args.reduce_features:
         # clfs = classifiers_vt
-        print(len(X_train[0]))
-        print(len(X_test[0]))
-        X_train, X_test = data_loader.union_reduce_then_split(X_train, X_test)
-        print(len(X_train[0]))
-        print(len(X_test[0]))
-        X_all = np.append(X_train, X_test, axis=0)
+        print(len(X_train_[0]))
+        print(len(X_test_[0]))
+        X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_, X_test_)
+        print(len(X_train_[0]))
+        print(len(X_test_[0]))
+        X_all = np.append(X_train_, X_test_, axis=0)
 
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
+    if args.loo_features:
+        feature_LOO_cross_val(X_train, X_test, y_train, y_test, args.reduce_features, config, feature_mapping, skf, clfs)
     if args.visualize_skf:
         visualize_cv(skf, args.k_folds, X_all, y_all)
     if args.cross_validate:
@@ -273,7 +338,7 @@ def main(argv):
         cross_predict(X_all, y_all, clfs, skf, args.reduce_features)
     if args.predict:
         clf = clfs[args.predict]
-        fit_predict(X_train, X_test, y_train, y_test, clf, args.predict)
+        fit_predict(X_train_, X_test_, y_train, y_test, clf, args.predict)
 
 
 if __name__ == "__main__":
