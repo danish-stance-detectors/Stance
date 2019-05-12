@@ -57,7 +57,7 @@ def select_features(data, feature_mapping, config_map, merge=True):
         if config_map['pos']:
             selected_features.append(instance[feature_mapping['pos']])
         if config_map['wembs']:
-            if feature_mapping['word2vec']:
+            if 'word2vec' in feature_mapping:
                 selected_features.append(instance[feature_mapping['word2vec']])
             else:
                 selected_features.append(instance[feature_mapping['fasttext']])
