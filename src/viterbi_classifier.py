@@ -4,6 +4,7 @@ import model_stats
 import sys
 import argparse
 from sklearn.base import BaseEstimator
+import collections
 
 import numpy as np
 from sklearn.dummy import DummyClassifier
@@ -27,16 +28,16 @@ def main(argv):
     parser.add_argument('-ml', '--minumum branch length', dest='min_len', default=1, help='Minimum branch lengths included in training')
     parser.add_argument('-en_da', '--eng_train_da_test', default=False, dest='en_da', action='store_true', help='Train on english data and test on danish data')
     parser.add_argument('-mix', '--mix_train_test', default=False, dest='mix', action='store_true', help='Train and test on mix of pheme and danish data')
-    parser.add_argument('-maj', '--majority', default=False, action='store_true', help='Use a dummy majority voter as model')
+    parser.add_argument('-dis', '--distribution_voter', default=False, action='store_true', help='Use a dummy distribution voter as model')
 
     args = parser.parse_args(argv)
     
     if args.loo:
         Loo_event_test(args.file_en, int(args.min_len), args.print_dist)
     elif args.danish:
-        train_test_danish(file_name=args.file_dk, min_length=int(args.min_len))
+        train_test_danish(args.distribution_voter, file_name=args.file_dk, min_length=int(args.min_len))
     elif args.en_da:
-        train_eng_test_danish(args.file_en, args.file_dk, args.majority, int(args.min_len))
+        train_eng_test_danish(args.file_en, args.file_dk, args.distribution_voter, int(args.min_len))
     elif args.pheme:
         train_test_pheme(args.file_en, int(args.min_len))
     elif args.mix:
@@ -136,6 +137,52 @@ class HMM(BaseEstimator):
         
         return predicts
 
+class DistributionVoter(BaseEstimator):
+    """
+    Stores distributions of stance labels for each rumour truth in training data.
+    Chooses the y whose overall distributions is closest to the branch.
+    """
+    def fit(self, X, y):
+        dist_dict = dict()
+        for i in range(len(X)):
+            dist = self.get_distribution(X[i])
+            
+            if y[i] not in dist_dict:
+                dist_dict[y[i]] = np.zeros(4)
+            dist_dict[y[i]] += dist
+
+        for i in range(len(dist_dict)):
+            dist_dict[i] /= dist_dict[i].sum()
+
+        self.dist_dict = dist_dict
+
+        return self
+    
+    def predict(self, X):
+        distributions = [self.get_distribution(x) for x in X]
+        predicts = []
+        for distribution in distributions:
+            min_dist = None
+            best_y = None
+            for k, v in self.dist_dict.items():
+                distance = self.get_distance(distribution, v)
+                if min_dist is None or distance < min_dist:
+                    min_dist = distance
+                    best_y = k
+
+            predicts.append(best_y)
+
+        return predicts
+    
+    def get_distribution(self, x):
+        dist = np.zeros(4)
+        for stance in x:
+            dist[int(stance)] += 1
+
+        return dist
+
+    def get_distance(self, dist_a, dist_b):
+        return np.linalg.norm(dist_a-dist_b)
 # Leaves one event out for testing and trains on the others
 # does so for each event
 def Loo_event_test(file_en, min_length, print_distribution):
@@ -217,7 +264,7 @@ def train_test_mix(file_en, file_da, min_length=1):
         #         best_f1 = f1_t_da
         # print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
 
-def train_eng_test_danish(file_en, file_da, majority_voter, min_length=1):    
+def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):    
     # load data
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
     danish_data_X = [x[1] for x in danish_data]
@@ -227,11 +274,11 @@ def train_eng_test_danish(file_en, file_da, majority_voter, min_length=1):
     y_train = [x[1] for x in data_train]
     X_train = [x[2] for x in data_train]
     print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
-    if majority_voter:
-        clf = DummyClassifier(strategy='most_frequent').fit(X_train, y_train)
+    if distribution_voter:
+        clf = DistributionVoter().fit(X_train, y_train)
         predicts = clf.predict(danish_data_X)
-        _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, predicts)
-        print("%-20s%-10s%10.2f%10.2f" % ('danish', '-', best_acc, best_f1))
+        _, acc, f1 = model_stats.cm_acc_f1(danish_data_y, predicts)
+        print("%-20s%-10s%10.2f%10.2f" % ('danish', '-', acc, f1))
     else:
         for s in range(1,16):
             best_acc = 0.0
@@ -278,7 +325,7 @@ def train_test_pheme(file_name, min_length=1):
                 best_f1 = f1_t_da
         print("%-20s%-10s%10.2f%10.2f" % ('pheme', s, best_acc, best_f1))      
 
-def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_length=1):
+def train_test_danish(distribution_voter, file_name='../data/hmm/hmm_data_comment_trees.csv', min_length=1):
 
     print("Testing on danish data")
 
@@ -291,23 +338,25 @@ def train_test_danish(file_name='../data/hmm/hmm_data_comment_trees.csv', min_le
     #     danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
     
     # train_y_x = list(zip(y_train, X_train))
+    if distribution_voter:
+        cross_val(DistributionVoter(), X, y, 3, 42, 0)
+    else:
+        for s in range(1,16):
+            best_acc = 0.0
+            best_f1 = 0.0
 
-    for s in range(1,16):
-        best_acc = 0.0
-        best_f1 = 0.0
-
-        # try out different random configurations
-        # for c in range(1):
-        cross_val(HMM(s), X, y, 3, 42, s)
-        #     clf = HMM(s).fit(X_train, y_train)
-        #     da_predicts = clf.predict(X_test)
-        
-        #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
+            # try out different random configurations
+            # for c in range(1):
+            cross_val(HMM(s), X, y, 3, 42, s)
+            #     clf = HMM(s).fit(X_train, y_train)
+            #     da_predicts = clf.predict(X_test)
             
-        #     if f1_t_da > best_f1:
-        #         best_acc = acc_t_da
-        #         best_f1 = f1_t_da
-        # print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
+            #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
+                
+            #     if f1_t_da > best_f1:
+            #         best_acc = acc_t_da
+            #         best_f1 = f1_t_da
+            # print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
     
 def save_model(file_name, out_file):
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)
