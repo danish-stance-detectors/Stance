@@ -80,12 +80,10 @@ def check_feature_importance():
         config_map[feature_name] = True
         X__ = data_loader.select_features(X, feature_mapping, config_map)
         l = len(X__[0])
-        # print(l)
-        f = eleminate_low_variance_features(0.001, X__)
-        # try:
-        #     f = eleminate_low_variance_features(0.0, X__)
-        # except ValueError:
-        #     f = l
+        try:
+            f = eleminate_low_variance_features(0.01, X__)
+        except ValueError:
+            f = 0
         print('{:20}All:{}\tAfter:{}'.format(feature_name, l, f))
         config_map[feature_name] = False
 # check_feature_importance()
