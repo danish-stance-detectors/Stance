@@ -6,6 +6,7 @@ import argparse
 from sklearn.base import BaseEstimator
 
 import numpy as np
+from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate, train_test_split
 from hmmlearn import hmm
 from joblib import dump, load
@@ -26,7 +27,7 @@ def main(argv):
     parser.add_argument('-ml', '--minumum branch length', dest='min_len', default=1, help='Minimum branch lengths included in training')
     parser.add_argument('-en_da', '--eng_train_da_test', default=False, dest='en_da', action='store_true', help='Train on english data and test on danish data')
     parser.add_argument('-mix', '--mix_train_test', default=False, dest='mix', action='store_true', help='Train and test on mix of pheme and danish data')
-    
+    parser.add_argument('-maj', '--majority', default=False, action='store_true', help='Use a dummy majority voter as model')
 
     args = parser.parse_args(argv)
     
@@ -35,7 +36,7 @@ def main(argv):
     elif args.danish:
         train_test_danish(file_name=args.file_dk, min_length=int(args.min_len))
     elif args.en_da:
-        train_eng_test_danish(args.file_en, args.file_dk, int(args.min_len))
+        train_eng_test_danish(args.file_en, args.file_dk, args.majority, int(args.min_len))
     elif args.pheme:
         train_test_pheme(args.file_en, int(args.min_len))
     elif args.mix:
@@ -216,7 +217,7 @@ def train_test_mix(file_en, file_da, min_length=1):
         #         best_f1 = f1_t_da
         # print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
 
-def train_eng_test_danish(file_en, file_da, min_length=1):    
+def train_eng_test_danish(file_en, file_da, majority_voter, min_length=1):    
     # load data
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
     danish_data_X = [x[1] for x in danish_data]
@@ -226,22 +227,28 @@ def train_eng_test_danish(file_en, file_da, min_length=1):
     y_train = [x[1] for x in data_train]
     X_train = [x[2] for x in data_train]
     print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
-    for s in range(1,16):
-        best_acc = 0.0
-        best_f1 = 0.0
+    if majority_voter:
+        clf = DummyClassifier(strategy='most_frequent').fit(X_train, y_train)
+        predicts = clf.predict(danish_data_X)
+        _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, predicts)
+        print("%-20s%-10s%10.2f%10.2f" % ('danish', '-', best_acc, best_f1))
+    else:
+        for s in range(1,16):
+            best_acc = 0.0
+            best_f1 = 0.0
 
-        # try out different random configurations
-        for c in range(1):
-            # test on danish data
-            clf = HMM(s).fit(X_train, y_train)
-            da_predicts = clf.predict(danish_data_X)
+            # try out different random configurations
+            for c in range(1):
+                # test on danish data
+                clf = HMM(s).fit(X_train, y_train)
+                da_predicts = clf.predict(danish_data_X)
 
-            _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
-            
-            if f1_t_da > best_f1:
-                best_acc = acc_t_da
-                best_f1 = f1_t_da
-        print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))
+                _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
+                
+                if f1_t_da > best_f1:
+                    best_acc = acc_t_da
+                    best_f1 = f1_t_da
+            print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))
 
 def train_test_pheme(file_name, min_length=1):
     
