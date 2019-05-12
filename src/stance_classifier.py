@@ -154,10 +154,10 @@ classifiers_LOO = {
 }
 
 classifiers_simple = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
-    'tree': DecisionTreeClassifier(presort=True, random_state=rand),
+    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
+    # 'tree': DecisionTreeClassifier(presort=True, random_state=rand),
     'svm': LinearSVC(random_state=rand, max_iter=50000),
-    'rf': RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=rand)
+    # 'rf': RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=rand)
 }
 
 classifiers_all = {
@@ -191,8 +191,8 @@ classifiers_vt = {
 }
 
 classifiers_best = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=500, class_weight='balanced'),
-    'svm': LinearSVC(penalty='l2', C=500, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
+    # 'svm': LinearSVC(penalty='l2', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
     # 'mv': DummyClassifier(strategy='most_frequent'),
     # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
     # 'random': DummyClassifier(strategy='uniform', random_state=rand)
@@ -279,10 +279,10 @@ def fit_predict(X_train, X_test, y_train, y_test, clf, name):
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_fasttext_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_fasttext_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -304,6 +304,8 @@ def main(argv):
         train_file=args.train_file, test_file=args.test_file
     )
     config = data_loader.get_features()
+    config['lexicon'] = False
+    config['reddit'] = False
     # Split data
     X_train_ = data_loader.select_features(X_train, feature_mapping, config)
     X_test_ = data_loader.select_features(X_test, feature_mapping, config)
