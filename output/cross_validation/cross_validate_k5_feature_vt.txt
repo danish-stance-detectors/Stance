@@ -1,0 +1,10 @@
+Simple model w/o lexicon and Reddit
+logit               f1 0.38 (+/- 0.06) acc 0.78 (+/- 0.02)
+tree                f1 0.32 (+/- 0.03) acc 0.69 (+/- 0.03)
+svm                 f1 0.41 (+/- 0.06) acc 0.76 (+/- 0.03)
+rf                  f1 0.25 (+/- 0.01) acc 0.77 (+/- 0.01)
+Simple model w/o lexicon and Reddit, with 0.001 VT
+logit               f1 0.40 (+/- 0.08) acc 0.78 (+/- 0.02)
+tree                f1 0.31 (+/- 0.05) acc 0.68 (+/- 0.02)
+svm                 f1 0.38 (+/- 0.05) acc 0.74 (+/- 0.04)
+rf                  f1 0.26 (+/- 0.02) acc 0.78 (+/- 0.02)
