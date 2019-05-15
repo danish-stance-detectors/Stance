@@ -1,10 +1,12 @@
 # Polyglot requires numpy and libicu-dev, where the latter is only available on  ubuntu/debian linux distributions
 # To install on Windows, follow these steps:
-# 1. install PyICU.whl from https://www.lfd.uci.edu/~gohlke/pythonlibs/
-# 2. install PyCLD2.whl from https://www.lfd.uci.edu/~gohlke/pythonlibs/
-# 3. git clone https://github.com/aboSamoor/polyglot
-# 4. cd polyglot
-# 5. python setup.py install
+# 1. download PyICU.whl from https://www.lfd.uci.edu/~gohlke/pythonlibs/
+# 1.1 $ pip install <path to package>
+# 2. download PyCLD2.whl from https://www.lfd.uci.edu/~gohlke/pythonlibs/
+# 2.1 $ pip install <path to package>
+# 3. $ git clone https://github.com/aboSamoor/polyglot
+# 4. $ cd polyglot
+# 5. $ python setup.py install
 # Then, to use it for the danish language download the necessary models as such:
 # $ polyglot download embeddings2.da pos2.da
 # Docs: https://polyglot.readthedocs.io/en/latest/POS.html
