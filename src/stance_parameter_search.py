@@ -50,22 +50,20 @@ settings = [
 ]
 
 settings_rand = [
-    # ('linear-svm', LinearSVC(random_state=rand), {
-    #     'C': sp_randint(1, 1000), 'class_weight': ['balanced', None],
-    #     'max_iter': [50000], 'dual': [True, False]}),
+    ('svm', LinearSVC(random_state=rand, penalty='l2'), {
+        'C': sp_randint(1, 1000), 'class_weight': ['balanced', None],
+        'max_iter': [50000], 'dual': [True, False]}),
+    ('logit', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', random_state=rand), {
+        'dual': [True, False], 'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
     ('tree', DecisionTreeClassifier(presort=True, random_state=rand), {
-        'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-        'max_depth': [3, 10, 50, None], "min_samples_split": sp_randint(2, 11),
-        'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None]}),
-    # ('logitl1', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l1'), {
-    #     'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
-    # ('logitl2', LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2'), {
-    #     'dual': [True, False], 'class_weight': ['balanced', None], 'C': sp_randint(1, 1000)}),
-    # ('random-forest', RandomForestClassifier(n_jobs=-1, random_state=rand), {
-    #     'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
-    #     'max_depth': [3, 10, 50, None], 'max_features': ['auto', 'log2', None],
-    #     "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
-    #     'class_weight': ['balanced_subsample', None]})
+            'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
+            'max_depth': [3, 10, 50, None], "min_samples_split": sp_randint(2, 11),
+            'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None]}),
+    ('rf', RandomForestClassifier(n_jobs=-1, random_state=rand), {
+        'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
+        'max_depth': [3, 10, 50, None], 'max_features': ['auto', 'log2', None],
+        "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
+        'class_weight': ['balanced_subsample', None]})
 ]
 
 scorer = 'f1_macro'
