@@ -154,7 +154,7 @@ classifiers_LOO = {
 }
 
 classifiers_simple = {
-    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
     # 'tree': DecisionTreeClassifier(presort=True, random_state=rand),
     'svm': LinearSVC(random_state=rand, max_iter=50000),
     # 'rf': RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=rand)
@@ -275,14 +275,47 @@ def fit_predict(X_train, X_test, y_train, y_test, clf, name):
     print('Acc: %.4f' % acc)
     print('f1: %.4f' % f1)
 
+def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
+    config_LRMFW = data_loader.get_features(most_freq=False, bow=False)
+    config_BOW = data_loader.get_features(all_true=False)
+    config_BOW['bow'] = True
+    # Split data
+    X_train_LRMFW = data_loader.select_features(X_train, feature_mapping, config_LRMFW)
+    X_test_LRMFW = data_loader.select_features(X_test, feature_mapping, config_LRMFW)
+    X_train_BOW = data_loader.select_features(X_train, feature_mapping, config_BOW)
+    X_test_BOW = data_loader.select_features(X_test, feature_mapping, config_BOW)
+    # Merged data
+    X_all = []
+    X_all.extend(X_train_LRMFW)
+    X_all.extend(X_test_LRMFW)
+    y_all = []
+    y_all.extend(y_train)
+    y_all.extend(y_test)
+
+    print(len(X_train_BOW[0]))
+    print(len(X_test_BOW[0]))
+    X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_BOW, X_test_BOW)
+    print(len(X_train_[0]))
+    print(len(X_test_[0]))
+    X_all_BOW = np.append(X_train_, X_test_, axis=0)
+    xx = []
+    for x1, x2 in zip(X_all, X_all_BOW):
+        row = []
+        row.extend(x1)
+        row.extend(x2)
+        xx.append(row)
+    X_all = xx
+    print(len(X_all[0]))
+    return X_all, y_all
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_fasttext_train.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_fasttext_test.csv',
+                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -303,9 +336,7 @@ def main(argv):
     X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
         train_file=args.train_file, test_file=args.test_file
     )
-    config = data_loader.get_features()
-    config['lexicon'] = False
-    config['reddit'] = False
+    config = data_loader.get_features(lexicon=False, reddit=False)
     # Split data
     X_train_ = data_loader.select_features(X_train, feature_mapping, config)
     X_test_ = data_loader.select_features(X_test, feature_mapping, config)
