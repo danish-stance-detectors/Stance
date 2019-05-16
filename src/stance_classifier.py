@@ -191,8 +191,9 @@ classifiers_vt = {
 }
 
 classifiers_best = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', penalty='l2', C=50, class_weight='balanced'),
-    # 'svm': LinearSVC(penalty='l2', C=50, class_weight=None, dual=False, max_iter=50000, random_state=rand),
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
+                                penalty='l2', C=1, class_weight='balanced'),
+    'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
     # 'mv': DummyClassifier(strategy='most_frequent'),
     # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
     # 'random': DummyClassifier(strategy='uniform', random_state=rand)
@@ -275,8 +276,9 @@ def fit_predict(X_train, X_test, y_train, y_test, clf, name):
     print('Acc: %.4f' % acc)
     print('f1: %.4f' % f1)
 
+
 def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
-    config_LRMFW = data_loader.get_features(most_freq=False, bow=False)
+    config_LRMFW = data_loader.get_features(reddit=False, lexicon=False, most_freq=False, bow=False)
     config_BOW = data_loader.get_features(all_true=False)
     config_BOW['bow'] = True
     # Split data
@@ -285,26 +287,26 @@ def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
     X_train_BOW = data_loader.select_features(X_train, feature_mapping, config_BOW)
     X_test_BOW = data_loader.select_features(X_test, feature_mapping, config_BOW)
     # Merged data
-    X_all = []
-    X_all.extend(X_train_LRMFW)
-    X_all.extend(X_test_LRMFW)
+    X_all_LRMFW = []
+    X_all_LRMFW.extend(X_train_LRMFW)
+    X_all_LRMFW.extend(X_test_LRMFW)
     y_all = []
     y_all.extend(y_train)
     y_all.extend(y_test)
 
     print(len(X_train_BOW[0]))
     print(len(X_test_BOW[0]))
-    X_train_, X_test_ = data_loader.union_reduce_then_split(X_train_BOW, X_test_BOW)
-    print(len(X_train_[0]))
-    print(len(X_test_[0]))
-    X_all_BOW = np.append(X_train_, X_test_, axis=0)
-    xx = []
-    for x1, x2 in zip(X_all, X_all_BOW):
+    X_train_BOW_, X_test_BOW_ = data_loader.union_reduce_then_split(X_train_BOW, X_test_BOW)
+    print(len(X_train_BOW_[0]))
+    print(len(X_test_BOW_[0]))
+    X_all_BOW = np.append(X_train_BOW_, X_test_BOW_, axis=0)
+    X_all = []
+    for x1, x2 in zip(X_all_LRMFW, X_all_BOW):
         row = []
         row.extend(x1)
-        row.extend(x2)
-        xx.append(row)
-    X_all = xx
+        row.extend(x2.tolist())
+        X_all.append(row)
+    X_all = np.array(X_all, dtype=np.float64, order='C')
     print(len(X_all[0]))
     return X_all, y_all
 
@@ -336,7 +338,7 @@ def main(argv):
     X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
         train_file=args.train_file, test_file=args.test_file
     )
-    config = data_loader.get_features(lexicon=False, reddit=False)
+    config = data_loader.get_features(most_freq=False)
     # Split data
     X_train_ = data_loader.select_features(X_train, feature_mapping, config)
     X_test_ = data_loader.select_features(X_test, feature_mapping, config)
@@ -344,11 +346,14 @@ def main(argv):
     X_all = []
     X_all.extend(X_train_)
     X_all.extend(X_test_)
+    X_all = np.array(X_all, dtype=np.float64, order='C')
     y_all = []
     y_all.extend(y_train)
     y_all.extend(y_test)
 
     clfs = classifiers_simple
+
+    # X_all, y_all = BOW_VT(X_train, X_test, y_train, y_test, feature_mapping)
 
     if args.reduce_features:
         # clfs = classifiers_vt
