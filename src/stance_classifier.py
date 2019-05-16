@@ -4,6 +4,7 @@ from sklearn.feature_selection import VarianceThreshold
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
 from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate
 from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
@@ -19,15 +20,15 @@ import model_stats
 output_folder = '../output/cross_validation/'
 rand = np.random.RandomState(42)
 
-def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=3, n_jobs=-1):
+def plot_learning_curve(estimator, title, X, y, scoring='f1_macro', ylim=None, cv=5, n_jobs=-1):
     plt.figure()
     plt.title(title)
     if ylim:
         plt.ylim(*ylim)
     plt.xlabel("Training examples")
-    plt.ylabel("Score")
+    plt.ylabel("%s score" % scoring)
     train_sizes, train_scores, test_scores = learning_curve(
-        estimator, X, y, cv=cv, n_jobs=n_jobs, scoring=scoring
+        estimator, X, y, cv=cv, n_jobs=n_jobs, scoring=scoring, verbose=1
     )
     train_scores_mean = np.mean(train_scores, axis=1)
     train_scores_std = np.std(train_scores, axis=1)
@@ -135,8 +136,9 @@ def visualize_cv(cv, n_splits, X, y):
     plt.show()
 
 baselines = {
-    'majority-vote': DummyClassifier(strategy='most_frequent'),
-    'stratified-random': DummyClassifier(strategy='stratified')
+    'mv': DummyClassifier(strategy='most_frequent'),
+    'sc': DummyClassifier(strategy='stratified', random_state=rand),
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
 classifiers_LOO = {
@@ -154,7 +156,7 @@ classifiers_LOO = {
 }
 
 classifiers_simple = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand),
+    'logit': LogisticRegression(solver='liblinear', multi_class='auto', random_state=rand, max_iter=50000),
     # 'tree': DecisionTreeClassifier(presort=True, random_state=rand),
     'svm': LinearSVC(random_state=rand, max_iter=50000),
     # 'rf': RandomForestClassifier(n_estimators=10, n_jobs=-1, random_state=rand)
@@ -184,28 +186,27 @@ classifiers_vt = {
     'rf': RandomForestClassifier(bootstrap=True, class_weight='balanced_subsample',
                                  criterion='entropy', max_depth=3,
                                  max_features='auto', min_samples_split=9,
-                                 n_estimators=280, n_jobs=-1, random_state=rand),
-    'mv': DummyClassifier(strategy='most_frequent'),
-    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    'random': DummyClassifier(strategy='uniform', random_state=rand)
+                                 n_estimators=280, n_jobs=-1, random_state=rand)
 }
 
 classifiers_best = {
     'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
-                                penalty='l2', C=1, class_weight='balanced'),
-    'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
-    # 'mv': DummyClassifier(strategy='most_frequent'),
-    # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+                                penalty='l2', C=1, class_weight='balanced', max_iter=50000),
+    # 'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
+    'mv': DummyClassifier(strategy='most_frequent'),
+    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
     # 'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
-def cross_val_plot(score, X, y, skf, clfs):
-    filepath = os.path.join(output_folder, 'cross_val_plot')
+def cross_val_plot(X, y, skf, clfs, score='f1_macro'):
     for name, clf in clfs.items():
+        folder = os.path.join(output_folder, name)
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         print('Plotting learning curve for', name)
         plot_learning_curve(clf, name, X, y, scoring=score, cv=skf)
-        s = '%s - %s.png' % (filepath, name)
+        s = os.path.join(folder, 'learning_curve_%s_k%d' % (score, skf.n_splits))
         plt.savefig(s, bbox_inches='tight')
         print('Saved plot to', s)
         # plt.show()
@@ -219,7 +220,7 @@ def cross_val(X, y, clfs, skf, plot_lc, reduced_feature):
     for name, clf in clfs.items():
         scores = cross_validate(clf, X, y, cv=skf, scoring=scoring, n_jobs=-1, verbose=1,
                                 pre_dispatch='2*n_jobs', return_train_score=False, error_score='raise')
-        s = "%-20s%s %0.2f (+/- %0.2f) %s %0.2f (+/- %0.2f)" \
+        s = "%-20s%s %0.4f (+/- %0.2f) %s %0.4f (+/- %0.2f)" \
             % (name, 'f1', scores['test_f1_macro'].mean(), scores['test_f1_macro'].std() * 2,
                'acc', scores['test_accuracy'].mean(), scores['test_accuracy'].std() * 2)
         print(s)
@@ -234,7 +235,7 @@ def cross_val(X, y, clfs, skf, plot_lc, reduced_feature):
             if not os.path.exists(folder):
                 os.makedirs(folder)
             for score in scoring:
-                plot_learning_curve(clf, '%s %s' % (name, score), X, y, scoring=score, cv=skf)
+                plot_learning_curve(clf, name, X, y, scoring=score, cv=skf)
                 s = os.path.join(folder, 'learning_curve_%s_k%d' % (score, skf.n_splits))
                 if reduced_feature:
                     s += '_vt'
@@ -252,11 +253,16 @@ def cross_predict(X, y, clfs, skf, reduced_feature):
         filename = os.path.join(folder, 'prediction_cm_k%d' % skf.n_splits)
         if reduced_feature:
             filename += '_vt'
-        cm, acc, f1 = model_stats.plot_confusion_matrix(y, predicted,
+        cm, acc, f1, sdqc_acc = model_stats.plot_confusion_matrix(y, predicted,
                                                        title='%s Confusion matrix - no normalization' % name,
                                                        save_to_filename='%s.png' % filename)
-        print('Acc: %.5f', acc)
-        print('f1: %.5f', f1)
+        target_names = ['S', 'D', 'Q', 'C']
+        cr = classification_report(y, predicted, labels=[0, 1, 2, 3], target_names=target_names, output_dict=True)
+        print('Acc: %.5f' % acc)
+        print('f1: %.5f' % f1)
+        print("SDQC acc:", sdqc_acc)
+        sdqc_f1 = [cr['S']['f1-score'], cr['D']['f1-score'], cr['Q']['f1-score'], cr['C']['f1-score']]
+        print('SDQC f1:', sdqc_f1)
 
 
 def fit_predict(X_train, X_test, y_train, y_test, clf, name):
@@ -325,6 +331,8 @@ def main(argv):
                         help='Enable plotting of learning curve')
     parser.add_argument('-cv', '--cross_validate', action='store_true', default=False,
                         help='Cross-validate scoring F1 macro')
+    parser.add_argument('-cvp', '--cross_val_plot', action='store_true', default=False,
+                        help='Plot learning curve through CV')
     parser.add_argument('-cp', '--cv_predict', action='store_true', default=False,
                         help='Cross-validate prediction')
     parser.add_argument('-loo', '--loo_features', action='store_true', default=False,
@@ -338,7 +346,7 @@ def main(argv):
     X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
         train_file=args.train_file, test_file=args.test_file
     )
-    config = data_loader.get_features(most_freq=False)
+    config = data_loader.get_features(most_freq=False, reddit=False, lexicon=False)
     # Split data
     X_train_ = data_loader.select_features(X_train, feature_mapping, config)
     X_test_ = data_loader.select_features(X_test, feature_mapping, config)
@@ -351,7 +359,7 @@ def main(argv):
     y_all.extend(y_train)
     y_all.extend(y_test)
 
-    clfs = classifiers_simple
+    clfs = classifiers_best
 
     # X_all, y_all = BOW_VT(X_train, X_test, y_train, y_test, feature_mapping)
 
@@ -366,6 +374,8 @@ def main(argv):
 
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
+    if args.cross_val_plot:
+        cross_val_plot(X_all, y_all, skf, clfs)
     if args.loo_features:
         feature_LOO_cross_val(X_train, X_test, y_train, y_test, args.reduce_features, config, feature_mapping, skf, clfs)
     if args.visualize_skf:
