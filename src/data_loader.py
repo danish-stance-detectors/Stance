@@ -76,10 +76,13 @@ def select_features(data, feature_mapping, config_map, merge=True):
     return filtered_data, [len(v) for v in filtered_data[0]]
 
 
-def get_features_and_labels(filename=datafile, delimiter=tab):
+def get_features_and_labels(filename=datafile, delimiter=tab, with_ids=False):
     instances, n_features, feature_mapping = get_instances(filename, delimiter)
     X = [x[2] for x in instances]
     y = [x[1] for x in instances]
+    ids = [x[0] for x in instances]
+    if with_ids:
+        return X, y, n_features, feature_mapping, ids
     return X, y, n_features, feature_mapping
 
 

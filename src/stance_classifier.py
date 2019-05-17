@@ -5,7 +5,7 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report
-from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate
+from sklearn.model_selection import cross_val_score, StratifiedKFold, learning_curve, cross_val_predict, cross_validate, StratifiedShuffleSplit
 from sklearn.dummy import DummyClassifier
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
@@ -192,10 +192,10 @@ classifiers_vt = {
 classifiers_best = {
     'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
                                 penalty='l2', C=1, class_weight='balanced', max_iter=50000),
-    # 'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
+    'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
     'mv': DummyClassifier(strategy='most_frequent'),
     'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    # 'random': DummyClassifier(strategy='uniform', random_state=rand)
+    'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
@@ -265,22 +265,30 @@ def cross_predict(X, y, clfs, skf, reduced_feature):
         print('SDQC f1:', sdqc_f1)
 
 
-def fit_predict(X_train, X_test, y_train, y_test, clf, name):
+def fit_predict(X_train, X_test, y_train, y_test, clfs, name):
+    clf = clfs[name]
     folder = os.path.join(output_folder, name)
     if not os.path.exists(folder):
         os.makedirs(folder)
     filename = os.path.join(folder, '%s_fit_predict_cm' % name)
     clf.fit(X_train, y_train)
     y_true, y_pred = y_test, clf.predict(X_test)
-    cm, acc, f1 = model_stats.plot_confusion_matrix(y_true, y_pred,
-                                                    title='%s Confusion matrix - no normalization' % name,
-                                                    save_to_filename='%s.png' % filename)
+    cm, acc, f1, sdqc_acc = model_stats.plot_confusion_matrix(y_true, y_pred,
+                                                              title='%s confusion matrix' % name,
+                                                              save_to_filename='%s.png' % filename)
+    target_names = ['S', 'D', 'Q', 'C']
+    cr = classification_report(y_true, y_pred, labels=[0, 1, 2, 3], target_names=target_names, output_dict=True)
+    print('Acc: %.4f' % acc)
+    print('f1: %.4f' % f1)
+    print("SDQC acc:", sdqc_acc)
+    sdqc_f1 = [cr['S']['f1-score'], cr['D']['f1-score'], cr['Q']['f1-score'], cr['C']['f1-score']]
+    print('SDQC f1:', sdqc_f1)
     with open('%s.txt' % filename, 'w+') as stats:
         stats.write(np.array2string(cm) + '\n')
         stats.write('Acc: %.4f\n' % acc)
         stats.write('F1: %.4f\n' % f1)
-    print('Acc: %.4f' % acc)
-    print('f1: %.4f' % f1)
+        stats.write('SDQC acc: {}\n'.format(sdqc_acc))
+        stats.write('SDQC f1 : {}\n'.format(sdqc_f1))
 
 
 def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
@@ -317,13 +325,41 @@ def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
     return X_all, y_all
 
 
+def CV_sup(clfs, name, X, y, X_sup, y_sup, k_folds=5):
+    clf = clfs[name]
+    rs = StratifiedShuffleSplit(n_splits=k_folds, test_size=.25, random_state=rand)
+    f1s = []
+    accs = []
+    for train_i, test_i in rs.split(X, y):
+        X_train = [X[i] for i in train_i]
+        X_train = np.append(X_train, X_sup, axis=0)
+        X_test = [X[i] for i in test_i]
+        y_train = [y[i] for i in train_i]
+        y_train.extend(y_sup)
+        y_test = [y[i] for i in test_i]
+        clf.fit(X_train, y_train)
+        y_true, y_pred = y_test, clf.predict(X_test)
+        _, acc, f1 = model_stats.cm_acc_f1(y_true, y_pred)
+        f1s.append(f1)
+        accs.append(acc)
+    f1s = np.asarray(f1s)
+    accs = np.asarray(accs)
+    s = "%-20s%s %0.4f (+/- %0.2f) %s %0.4f (+/- %0.2f)" \
+        % (name, 'f1', f1s.mean(), f1s.std() * 2,
+           'acc', accs.mean(), accs.std() * 2)
+    print(s)
+
+
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        help='Input file holding test data')
+    parser.add_argument('-sup', '--sup_file',
+                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_sup.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -331,6 +367,8 @@ def main(argv):
                         help='Enable plotting of learning curve')
     parser.add_argument('-cv', '--cross_validate', action='store_true', default=False,
                         help='Cross-validate scoring F1 macro')
+    parser.add_argument('-cvsup', '--cross_validate_sup', action='store_true', default=False,
+                        help='Cross-validate scoring F1 macro with super sampling')
     parser.add_argument('-cvp', '--cross_val_plot', action='store_true', default=False,
                         help='Plot learning curve through CV')
     parser.add_argument('-cp', '--cv_predict', action='store_true', default=False,
@@ -343,18 +381,34 @@ def main(argv):
     parser.add_argument('-r', '--reduce_features', action='store_true', default=False,
                         help='Reduce features by Variance Threshold')
     args = parser.parse_args(argv)
-    X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
-        train_file=args.train_file, test_file=args.test_file
-    )
+    X_train, y_train, n_features, feature_mapping, train_ids = data_loader.get_features_and_labels(args.train_file,
+                                                                                                   with_ids=True)
+    X_test, y_test, _, _, test_ids = data_loader.get_features_and_labels(args.test_file, with_ids=True)
+    # X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
+    #     train_file=args.train_file, test_file=args.test_file
+    # )
     config = data_loader.get_features(most_freq=False, reddit=False, lexicon=False)
     # Split data
-    X_train_ = data_loader.select_features(X_train, feature_mapping, config)
-    X_test_ = data_loader.select_features(X_test, feature_mapping, config)
+    X_train_ = np.asarray(data_loader.select_features(X_train, feature_mapping, config), dtype=np.float64, order='C')
+    X_test_ = np.asarray(data_loader.select_features(X_test, feature_mapping, config), dtype=np.float64, order='C')
+    X_sup_, y_sup = [], []
+    if args.sup_file:
+        X_sup, y_sup, _, _, sup_ids = data_loader.get_features_and_labels(args.sup_file, with_ids=True)
+        X_train_new, y_train_new = [], []
+        for x_id, x_tr, y_tr in zip(train_ids, X_train, y_train):
+            if '%s_' % x_id in sup_ids:
+                X_sup.append(x_tr)
+                y_sup.append(y_tr)
+            else:
+                X_train_new.append(x_tr)
+                y_train_new.append(y_tr)
+        X_train_ = np.asarray(data_loader.select_features(X_train_new, feature_mapping, config),
+                              dtype=np.float64, order='C')
+        y_train = y_train_new
+        X_sup_ = np.asarray(data_loader.select_features(X_sup, feature_mapping, config), dtype=np.float64, order='C')
+
     # Merged data
-    X_all = []
-    X_all.extend(X_train_)
-    X_all.extend(X_test_)
-    X_all = np.array(X_all, dtype=np.float64, order='C')
+    X_all = np.append(X_train_, X_test_, axis=0)
     y_all = []
     y_all.extend(y_train)
     y_all.extend(y_test)
@@ -374,6 +428,8 @@ def main(argv):
 
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
+    if args.cross_validate_sup:
+        CV_sup(clfs, 'svm', X_all, y_all, X_sup_, y_sup, k_folds=3)
     if args.cross_val_plot:
         cross_val_plot(X_all, y_all, skf, clfs)
     if args.loo_features:
@@ -385,8 +441,7 @@ def main(argv):
     if args.cv_predict:
         cross_predict(X_all, y_all, clfs, skf, args.reduce_features)
     if args.predict:
-        clf = clfs[args.predict]
-        fit_predict(X_train_, X_test_, y_train, y_test, clf, args.predict)
+        fit_predict(X_train_, X_test_, y_train, y_test, clfs, args.predict)
 
 
 if __name__ == "__main__":
