@@ -33,9 +33,16 @@ def get_instances(filename=datafile, delimiter=tab):
         n_features += len(feature_vec)
     return instances, n_features, feature_mapping
 
-def get_features():
-    return {'all': True, 'text': True, 'lexicon': True,
-                    'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}
+
+def get_features(all_true=True, text=True, lexicon=True, sentiment=True, reddit=True, most_freq=True,
+                 bow=True, pos=True, wembs=True):
+    if all_true:
+        return {'all': all_true, 'text': text, 'lexicon': lexicon,
+                'sentiment': sentiment, 'reddit': reddit, 'most_freq': most_freq,
+                'bow': bow, 'pos': pos, 'wembs': wembs}
+    return {'all': False, 'text': False, 'lexicon': False,
+            'sentiment': False, 'reddit': False, 'most_freq': False,
+            'bow': False, 'pos': False, 'wembs': False}
 
 
 def select_features(data, feature_mapping, config_map, merge=True):
@@ -69,10 +76,13 @@ def select_features(data, feature_mapping, config_map, merge=True):
     return filtered_data, [len(v) for v in filtered_data[0]]
 
 
-def get_features_and_labels(filename=datafile, delimiter=tab):
+def get_features_and_labels(filename=datafile, delimiter=tab, with_ids=False):
     instances, n_features, feature_mapping = get_instances(filename, delimiter)
     X = [x[2] for x in instances]
     y = [x[1] for x in instances]
+    ids = [x[0] for x in instances]
+    if with_ids:
+        return X, y, n_features, feature_mapping, ids
     return X, y, n_features, feature_mapping
 
 

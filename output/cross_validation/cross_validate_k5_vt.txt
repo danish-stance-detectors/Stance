@@ -1,6 +1,0 @@
-DSL trained fasttext
-logit               f1 0.38 (+/- 0.06) acc 0.77 (+/- 0.02)
-Word2vec
-logit               f1 0.40 (+/- 0.08) acc 0.78 (+/- 0.02)
-Pre-trained fasttext
-logit               f1 0.36 (+/- 0.03) acc 0.78 (+/- 0.01)

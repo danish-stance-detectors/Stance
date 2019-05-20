@@ -1,0 +1,46 @@
+Best parameters set found on development set for F1 macro:
+0.348 for {'C': 10, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+Randomized scores on development set:
+0.336 (+/-0.035) for {'C': 1, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.336 (+/-0.035) for {'C': 1, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.335 (+/-0.025) for {'C': 1, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.335 (+/-0.025) for {'C': 1, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.348 (+/-0.022) for {'C': 10, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.338 (+/-0.046) for {'C': 10, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.342 (+/-0.029) for {'C': 10, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.336 (+/-0.048) for {'C': 10, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.338 (+/-0.008) for {'C': 50, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.325 (+/-0.040) for {'C': 50, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.345 (+/-0.028) for {'C': 50, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.327 (+/-0.032) for {'C': 50, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.346 (+/-0.037) for {'C': 100, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.320 (+/-0.031) for {'C': 100, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.345 (+/-0.052) for {'C': 100, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.319 (+/-0.017) for {'C': 100, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.320 (+/-0.045) for {'C': 500, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.318 (+/-0.047) for {'C': 500, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.322 (+/-0.052) for {'C': 500, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.328 (+/-0.037) for {'C': 500, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+0.320 (+/-0.054) for {'C': 1000, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}
+0.307 (+/-0.037) for {'C': 1000, 'class_weight': 'balanced', 'dual': False, 'max_iter': 50000}
+0.317 (+/-0.070) for {'C': 1000, 'class_weight': None, 'dual': True, 'max_iter': 50000}
+0.321 (+/-0.022) for {'C': 1000, 'class_weight': None, 'dual': False, 'max_iter': 50000}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.28      0.27      0.28        55
+           1       0.35      0.37      0.36        60
+           2       0.25      0.19      0.21        16
+           3       0.84      0.85      0.84       471
+
+   micro avg       0.73      0.73      0.73       602
+   macro avg       0.43      0.42      0.42       602
+weighted avg       0.73      0.73      0.73       602
+
+[[ 15   6   0  34]
+ [  6  22   0  32]
+ [  1   2   3  10]
+ [ 31  32   9 399]]
+acc: 0.7292
+f1 macro: 0.4241
+

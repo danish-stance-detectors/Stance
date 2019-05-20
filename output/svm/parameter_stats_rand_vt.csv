@@ -1,0 +1,3 @@
+estimator,f1_macro,acc,folds,rand_iter,parameters,features
+svm,0.4241,0.7292,3,30,"{'C': 10, 'class_weight': 'balanced', 'dual': True, 'max_iter': 50000}","{'all': True, 'text': True, 'lexicon': False, 'sentiment': True, 'reddit': False, 'most_freq': False, 'bow': True, 'pos': True, 'wembs': True}"
+svm,0.4253,0.7508,3,30,"{'C': 10, 'class_weight': None, 'dual': True, 'max_iter': 50000}","{'all': True, 'text': True, 'lexicon': False, 'sentiment': True, 'reddit': False, 'most_freq': False, 'bow': True, 'pos': True, 'wembs': True}"

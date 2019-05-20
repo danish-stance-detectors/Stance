@@ -10,6 +10,13 @@ def cm_acc_f1(labels_true, labels_pred):
     f1 = sk.f1_score(labels_true, labels_pred, average='macro')
     return cm, acc, f1
 
+def cm_acc_f1_sdqc(labels_true, labels_pred):
+    cm = sk.confusion_matrix(labels_true, labels_pred)
+    acc = sk.accuracy_score(labels_true, labels_pred)
+    f1 = sk.f1_score(labels_true, labels_pred, average='macro')
+    sdqc_acc = (cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]).diagonal()
+    return cm, acc, f1, sdqc_acc
+
 
 def print_confusion_matrix(labels_true, labels_pred):
     cm, acc, f1 = cm_acc_f1(labels_true, labels_pred)
@@ -46,7 +53,7 @@ def plot_confusion_matrix(y_true, y_pred,
             title = 'Confusion matrix, without normalization'
 
     # Compute confusion matrix
-    cm, acc, f1 = cm_acc_f1(y_true, y_pred)
+    cm, acc, f1, sdqc_acc = cm_acc_f1_sdqc(y_true, y_pred)
     # cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
     classes = [0, 1, 2, 3]
@@ -85,4 +92,4 @@ def plot_confusion_matrix(y_true, y_pred,
     fig.tight_layout()
     if save_to_filename:
         plt.savefig(save_to_filename, bbox_inches='tight')
-    return cm, acc, f1
+    return cm, acc, f1, sdqc_acc
