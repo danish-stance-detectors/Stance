@@ -1,0 +1,72 @@
+Best parameters set found on development set for F1 macro:
+0.379 for {'C': 150, 'class_weight': None, 'dual': True}
+Randomized scores on development set:
+0.370 (+/-0.021) for {'C': 75, 'class_weight': None, 'dual': False}
+0.375 (+/-0.023) for {'C': 836, 'class_weight': 'balanced', 'dual': True}
+0.372 (+/-0.022) for {'C': 71, 'class_weight': None, 'dual': True}
+0.374 (+/-0.025) for {'C': 200, 'class_weight': 'balanced', 'dual': False}
+0.377 (+/-0.014) for {'C': 307, 'class_weight': None, 'dual': True}
+0.373 (+/-0.022) for {'C': 377, 'class_weight': 'balanced', 'dual': False}
+0.375 (+/-0.022) for {'C': 399, 'class_weight': 'balanced', 'dual': True}
+0.377 (+/-0.017) for {'C': 595, 'class_weight': None, 'dual': True}
+0.367 (+/-0.025) for {'C': 522, 'class_weight': None, 'dual': False}
+0.377 (+/-0.016) for {'C': 4, 'class_weight': 'balanced', 'dual': False}
+0.364 (+/-0.028) for {'C': 848, 'class_weight': None, 'dual': False}
+0.374 (+/-0.025) for {'C': 281, 'class_weight': 'balanced', 'dual': False}
+0.375 (+/-0.016) for {'C': 610, 'class_weight': None, 'dual': True}
+0.373 (+/-0.020) for {'C': 963, 'class_weight': 'balanced', 'dual': True}
+0.377 (+/-0.021) for {'C': 309, 'class_weight': None, 'dual': True}
+0.377 (+/-0.017) for {'C': 931, 'class_weight': None, 'dual': True}
+0.371 (+/-0.025) for {'C': 633, 'class_weight': 'balanced', 'dual': False}
+0.368 (+/-0.028) for {'C': 105, 'class_weight': None, 'dual': False}
+0.373 (+/-0.022) for {'C': 861, 'class_weight': 'balanced', 'dual': True}
+0.377 (+/-0.017) for {'C': 429, 'class_weight': None, 'dual': True}
+0.370 (+/-0.028) for {'C': 28, 'class_weight': None, 'dual': False}
+0.377 (+/-0.017) for {'C': 588, 'class_weight': None, 'dual': True}
+0.377 (+/-0.021) for {'C': 866, 'class_weight': None, 'dual': True}
+0.368 (+/-0.024) for {'C': 167, 'class_weight': None, 'dual': False}
+0.377 (+/-0.016) for {'C': 785, 'class_weight': None, 'dual': True}
+0.376 (+/-0.017) for {'C': 859, 'class_weight': None, 'dual': True}
+0.367 (+/-0.024) for {'C': 686, 'class_weight': None, 'dual': False}
+0.377 (+/-0.015) for {'C': 935, 'class_weight': None, 'dual': True}
+0.378 (+/-0.017) for {'C': 446, 'class_weight': None, 'dual': True}
+0.379 (+/-0.024) for {'C': 150, 'class_weight': None, 'dual': True}
+0.374 (+/-0.023) for {'C': 59, 'class_weight': 'balanced', 'dual': False}
+0.374 (+/-0.025) for {'C': 199, 'class_weight': 'balanced', 'dual': False}
+0.367 (+/-0.025) for {'C': 561, 'class_weight': None, 'dual': False}
+0.377 (+/-0.020) for {'C': 247, 'class_weight': None, 'dual': True}
+0.375 (+/-0.019) for {'C': 239, 'class_weight': 'balanced', 'dual': True}
+0.378 (+/-0.025) for {'C': 168, 'class_weight': None, 'dual': True}
+0.377 (+/-0.016) for {'C': 811, 'class_weight': None, 'dual': True}
+0.371 (+/-0.025) for {'C': 728, 'class_weight': 'balanced', 'dual': False}
+0.376 (+/-0.019) for {'C': 474, 'class_weight': None, 'dual': True}
+0.373 (+/-0.020) for {'C': 367, 'class_weight': 'balanced', 'dual': True}
+0.367 (+/-0.025) for {'C': 539, 'class_weight': None, 'dual': False}
+0.365 (+/-0.024) for {'C': 960, 'class_weight': None, 'dual': False}
+0.378 (+/-0.018) for {'C': 926, 'class_weight': None, 'dual': True}
+0.374 (+/-0.025) for {'C': 214, 'class_weight': 'balanced', 'dual': False}
+0.374 (+/-0.026) for {'C': 114, 'class_weight': 'balanced', 'dual': False}
+0.376 (+/-0.014) for {'C': 503, 'class_weight': None, 'dual': True}
+0.375 (+/-0.019) for {'C': 588, 'class_weight': 'balanced', 'dual': True}
+0.377 (+/-0.016) for {'C': 824, 'class_weight': None, 'dual': True}
+0.374 (+/-0.019) for {'C': 44, 'class_weight': 'balanced', 'dual': False}
+0.376 (+/-0.017) for {'C': 855, 'class_weight': None, 'dual': True}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.25      0.19      0.22        68
+           1       0.37      0.29      0.33        75
+           2       0.40      0.10      0.16        20
+           3       0.83      0.89      0.86       589
+
+   micro avg       0.75      0.75      0.75       752
+   macro avg       0.46      0.37      0.39       752
+weighted avg       0.72      0.75      0.73       752
+
+[[ 13   8   0  47]
+ [  6  22   0  47]
+ [  1   2   2  15]
+ [ 31  28   3 527]]
+acc: 0.7500
+f1 macro: 0.3912
+

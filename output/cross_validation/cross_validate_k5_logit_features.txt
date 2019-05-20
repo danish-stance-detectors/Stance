@@ -1,0 +1,8 @@
+Simple model w/o lexicon, sentiment, reddit
+logit               f1 0.38 (+/- 0.06) acc 0.78 (+/- 0.02)
+Simple model w/o lexicon, reddit
+logit               f1 0.38 (+/- 0.06) acc 0.78 (+/- 0.02)
+Best model w/o lexicon, sentiment, reddit
+logit               f1 0.42 (+/- 0.05) acc 0.76 (+/- 0.02)
+Best model w/o lexicon, reddit
+logit               f1 0.42 (+/- 0.04) acc 0.77 (+/- 0.02)

@@ -1,0 +1,19 @@
+# DSL trained fasttext
+## L+R and VT
+logit               f1 0.38 (+/- 0.06) acc 0.77 (+/- 0.02)
+svm                 f1 0.39 (+/- 0.08) acc 0.75 (+/- 0.03)
+## All
+logit               f1 0.37 (+/- 0.07) acc 0.78 (+/- 0.02)
+svm                 f1 0.38 (+/- 0.07) acc 0.74 (+/- 0.02)
+
+# Pre-trained fasttext
+logit               f1 0.36 (+/- 0.03) acc 0.78 (+/- 0.01)
+svm                 f1 0.41 (+/- 0.06) acc 0.77 (+/- 0.02)
+
+# Word2vec
+## L+R and VT
+logit               f1 0.40 (+/- 0.08) acc 0.78 (+/- 0.02)
+svm                 f1 0.41 (+/- 0.06) acc 0.76 (+/- 0.03)
+## All
+logit               f1 0.36 (+/- 0.02) acc 0.78 (+/- 0.02)
+svm                 f1 0.39 (+/- 0.02) acc 0.76 (+/- 0.02)

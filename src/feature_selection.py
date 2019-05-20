@@ -30,10 +30,10 @@ classifiers = {
 
 parser = argparse.ArgumentParser(description='Feature selection for stance classification')
 parser.add_argument('-x', '--train_file', dest='train_file',
-                    default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                    default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                     help='Input file holding train data for X')
 parser.add_argument('-y', '--test_file', dest='test_file',
-                    default='../data/preprocessed/preprocessed_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                    default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                     help='Input file holding test data for y')
 args = parser.parse_args()
 
@@ -80,12 +80,10 @@ def check_feature_importance():
         config_map[feature_name] = True
         X__ = data_loader.select_features(X, feature_mapping, config_map)
         l = len(X__[0])
-        # print(l)
-        f = eleminate_low_variance_features(0.001, X__)
-        # try:
-        #     f = eleminate_low_variance_features(0.0, X__)
-        # except ValueError:
-        #     f = l
+        try:
+            f = eleminate_low_variance_features(0.01, X__)
+        except ValueError:
+            f = 0
         print('{:20}All:{}\tAfter:{}'.format(feature_name, l, f))
         config_map[feature_name] = False
 # check_feature_importance()

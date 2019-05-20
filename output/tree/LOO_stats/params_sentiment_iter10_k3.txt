@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.288 for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'random'}
+Grid scores on development set:
+0.265 (+/-0.037) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'best'}
+0.245 (+/-0.035) for {'class_weight': None, 'criterion': 'gini', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 2, 'splitter': 'random'}
+0.253 (+/-0.031) for {'class_weight': None, 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 2, 'splitter': 'random'}
+0.281 (+/-0.012) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 2, 'splitter': 'random'}
+0.288 (+/-0.020) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'random'}
+0.278 (+/-0.022) for {'class_weight': 'balanced', 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 7, 'splitter': 'best'}
+0.287 (+/-0.014) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 7, 'splitter': 'random'}
+0.060 (+/-0.011) for {'class_weight': 'balanced', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 7, 'splitter': 'random'}
+0.285 (+/-0.036) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 8, 'splitter': 'random'}
+0.285 (+/-0.032) for {'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': None, 'min_samples_split': 10, 'splitter': 'random'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.13      0.34      0.19        68
+           1       0.12      0.17      0.14        75
+           2       0.14      0.30      0.19        20
+           3       0.84      0.60      0.70       589
+
+   micro avg       0.53      0.53      0.53       752
+   macro avg       0.31      0.35      0.31       752
+weighted avg       0.69      0.53      0.59       752
+
+[[ 23  11   4  30]
+ [ 28  13   2  32]
+ [  5   3   6   6]
+ [120  83  30 356]]
+acc: 0.5293
+f1 macro: 0.3064
+

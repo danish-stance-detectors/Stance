@@ -1,0 +1,15 @@
+# All features
+logitl1             f1 0.40 (+/- 0.07) acc 0.76 (+/- 0.05)
+logitl2             f1 0.38 (+/- 0.08) acc 0.76 (+/- 0.03)
+logitl1_balanced    f1 0.38 (+/- 0.06) acc 0.75 (+/- 0.01)
+logitl2_balanced    f1 0.41 (+/- 0.07) acc 0.76 (+/- 0.03)
+# All features VT
+logitl1             f1 0.39 (+/- 0.09) acc 0.74 (+/- 0.04)
+logitl2             f1 0.39 (+/- 0.08) acc 0.75 (+/- 0.04)
+logitl1_balanced    f1 0.38 (+/- 0.04) acc 0.73 (+/- 0.03)
+logitl2_balanced    f1 0.41 (+/- 0.06) acc 0.74 (+/- 0.03)
+# Best logit
+## All-VT
+logit               f1 0.41 (+/- 0.07) acc 0.75 (+/- 0.04)
+## BOW-VT
+logit               f1 0.41 (+/- 0.07) acc 0.75 (+/- 0.04)

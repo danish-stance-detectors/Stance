@@ -33,6 +33,8 @@ semeval_test_data_path = '../data/semeval_rumour_data/semeval2017-task8-test-dat
 
 data_folder = '../data/hmm/'
 
+keep_time = False
+
 # def main(argv):
 
 #     parser = argparse.ArgumentParser(description='Preprocessing of data files from pheme and semeval for rumour veracity hmm classification')
@@ -162,7 +164,7 @@ def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
             
             replies = sorted(replies, key = lambda x : x[1]) # sort replies by time ascending
 
-            if True: # keep time
+            if keep_time: # keep time
                 # normalize time
                 max_time = max([x[1] for x in replies])
                 min_time = min([x[1] for x in replies])
@@ -173,7 +175,7 @@ def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
                     else:
                         norm_time = (replies[i][1] - min_time) / (max_time - min_time)
                     replies[i] = (replies[i][0], norm_time)
-            if True: # keep times
+            if keep_time: # keep times
                 replies = unpack_tupples(replies)
             else:
                 replies = [x[0] for x in replies] # throw away time stamp

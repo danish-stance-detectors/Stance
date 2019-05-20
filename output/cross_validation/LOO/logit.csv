@@ -1,0 +1,10 @@
+estimator,f1,f1_std,acc,acc_std,LOO feature
+logit,0.3577,0.05,0.7755,0.02,all
+logit,0.3574,0.09,0.7775,0.03,text
+logit,0.3709,0.06,0.7795,0.01,lexicon
+logit,0.3755,0.07,0.7799,0.02,sentiment
+logit,0.3760,0.07,0.7782,0.03,reddit
+logit,0.3590,0.03,0.7789,0.01,most_freq
+logit,0.3466,0.05,0.7662,0.02,bow
+logit,0.3577,0.10,0.7779,0.02,pos
+logit,0.3468,0.07,0.7765,0.03,wembs

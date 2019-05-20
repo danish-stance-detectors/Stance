@@ -1,0 +1,2 @@
+estimator,f1_macro,acc,folds,rand_iter,parameters,features
+random-forest,0.3725,0.5691,3,50,"{'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 9, 'n_estimators': 281}","{'all': True, 'text': True, 'lexicon': True, 'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}"

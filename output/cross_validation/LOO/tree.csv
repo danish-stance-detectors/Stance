@@ -1,0 +1,10 @@
+estimator,f1,f1_std,acc,acc_std,LOO feature
+tree,0.3168,0.06,0.6944,0.03,all
+tree,0.2904,0.05,0.6837,0.03,text
+tree,0.3242,0.02,0.7001,0.04,lexicon
+tree,0.3045,0.04,0.6857,0.03,sentiment
+tree,0.3158,0.05,0.6951,0.02,reddit
+tree,0.3150,0.04,0.7000,0.02,most_freq
+tree,0.2884,0.02,0.6521,0.03,bow
+tree,0.3035,0.01,0.6861,0.02,pos
+tree,0.3141,0.03,0.7093,0.03,wembs

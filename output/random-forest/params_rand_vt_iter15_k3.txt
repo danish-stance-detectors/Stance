@@ -1,0 +1,37 @@
+Best parameters set found on development set for F1 macro:
+0.349 for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 4, 'n_estimators': 569}
+Randomized scores on development set:
+0.258 (+/-0.044) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 5, 'n_estimators': 931}
+0.339 (+/-0.018) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 3, 'n_estimators': 512}
+0.244 (+/-0.035) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': None, 'max_features': 'log2', 'min_samples_split': 5, 'n_estimators': 670}
+0.236 (+/-0.030) for {'bootstrap': True, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 50, 'max_features': 'auto', 'min_samples_split': 8, 'n_estimators': 688}
+0.249 (+/-0.031) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 6, 'n_estimators': 55}
+0.246 (+/-0.039) for {'bootstrap': False, 'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 9, 'n_estimators': 353}
+0.344 (+/-0.042) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 7, 'n_estimators': 645}
+0.228 (+/-0.012) for {'bootstrap': False, 'class_weight': None, 'criterion': 'gini', 'max_depth': 10, 'max_features': 'auto', 'min_samples_split': 2, 'n_estimators': 910}
+0.327 (+/-0.040) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 9, 'n_estimators': 844}
+0.349 (+/-0.044) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 3, 'max_features': 'log2', 'min_samples_split': 4, 'n_estimators': 569}
+0.244 (+/-0.035) for {'bootstrap': True, 'class_weight': None, 'criterion': 'gini', 'max_depth': None, 'max_features': 'auto', 'min_samples_split': 2, 'n_estimators': 817}
+0.253 (+/-0.017) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 10, 'n_estimators': 642}
+0.246 (+/-0.039) for {'bootstrap': False, 'class_weight': None, 'criterion': 'gini', 'max_depth': 50, 'max_features': 'log2', 'min_samples_split': 5, 'n_estimators': 225}
+0.348 (+/-0.040) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 50, 'max_features': None, 'min_samples_split': 10, 'n_estimators': 758}
+0.219 (+/-0.000) for {'bootstrap': True, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 10, 'max_features': 'log2', 'min_samples_split': 7, 'n_estimators': 882}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.18      0.46      0.26        68
+           1       0.16      0.31      0.21        75
+           2       0.12      0.15      0.14        20
+           3       0.88      0.61      0.72       589
+
+   micro avg       0.56      0.56      0.56       752
+   macro avg       0.34      0.38      0.33       752
+weighted avg       0.73      0.56      0.61       752
+
+[[ 31  18   1  18]
+ [ 26  23   3  23]
+ [  4   7   3   6]
+ [114  97  17 361]]
+acc: 0.5559
+f1 macro: 0.3312
+

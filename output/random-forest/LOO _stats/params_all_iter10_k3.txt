@@ -1,0 +1,32 @@
+Best parameters set found on development set for F1 macro:
+0.335 for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'max_features': None, 'min_samples_split': 2, 'n_estimators': 230}
+Grid scores on development set:
+0.244 (+/-0.016) for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 16, 'max_features': 'auto', 'min_samples_split': 5, 'n_estimators': 805}
+0.219 (+/-0.000) for {'bootstrap': True, 'class_weight': None, 'criterion': 'gini', 'max_depth': 3, 'max_features': 'auto', 'min_samples_split': 9, 'n_estimators': 1631}
+0.328 (+/-0.007) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 30, 'max_features': None, 'min_samples_split': 9, 'n_estimators': 249}
+0.219 (+/-0.000) for {'bootstrap': True, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 7, 'max_features': 'auto', 'min_samples_split': 5, 'n_estimators': 1853}
+0.244 (+/-0.016) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 34, 'max_features': 'auto', 'min_samples_split': 2, 'n_estimators': 827}
+0.249 (+/-0.014) for {'bootstrap': False, 'class_weight': None, 'criterion': 'gini', 'max_depth': 23, 'max_features': 'auto', 'min_samples_split': 8, 'n_estimators': 546}
+0.244 (+/-0.016) for {'bootstrap': False, 'class_weight': None, 'criterion': 'entropy', 'max_depth': 46, 'max_features': 'auto', 'min_samples_split': 7, 'n_estimators': 846}
+0.335 (+/-0.051) for {'bootstrap': False, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 10, 'max_features': None, 'min_samples_split': 2, 'n_estimators': 230}
+0.244 (+/-0.016) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'entropy', 'max_depth': 20, 'max_features': 'auto', 'min_samples_split': 8, 'n_estimators': 1593}
+0.321 (+/-0.004) for {'bootstrap': True, 'class_weight': 'balanced_subsample', 'criterion': 'gini', 'max_depth': 4, 'max_features': 'auto', 'min_samples_split': 7, 'n_estimators': 623}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.17      0.19      0.18        68
+           1       0.15      0.39      0.22        75
+           2       0.11      0.20      0.14        20
+           3       0.84      0.64      0.73       589
+
+   micro avg       0.56      0.56      0.56       752
+   macro avg       0.32      0.35      0.32       752
+weighted avg       0.69      0.56      0.61       752
+
+[[ 13  19   4  32]
+ [ 13  29   2  31]
+ [  3   6   4   7]
+ [ 48 140  26 375]]
+acc: 0.5598
+f1 macro: 0.3158
+

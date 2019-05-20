@@ -28,7 +28,17 @@ def main(argv):
     
     write_hmm_data(args.outfile, data)
 
-unpack_tupples = lambda l : [x for t in l for x in t]
+# unpack_tupples = lambda l : [x for t in l for x in t]
+
+def unpack_tupples(list):
+    flat_list = []
+    for item in list:
+        if type(item) == list:
+            flat_list.extend(item)
+        else:
+            flat_list.append(item)
+    
+    return flat_list
 
 def read_hmm_data(filename, keep_time):
     if not filename:
@@ -49,7 +59,7 @@ def read_hmm_data(filename, keep_time):
                 json_obj = json.load(file)
                 sub = json_obj['redditSubmission']
                 if sub['IsRumour'] and not sub['IsIrrelevant']:
-                    print("Adding {} as rumour".format(submission_json))
+                    print("Adding {} with id {} as rumour".format(sub['title'], submission_json))
                     rumour_truth = int(sub['TruthStatus'] == 'True')
                     rumour_count += 1
                     truth_count += rumour_truth

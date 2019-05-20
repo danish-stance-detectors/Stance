@@ -74,7 +74,6 @@ class FeatureExtractor:
         # **(Normalized) count features**
         txt_len = self.normalize(len(text), 'txt_len') if len(text) > 0 else 0
         url_count = self.normalize(tokens.count('urlurlurl'), 'url_count')
-        quote_count = self.normalize(tokens.count('refrefref'), 'quote_count')
         # longest sequence of capital letters, default empty for 0 length
         cap_sequence_max_len = len(max(re.findall(r"[A-ZÆØÅ]+", text), key=len, default=''))
         cap_sequence_max_len = self.normalize(cap_sequence_max_len, 'cap_sequence_max_len')
@@ -91,7 +90,7 @@ class FeatureExtractor:
             tokens_len = self.normalize(len(tokens), 'tokens_len')
             avg_word_len_true = sum([len(word) for word in tokens]) / len(tokens)
             avg_word_len = self.normalize(avg_word_len_true, 'avg_word_len')
-        return [period, e_mark, q_mark, hasTripDot, url_count, quote_count, tripDotCount, q_mark_count,
+        return [period, e_mark, q_mark, hasTripDot, url_count, tripDotCount, q_mark_count,
                 e_mark_count, cap_ratio, txt_len, tokens_len, avg_word_len, cap_sequence_max_len]
 
     def special_words_in_text(self, tokens, text):
@@ -107,6 +106,7 @@ class FeatureExtractor:
             self.normalize(negative_smiley_count, 'negative_smiley_count')]
 
     def reddit_comment_features(self, comment):
+        quote_count = self.normalize(comment.tokens.count('refrefref'), 'quote_count')
         karma_norm = self.normalize(comment.user_karma, 'karma')
         edited = int('edit:' in comment.text.lower())
         sarcasm = 1 if sarcasm_token.search(comment.text) else 0
@@ -114,7 +114,7 @@ class FeatureExtractor:
         reply_count_norm = self.normalize(comment.reply_count, 'reply_count')
         return [karma_norm, int(comment.user_gold_status), int(comment.user_is_employee),
                 int(comment.user_has_verified_email), upvotes_norm, reply_count_norm,
-                int(comment.is_submitter), edited, sarcasm]
+                int(comment.is_submitter), edited, sarcasm, quote_count]
 
     def most_frequent_words_for_label(self, tokens, n_most):
         vec = []

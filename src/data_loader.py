@@ -33,9 +33,16 @@ def get_instances(filename=datafile, delimiter=tab):
         n_features += len(feature_vec)
     return instances, n_features, feature_mapping
 
-def get_features():
-    return {'all': True, 'text': True, 'lexicon': True,
-                    'sentiment': True, 'reddit': True, 'most_freq': True, 'bow': True, 'pos': True, 'wembs': True}
+
+def get_features(all_true=True, text=True, lexicon=True, sentiment=True, reddit=True, most_freq=True,
+                 bow=True, pos=True, wembs=True):
+    if all_true:
+        return {'all': all_true, 'text': text, 'lexicon': lexicon,
+                'sentiment': sentiment, 'reddit': reddit, 'most_freq': most_freq,
+                'bow': bow, 'pos': pos, 'wembs': wembs}
+    return {'all': False, 'text': False, 'lexicon': False,
+            'sentiment': False, 'reddit': False, 'most_freq': False,
+            'bow': False, 'pos': False, 'wembs': False}
 
 
 def select_features(data, feature_mapping, config_map, merge=True):
@@ -57,7 +64,7 @@ def select_features(data, feature_mapping, config_map, merge=True):
         if config_map['pos']:
             selected_features.append(instance[feature_mapping['pos']])
         if config_map['wembs']:
-            if feature_mapping['word2vec']:
+            if 'word2vec' in feature_mapping:
                 selected_features.append(instance[feature_mapping['word2vec']])
             else:
                 selected_features.append(instance[feature_mapping['fasttext']])
@@ -69,10 +76,13 @@ def select_features(data, feature_mapping, config_map, merge=True):
     return filtered_data, [len(v) for v in filtered_data[0]]
 
 
-def get_features_and_labels(filename=datafile, delimiter=tab):
+def get_features_and_labels(filename=datafile, delimiter=tab, with_ids=False):
     instances, n_features, feature_mapping = get_instances(filename, delimiter)
     X = [x[2] for x in instances]
     y = [x[1] for x in instances]
+    ids = [x[0] for x in instances]
+    if with_ids:
+        return X, y, n_features, feature_mapping, ids
     return X, y, n_features, feature_mapping
 
 
@@ -96,9 +106,11 @@ def load_train_test_data(train_file, test_file, delimiter=tab, split=True):
         y_train.extend(y_test)
         return X_train, y_train, n_features, feature_mapping
 
+
 def union_reduce_then_split(x1, x2):
     split = len(x1)
-    x_union = x1
+    x_union = []
+    x_union.extend(x1)
     x_union.extend(x2)
     x_transformed = VarianceThreshold(0.001).fit_transform(x_union)
     return x_transformed[:split], x_transformed[split:]

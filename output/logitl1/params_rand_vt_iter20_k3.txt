@@ -1,0 +1,42 @@
+Best parameters set found on development set for F1 macro:
+0.377 for {'C': 61, 'class_weight': 'balanced'}
+Randomized scores on development set:
+0.361 (+/-0.017) for {'C': 336, 'class_weight': 'balanced'}
+0.343 (+/-0.028) for {'C': 730, 'class_weight': None}
+0.349 (+/-0.038) for {'C': 178, 'class_weight': None}
+0.355 (+/-0.029) for {'C': 371, 'class_weight': None}
+0.356 (+/-0.037) for {'C': 791, 'class_weight': None}
+0.353 (+/-0.034) for {'C': 318, 'class_weight': None}
+0.356 (+/-0.030) for {'C': 369, 'class_weight': None}
+0.364 (+/-0.012) for {'C': 62, 'class_weight': None}
+0.360 (+/-0.019) for {'C': 505, 'class_weight': 'balanced'}
+0.348 (+/-0.038) for {'C': 195, 'class_weight': None}
+0.358 (+/-0.036) for {'C': 963, 'class_weight': None}
+0.377 (+/-0.024) for {'C': 61, 'class_weight': 'balanced'}
+0.356 (+/-0.048) for {'C': 990, 'class_weight': 'balanced'}
+0.357 (+/-0.030) for {'C': 992, 'class_weight': None}
+0.359 (+/-0.043) for {'C': 917, 'class_weight': None}
+0.347 (+/-0.014) for {'C': 622, 'class_weight': 'balanced'}
+0.356 (+/-0.032) for {'C': 923, 'class_weight': None}
+0.361 (+/-0.041) for {'C': 903, 'class_weight': None}
+0.353 (+/-0.017) for {'C': 586, 'class_weight': 'balanced'}
+0.353 (+/-0.028) for {'C': 437, 'class_weight': 'balanced'}
+Classification report for results on evaluation set:
+              precision    recall  f1-score   support
+
+           0       0.22      0.19      0.20        68
+           1       0.35      0.39      0.36        75
+           2       0.22      0.10      0.14        20
+           3       0.84      0.86      0.85       589
+
+   micro avg       0.73      0.73      0.73       752
+   macro avg       0.41      0.38      0.39       752
+weighted avg       0.72      0.73      0.72       752
+
+[[ 13   9   2  44]
+ [  7  29   0  39]
+ [  3   4   2  11]
+ [ 37  42   5 505]]
+acc: 0.7301
+f1 macro: 0.3890
+
