@@ -25,6 +25,7 @@ def main(argv):
     parser.add_argument('-kf', '--k_folds', help='Number of folds to do in cross validation', type=int)
     parser.add_argument('-rs', '--restarts', help='Number of times to restart with new random state', type=int)
     parser.add_argument('-rand', '--rand_state', default=357, help='Specific random state', type=int)
+    parser.add_argument('-s', '--state_size', help='Specify the size of the space for the model', type=int)
     
     
     args = parser.parse_args(argv)
@@ -42,15 +43,30 @@ def main(argv):
             if args.mix and args.k_folds:
                 X.extend(X_test)
                 y.extend(y_test)
-                for i in range(1, 16):
-                    cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
+                if args.space_size:
+                    cross_val(MSHMM(2, args.space_size), X, y, args.k_folds, args.rand_state, i)
+                    skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=args.rand_state)
+                    predicts = cross_val_predict(MSHMM(2, args.state_size), X, y, cv=skf)
+                    cm, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
+                    print(cm)
+                else:
+                    for i in range(1, 16):
+                        cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
             else:
                 print("%-10s%10s%10s" % ('state space', 'acc', 'f1'))
-                for i in range(1, 16):
-                    clf = MSHMM(2, i).fit(X, y)
+                if args.space_size:
+                    clf = MSHMM(2, args.space_size).fit(X, y)
                     predicts = clf.predict(X_test)
-                    _, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
+                    cm, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
                     print("%-10s%10.2f%10.2f" % (i, acc, f1))
+                    print("\n")
+                    print(cm)
+                else:
+                    for i in range(1, 16):
+                        clf = MSHMM(2, i).fit(X, y)
+                        predicts = clf.predict(X_test)
+                        _, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
+                        print("%-10s%10.2f%10.2f" % (i, acc, f1))
 
         elif args.loo:
             sem_data = hmm_data_loader.get_semeval_hmm_data(filename=args.file_train)
@@ -59,38 +75,45 @@ def main(argv):
         else:
             if not args.k_folds:
                 print("%-10s%10s%10s" % ('state space', 'acc', 'f1'))
-
-            for i in range(1,16):
-                if args.k_folds:
-                    if args.restarts:
-                        for r in random.sample(range(1, 1000), args.restarts):
+            
+            if args.state_size:
+                skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=args.rand_state)
+                predicts = cross_val_predict(MSHMM(2, args.state_size), X, y, cv=skf)
+                cm, acc, f1 = model_stats.cm_acc_f1(y, predicts)
+                print("%-10s%10.2f%10.2f" % (args.state_size, acc, f1))
+                print(cm)
+            else:
+                for i in range(1,16):
+                    if args.k_folds:
+                        if args.restarts:
+                            for r in random.sample(range(1, 1000), args.restarts):
+                                cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
+                            print("\n")
+                        else:
                             cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
-                        print("\n")
                     else:
-                        cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
-                else:
-                    best_acc = 0.0
-                    best_f1 = 0.0
-                    best_rand_state = None
-                    best_i = None
+                        best_acc = 0.0
+                        best_f1 = 0.0
+                        best_rand_state = None
+                        best_i = None
 
-                    if args.restarts:
-                        for r in random.sample(range(1, 1000), args.restarts):
+                        if args.restarts:
+                            for r in random.sample(range(1, 1000), args.restarts):
+                                acc, f1 = test(X, y, args.rand_state, i)
+                                if f1 > best_f1:
+                                    best_f1 = f1
+                                    best_acc = acc
+                                    best_rand_state = args.rand_state
+                                    best_i = i
+                        else:
                             acc, f1 = test(X, y, args.rand_state, i)
-                            if f1 > best_f1:
-                                best_f1 = f1
-                                best_acc = acc
-                                best_rand_state = args.rand_state
-                                best_i = i
-                    else:
-                        acc, f1 = test(X, y, args.rand_state, i)
+                            
+                            best_acc = acc
+                            best_f1 = f1
+                            best_rand_state = args.rand_state
+                            best_i = i
                         
-                        best_acc = acc
-                        best_f1 = f1
-                        best_rand_state = args.rand_state
-                        best_i = i
-                    
-                    print("%-10s%-10s%10.2f%10.2f" % (best_i, best_rand_state, best_acc, best_f1))
+                        print("%-10s%-10s%10.2f%10.2f" % (best_i, best_rand_state, best_acc, best_f1))
 
 def test(X, y, rand, i):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=rand)

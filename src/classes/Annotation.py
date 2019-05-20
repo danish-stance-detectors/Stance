@@ -84,14 +84,22 @@ class RedditAnnotation:
         self.upvotes = comment_json["upvotes"]
 
         # user info
-        self.user_id = comment_json["user"]["id"]
-        self.user_name = comment_json["user"]["username"]
-        self.user_created = comment_json["user"]["created"]
-        self.user_karma = comment_json["user"]["karma"]
-        self.user_gold_status = comment_json["user"]["gold_status"]
-        self.user_is_employee = comment_json["user"]["is_employee"]
-        self.user_has_verified_email = comment_json["user"]["has_verified_email"]
-
+        if 'id' in comment_json["user"]:
+            self.user_id = comment_json["user"]["id"]
+            self.user_name = comment_json["user"]["username"]
+            self.user_created = comment_json["user"]["created"]
+            self.user_karma = comment_json["user"]["karma"]
+            self.user_gold_status = comment_json["user"]["gold_status"]
+            self.user_is_employee = comment_json["user"]["is_employee"]
+            self.user_has_verified_email = comment_json["user"]["has_verified_email"]
+        else: # default values if no user
+            self.user_id = ''
+            self.user_name = ''
+            self.user_created = '1970-01-01T00:00:00'
+            self.user_karma = False
+            self.user_gold_status = False
+            self.user_is_employee = False
+            self.user_has_verified_email = False
     def tokenize(self, text):
         # Convert all words to lower case and tokenize
         text_tokens = word_tokenize(text.lower(), language='danish')
