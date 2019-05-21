@@ -190,12 +190,12 @@ classifiers_vt = {
 }
 
 classifiers_best = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
-                                penalty='l2', C=1, class_weight='balanced', max_iter=50000),
+    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
+    #                             penalty='l2', C=1, class_weight='balanced', max_iter=50000),
     'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
-    'mv': DummyClassifier(strategy='most_frequent'),
-    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    'random': DummyClassifier(strategy='uniform', random_state=rand)
+    # 'mv': DummyClassifier(strategy='most_frequent'),
+    # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    # 'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
@@ -327,7 +327,7 @@ def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
 
 def CV_sup(clfs, name, X, y, X_sup, y_sup, k_folds=5):
     clf = clfs[name]
-    rs = StratifiedShuffleSplit(n_splits=k_folds, test_size=.25, random_state=rand)
+    rs = StratifiedShuffleSplit(n_splits=k_folds, test_size=.2, random_state=rand)
     f1s = []
     accs = []
 
@@ -408,7 +408,7 @@ def main(argv):
     X_train_ = np.asarray(data_loader.select_features(X_train, feature_mapping, config), dtype=np.float64, order='C')
     X_test_ = np.asarray(data_loader.select_features(X_test, feature_mapping, config), dtype=np.float64, order='C')
     X_sup_, y_sup = [], []
-    if args.sup_file:
+    if args.sup_file and args.cross_validate_sup:
         X_sup, y_sup, _, _, sup_ids = data_loader.get_features_and_labels(args.sup_file, with_ids=True)
         X_train_new, y_train_new = [], []
         X_sup_orig = [None]*len(sup_ids)
@@ -453,7 +453,7 @@ def main(argv):
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
     if args.cross_validate_sup:
-        CV_sup(clfs, 'svm', X_all, y_all, X_sup_, y_sup, k_folds=3)
+        CV_sup(clfs, 'svm', X_all, y_all, X_sup_, y_sup)
     if args.cross_val_plot:
         cross_val_plot(X_all, y_all, skf, clfs)
     if args.loo_features:
