@@ -7,6 +7,7 @@ from sklearn.metrics.classification import classification_report
 import numpy as np
 
 preprocessed_folder = '../../data/preprocessed/'
+output_folder = '../../output/end-to-end/'
 
 parser = argparse.ArgumentParser(description='Prediction of stance labels')
 parser.add_argument('-f', '--file_folder', default='../data/annotated/', help='Input folder holding annotated data')
@@ -65,8 +66,8 @@ def normalize(x_i, min_x, max_x):
     return x_i
 
 
-with open(os.path.join('results/', 'stance_labels.csv'), 'w+', newline='') as stance_file, open(
-        os.path.join('results/', 'stance_labels_time.csv'), 'w+', newline='') as stance_file_time:
+with open(os.path.join(output_folder, 'stance_labels.csv'), 'w+', newline='') as stance_file, open(
+        os.path.join(output_folder, 'stance_labels_time.csv'), 'w+', newline='') as stance_file_time:
     stance_writer = csv.writer(stance_file, delimiter='\t')
     stance_time_writer = csv.writer(stance_file_time, delimiter='\t')
     stance_writer.writerow(['truth_status', 'stance_sequence'])
@@ -103,8 +104,8 @@ for LOO_sub_id in submission_ids:  # The submission to leave out
     y_pred_time = [(x[0], y) for x, y in zip(rumour_test, y_pred)]
     y_pred_time.sort(key=lambda tup: tup[0])  # sort by time
 
-    with open(os.path.join('results/', 'stance_labels.csv'), 'a', newline='') as stance_file, open(
-            os.path.join('results/', 'stance_labels_time.csv'), 'a', newline='') as stance_file_time:
+    with open(os.path.join(output_folder, 'stance_labels.csv'), 'a', newline='') as stance_file, open(
+            os.path.join(output_folder, 'stance_labels_time.csv'), 'a', newline='') as stance_file_time:
         stance_writer = csv.writer(stance_file, delimiter='\t')
         stance_time_writer = csv.writer(stance_file_time, delimiter='\t')
 
@@ -129,7 +130,7 @@ for LOO_sub_id in submission_ids:  # The submission to leave out
     print('True:', y_true)
     print('Pred:', y_pred.tolist())
     print()
-    with open(os.path.join('results/', LOO_sub_id + '_stance.txt'), 'w+') as rumour_stance_file:
+    with open(os.path.join(output_folder, LOO_sub_id + '_stance.txt'), 'w+') as rumour_stance_file:
         rumour_stance_file.write(np.array2string(cm) + '\n')
         rumour_stance_file.write('Acc: %.4f\n' % acc)
         rumour_stance_file.write('F1: %.4f\n' % f1)
