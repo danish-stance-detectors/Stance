@@ -6,6 +6,7 @@ from nltk import word_tokenize, sent_tokenize
 import argparse
 import datetime
 import time
+from data_loader import load_bow_list
 
 datafolder = '../data/'
 hmm_folder = os.path.join(datafolder, 'hmm/')
@@ -130,46 +131,54 @@ def main(argv):
     parser.add_argument('-c', '--corpus', default=False, dest='corpus', action='store_true',
                         help='Write a corpus file for Reddit data')
     parser.add_argument('-concat', '--concat', default=False, action='store_true', help='Concatenate train and test to a single output file')
+    parser.add_argument('-bow_dict', '--bow_dict', default=False, action='store_true', help='Store file with bow words.')
     parser.add_argument('-o', '--outname', help='output name prefix for preprocessed file')
     parser.add_argument('-path', '--path', help='path to data to preprocess', default='../data/annotated/')
     args = parser.parse_args(argv)
 
-    outputfile = 'PP'
-    if args.outname:
-        outputfile = args.outname
-    
-    features = []
-    for arg in vars(args):
-        attr = getattr(args, arg)
-        if attr:
-            if not (arg == 'sup' or arg == 'sub'):
-                features.append(arg)
-            outputfile += '_%s' % arg
-            if type(attr) is int:
-                outputfile += '%d' % attr
-            if type(attr) is float:
-                outputfile += '%d' % int(attr*100)
-
-    word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
-
-    dataset, train, test = preprocess(args.path, args.sub, args.sup)
-    if args.corpus:
-        train.extend(test)
-        write_reddit_corupus(train)
-        return
-
-    feature_extractor = FeatureExtractor(dataset)
-    train_features = create_features(feature_extractor, train, args.text, args.lexicon, args.sentiment, args.reddit,
-                                    args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
-    test_features = create_features(feature_extractor, test, args.text, args.lexicon, args.sentiment, args.reddit,
-                                    args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
-    
-    if args.concat:
-        train_features.extend(test_features)
-        write_preprocessed(features, train_features, outputfile + '_concat.csv')
+    if args.bow_dict:
+        bow_set = load_bow_list(args.path)
+        with open(args.outname, 'w+', encoding='utf-8') as file:
+            for word in bow_set:
+                file.write(word + '\n')
     else:
-        write_preprocessed(features, train_features, outputfile + '_train.csv')
-        write_preprocessed(features, test_features, outputfile + '_test.csv')
+
+        outputfile = 'PP'
+        if args.outname:
+            outputfile = args.outname
+        
+        features = []
+        for arg in vars(args):
+            attr = getattr(args, arg)
+            if attr:
+                if not (arg == 'sup' or arg == 'sub'):
+                    features.append(arg)
+                outputfile += '_%s' % arg
+                if type(attr) is int:
+                    outputfile += '%d' % attr
+                if type(attr) is float:
+                    outputfile += '%d' % int(attr*100)
+
+        word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
+
+        dataset, train, test = preprocess(args.path, args.sub, args.sup)
+        if args.corpus:
+            train.extend(test)
+            write_reddit_corupus(train)
+            return
+
+        feature_extractor = FeatureExtractor(dataset)
+        train_features = create_features(feature_extractor, train, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
+        test_features = create_features(feature_extractor, test, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
+        
+        if args.concat:
+            train_features.extend(test_features)
+            write_preprocessed(features, train_features, outputfile + '_concat.csv')
+        else:
+            write_preprocessed(features, train_features, outputfile + '_train.csv')
+            write_preprocessed(features, test_features, outputfile + '_test.csv')
 
 
 if __name__ == "__main__":
