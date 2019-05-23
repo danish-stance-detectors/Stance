@@ -1,7 +1,7 @@
-import word_embeddings
-from classes.Annotation import RedditDataset
-from classes.afinn_sentiment import get_afinn_sentiment
-from classes.polyglot_pos import pos_tags_occurence
+from src import word_embeddings
+from src.classes.Annotation import RedditDataset
+from src.classes.afinn_sentiment import get_afinn_sentiment
+from src.classes.polyglot_pos import pos_tags_occurence
 import re
 
 # Module for extracting features from comment annotations
@@ -62,7 +62,7 @@ class FeatureExtractor:
         parent_sdqc = self.sdqc_to_int[comment.sdqc_parent]
         sub_sdqc = self.sdqc_to_int[comment.sdqc_submission]
 
-        return comment.comment_id, parent_sdqc, sub_sdqc, feature_vec
+        return comment.submission_id, comment.comment_id, comment.created, parent_sdqc, sub_sdqc, feature_vec
 
     def text_features(self, text, tokens):
         # **Binary occurrence features**
