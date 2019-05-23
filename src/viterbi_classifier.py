@@ -43,9 +43,9 @@ def main(argv):
     elif args.en_da:
         train_eng_test_danish(args.file_en, args.file_dk, args.distribution_voter, int(args.min_len))
     elif args.pheme:
-        train_test_pheme(args.file_en, int(args.min_len))
+        train_test_pheme(args.file_en, args.distribution_voter, int(args.min_len))
     elif args.mix:
-        train_test_mix(args.file_en, args.file_dk, int(args.min_len))
+        train_test_mix(args.file_en, args.file_dk, args.distribution_voter, int(args.min_len))
     elif args.save:
         save_model(args.file_dk, args.outfile)
 
@@ -233,7 +233,7 @@ def Loo_event_test(file_en, min_length, print_distribution):
                     best_f1 = f1_t
             print("%-20s%-10s%10.2f%10.2f" % (test_event, s, best_acc, best_f1))
 
-def train_test_mix(file_en, file_da, min_length=1):    
+def train_test_mix(file_en, file_da, distribution_voter, min_length=1):    
     # load data
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
     X_da = [x[1] for x in danish_data]
@@ -246,9 +246,11 @@ def train_test_mix(file_en, file_da, min_length=1):
     X_en.extend(X_da)
     y_en.extend(y_da)
 
-    for s in range(1,16):
-        
-        cross_val(HMM(s), X_en, y_en, 3, 42, s)
+    if distribution_voter:
+        cross_val(DistributionVoter(), X_en, y_en, 3, 42, 1)
+    else:
+        for s in range(1,16):
+            cross_val(HMM(s), X_en, y_en, 3, 42, s)
 
 def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):    
     # load data
@@ -287,7 +289,7 @@ def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):
                 best_s = s
         print("%-20s%-10s%10.2f%10.2f" % ('danish', best_s, best_acc, best_f1))
 
-def train_test_pheme(file_name, min_length=1):
+def train_test_pheme(file_name, distribution_voter, min_length=1):
     
     print("Testing on english data")
 
@@ -295,10 +297,11 @@ def train_test_pheme(file_name, min_length=1):
     data_train = [x for x in data_train if len(x[2]) >= min_length]
     data_train_y = [x[1] for x in data_train]
     data_train_X = [x[2] for x in data_train]
-    
-    for s in range(1,16):
-        
-        cross_val(HMM(s), data_train_X, data_train_y, 3, 42, s)    
+    if distribution_voter:
+        cross_val(DistributionVoter(), data_train_X, data_train_y, 3, 42, 1)
+    else:
+        for s in range(1,16):    
+            cross_val(HMM(s), data_train_X, data_train_y, 3, 42, s)    
 
 def train_test_danish(distribution_voter, file_name='../data/hmm/hmm_data_comment_trees.csv', min_length=1):
 

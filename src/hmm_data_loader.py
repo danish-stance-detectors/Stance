@@ -254,7 +254,7 @@ def write_hmm_data(filename, data):
     if not data:
         return
     print('Writing hmm vectors to', filename)
-    with open(filename, "w+", newline='') as out_file:
+    with open(filename, "w+", newline='') as out_file: 
         csv_writer = csv.writer(out_file, delimiter='\t')
         csv_writer.writerow(['TruthStatus', 'SDQC_Labels'])
         
