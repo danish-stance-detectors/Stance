@@ -40,6 +40,12 @@ def unpack_tupples(list):
     
     return flat_list
 
+rumour_truth_to_int = {
+    'False' : 0,
+    'True'  : 1,
+    'Unverified' : 1
+}
+
 def read_hmm_data(filename, keep_time):
     if not filename:
         return
@@ -60,7 +66,7 @@ def read_hmm_data(filename, keep_time):
                 sub = json_obj['redditSubmission']
                 if sub['IsRumour'] and not sub['IsIrrelevant']:
                     print("Adding {} with id {} as rumour".format(sub['title'], submission_json))
-                    rumour_truth = int(sub['TruthStatus'] == 'True')
+                    rumour_truth = rumour_truth_to_int[sub['TruthStatus']]
                     rumour_count += 1
                     truth_count += rumour_truth
                     for branch in json_obj['branches']:
@@ -120,7 +126,7 @@ def read_hmm_data_no_branches(filename, keep_time):
                     print("Adding {} as rumour".format(submission_json))
                     
                     distinct_comments = dict()
-                    rumour_truth = int(sub['TruthStatus'] == 'True')
+                    rumour_truth = rumour_truth_to_int[sub['TruthStatus']]
                     rumour_count += 1
                     truth_count += rumour_truth
                     for branch in json_obj['branches']:
@@ -191,7 +197,7 @@ def read_hmm_data_cmt_trees(filename, keep_time):
                     print("Adding {} as rumour".format(submission_json))
                     
                     distinct_comments = dict()
-                    rumour_truth = int(sub['TruthStatus'] == 'True')
+                    rumour_truth = rumour_truth_to_int[sub['TruthStatus']]
                     rumour_count += 1
                     truth_count += rumour_truth
                     for branch in json_obj['branches']:
@@ -268,7 +274,7 @@ def get_hmm_data(filename=hmm_datafile, delimiter=tab):
         for row in csvreader:
             truth_status = int(row[0])
             values = row[1].strip("[").strip("]").split(',')
-            instance_vec = [float(i.strip()) for i in values]
+            instance_vec = [float(i.strip().strip('(').strip(')')) for i in values]
             data.append((truth_status, instance_vec))
             max_branch_len = max(max_branch_len, len(instance_vec))
     
