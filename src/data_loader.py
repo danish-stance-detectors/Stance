@@ -1,10 +1,16 @@
 import csv
+import os
+import json
+import re
 
 from sklearn.feature_selection import VarianceThreshold
 from sklearn.model_selection import train_test_split
 
+from nltk import word_tokenize
+
 datafile = '../data/preprocessed/preprocessed.csv'
 tab = '\t'
+punctuation = re.compile('[^a-zA-ZæøåÆØÅ0-9]')
 
 def get_instances(filename=datafile, delimiter=tab):
     """Load preprocessed data from a csv-file into an iterable
@@ -106,6 +112,28 @@ def load_train_test_data(train_file, test_file, delimiter=tab, split=True):
         y_train.extend(y_test)
         return X_train, y_train, n_features, feature_mapping
 
+def load_bow_list(path):
+    print("Finding all unique word in {}\n".format(path))
+    dirs = os.listdir(path)
+    word_set = set()
+    for dir in dirs:
+        dir_path = path + dir
+        print("adding {} to bow list".format(dir_path))
+        if os.path.isdir(dir_path):
+            for submission in os.listdir(dir_path):
+                file_path = dir_path + '/' + submission
+
+                with open(file_path, 'r', encoding='utf-8') as json_file:
+                    json_obj = json.load(json_file)
+
+                    for branch in json_obj['branches']:
+                        for comment in branch:
+                            text = comment['comment']['text']
+                            text_tokens = word_tokenize(text.lower(), language='danish')
+                            tokens = [t for t in text_tokens if not punctuation.match(t)]
+                            word_set.update(tokens)
+    print("Found {} unique words in {}".format(len(word_set), path))
+    return word_set
 
 def union_reduce_then_split(x1, x2):
     split = len(x1)

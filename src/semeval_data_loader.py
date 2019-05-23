@@ -3,6 +3,7 @@ import json
 import time
 import os
 import csv
+import sys
 from datetime import datetime
 import argparse
 
@@ -35,14 +36,26 @@ data_folder = '../data/hmm/'
 
 keep_time = False
 
-# def main(argv):
+def main(argv):
 
-#     parser = argparse.ArgumentParser(description='Preprocessing of data files from pheme and semeval for rumour veracity hmm classification')
+    parser = argparse.ArgumentParser(description='Preprocessing of data files from pheme and semeval for rumour veracity hmm classification')
 
-#     parser.add_argument('-f', '--data file path', dest='file', default='../data/pheme_data/pheme-rumour-scheme-dataset/threads/en/', help='Input folder holding annotated data')
-#     parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
+    parser.add_argument('-f', '--data file path', dest='file', default='../data/semeval_rumour_data/semeval2017-task8-dataset/rumoureval-data/', help='Input folder holding annotated data')
+    parser.add_argument('-o', '--out file path', dest='outfile', default='../data/hmm/hmm_data.csv', help='Output filer holding preprocessed data')
+    parser.add_argument('-time', '--keep_time', action='store_true', default=False, help='Keep the normalized timestamps')
+    parser.add_argument('-train', '--train', action='store_true', default=False, help='Include and write out semeval train data')
+    parser.add_argument('-dev', '--dev', action='store_true', default=False, help='Include and write out semeval dev data')
+    parser.add_argument('-test', '--test', action='store_true', default=False, help='Include and write out semeval test data as well')
     
-#     args = parser.parse_args(argv)
+    args = parser.parse_args(argv)
+
+    # write train dev to separate file
+    if args.train or args.dev:
+        read_rumour_data_dev_train(args.file, args.outfile, args.train, args.dev, False, args.keep_time)
+    
+    # write test to separate file
+    if args.test:
+        read_rumour_data_dev_train(args.file, args.outfile.rstrip('.csv') + '_test.csv', False, False, args.test, args.keep_time)
 
 # Events from which dungs 18 used rumour data from
 dungs18_events = [
@@ -105,7 +118,7 @@ def read_pheme_labels(path):
     
     return label_dict
 
-def read_all_rumours(path, rumour_dict, stance_dict, include_all=False):
+def read_all_rumours(path, rumour_dict, stance_dict, include_all=False, keep_time_=False):
 
     events = os.listdir(path)
     data = []
@@ -114,7 +127,7 @@ def read_all_rumours(path, rumour_dict, stance_dict, include_all=False):
         if event in dungs18_events:
             # get all conversations in event
             event_path = os.path.join(path, event)
-            event_data = read_conversations_in_dir(event_path, event, rumour_dict, stance_dict, min_len=1)
+            event_data = read_conversations_in_dir(event_path, event, rumour_dict, stance_dict, min_len=1, keep_time=keep_time_)
 
             # Event must yield atleast 5 conversations with 5 or more tweets
             # tmp_len = len([x for x in event_data if len(x[2]) > 4])
@@ -131,7 +144,7 @@ def read_test_rumours(path, rumour_dict, stance_dict):
     return read_conversations_in_dir(path, 'test', rumour_dict, stance_dict)
 
 # reads all conversations in a specific path folder
-def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1):
+def read_conversations_in_dir(path, event, rumour_dict, stance_dict, min_len=1, keep_time=False):
     conversations = os.listdir(path)
     event_data = []
     for conv in conversations:
@@ -218,34 +231,64 @@ def write_hmm_data(filename, data):
             csv_writer.writerow([event, truth_status, labels])
     print('Done')
 
+# Reads rumour labels. Bool flags to control train, dev and test labels
+def read_rumour_labels_all(train=False, dev=False, test=False):
+    rumour_labels = dict()
+    if train:
+        rumour_labels.update(read_rumour_labels(rumour_train_labels_path))
+    if dev:
+        rumour_labels.update(read_rumour_labels(rumour_dev_labels_path))
+    if test:
+        rumour_labels.read_rumour_labels(rumour_test_labels_path)
+    
+    return rumour_labels
+
+# Reads stance labels. Bool flags to control train, dev and test labels
+def read_stance_labels_all(train=False, dev=False, test=False):
+    stance_labels = dict()
+    if train:
+        stance_labels.update(read_stance_labels(training_labels_path))
+    if dev:
+        stance_labels.update(read_stance_labels(dev_labels_path))
+    if test:
+        stance_labels.update(read_stance_labels(test_stance_labels))
+    
+    return stance_labels
+
+def read_rumour_data_dev_train(path, out_path, train_, dev_, test_, keep_time):
+
+    rumour_labels = read_rumour_labels_all(train=train_, dev=dev_, test=test_)
+    stance_labels = read_stance_labels_all(train=train_, dev=dev_, test=test_)
+
+    rumour_data_train = read_all_rumours(semeval_train_dev_data_path, rumour_labels, stance_labels, keep_time_=keep_time)
+    
+    print("Found data for {} training rumours".format(len(rumour_data_train)))
+    
+    write_hmm_data(out_path, rumour_data_train)
+
 #rumour labels
-rumour_labels = dict()
-rumour_test_labels = dict()
-stance_labels = dict()
+# rumour_labels = dict()
+# rumour_test_labels = dict()
+# stance_labels = dict()
 
-rumour_labels.update(read_rumour_labels(rumour_train_labels_path))
-rumour_labels.update(read_rumour_labels(rumour_dev_labels_path))
+# rumour_labels.update(read_rumour_labels(rumour_train_labels_path))
+# rumour_labels.update(read_rumour_labels(rumour_dev_labels_path))
 
-rumour_test_labels = read_rumour_labels(rumour_test_labels_path)
+# rumour_test_labels = read_rumour_labels(rumour_test_labels_path)
 
-# stance labels
-stance_labels.update(read_stance_labels(training_labels_path))
-stance_labels.update(read_stance_labels(dev_labels_path))
-# stance_labels.update(read_pheme_labels(pheme_stance_labels_de_old))
-# stance_labels.update(read_pheme_labels(pheme_stance_labels_en_old))
-stance_labels.update(read_stance_labels(test_stance_labels))
+# # stance labels
+# stance_labels.update(read_stance_labels(training_labels_path))
+# stance_labels.update(read_stance_labels(dev_labels_path))
+# stance_labels.update(read_stance_labels(test_stance_labels))
 
-# rumour_data = read_all_rumours(training_data_path_en_old, rumour_labels, stance_labels)
-# rumour_data_de = read_all_rumours(training_data_path_de_old, rumour_labels, stance_labels)
-# rumour_data.extend(rumour_data_de)
-rumour_data_train= read_all_rumours(semeval_train_dev_data_path, rumour_labels, stance_labels)
+# rumour_data_train= read_all_rumours(semeval_train_dev_data_path, rumour_labels, stance_labels)
 
-rumour_data_test = read_test_rumours(semeval_test_data_path, rumour_test_labels, stance_labels)
+# rumour_data_test = read_test_rumours(semeval_test_data_path, rumour_test_labels, stance_labels)
 
-#rumour_data_train.extend(rumour_data_dev)
-#rumour_data_train.extend(rumour_data_test)
+# print("Found data for {} training rumours".format(len(rumour_data_train)))
 
-print("Found data for {} training rumours".format(len(rumour_data_train)))
+# write_hmm_data(data_folder + 'semeval_train_dev.csv', rumour_data_train)
+# write_hmm_data(data_folder + 'semeval_test.csv', rumour_data_test)
 
-write_hmm_data(data_folder + 'semeval_train_dev.csv', rumour_data_train)
-write_hmm_data(data_folder + 'semeval_test.csv', rumour_data_test)
+if __name__ == "__main__":
+    main(sys.argv[1:])

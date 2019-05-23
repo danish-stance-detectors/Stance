@@ -246,27 +246,9 @@ def train_test_mix(file_en, file_da, min_length=1):
     X_en.extend(X_da)
     y_en.extend(y_da)
 
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X_en, y_en, test_size=0.2, stratify=y_en)
-
     for s in range(1,16):
-        # best_acc = 0.0
-        # best_f1 = 0.0
         
         cross_val(HMM(s), X_en, y_en, 3, 42, s)
-
-        # # try out different random configurations
-        # for c in range(1):
-        #     # test on danish data
-        #     clf = HMM(s).fit(X_train, y_train)
-        #     predicts = clf.predict(X_test)
-
-        #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
-            
-        #     if f1_t_da > best_f1:
-        #         best_acc = acc_t_da
-        #         best_f1 = f1_t_da
-        # print("%-20s%-10s%10.2f%10.2f" % ('mix', s, best_acc, best_f1))
 
 def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):    
     # load data
@@ -278,10 +260,6 @@ def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):
     y_train = [x[1] for x in data_train]
     X_train = [x[2] for x in data_train]
 
-    y_set = set(y_train)
-    print(y_set)
-    y_counts = set([(y, y_train.count(y)) for y in y_set])
-    print(y_counts)
     print("%-20s%10s%10s%10s" % ('event', 'components', 'accuracy', 'f1'))
 
     if distribution_voter:
@@ -290,10 +268,10 @@ def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):
         _, acc, f1 = model_stats.cm_acc_f1(danish_data_y, predicts)
         print("%-20s%-10s%10.2f%10.2f" % ('danish', '-', acc, f1))
     else:
+        best_acc = 0.0
+        best_f1 = 0.0
+        best_s = None
         for s in range(1,16):
-            best_acc = 0.0
-            best_f1 = 0.0
-
             # try out different random configurations
             for c in range(1):
                 # test on danish data
@@ -301,12 +279,13 @@ def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):
                 da_predicts = clf.predict(danish_data_X)
 
             cm, acc_t_da, f1_t_da = model_stats.cm_acc_f1(danish_data_y, da_predicts)
-            print(cm)
+            # print(cm)
             
             if f1_t_da > best_f1:
                 best_acc = acc_t_da
                 best_f1 = f1_t_da
-        print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))
+                best_s = s
+        print("%-20s%-10s%10.2f%10.2f" % ('danish', best_s, best_acc, best_f1))
 
 def train_test_pheme(file_name, min_length=1):
     
@@ -317,25 +296,9 @@ def train_test_pheme(file_name, min_length=1):
     data_train_y = [x[1] for x in data_train]
     data_train_X = [x[2] for x in data_train]
     
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     data_train_X, data_train_y, test_size=0.2, stratify=data_train_y)
-    
     for s in range(1,16):
-        # best_acc = 0.0
-        # best_f1 = 0.0
         
-        cross_val(HMM(s), data_train_X, data_train_y, 3, 42, s)
-        # # try out different random configurations
-        # for c in range(1):
-        #     clf = HMM(s).fit(X_train, y_train)
-        #     predicts = clf.predict(X_test)
-
-        #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, predicts)
-            
-        #     if f1_t_da > best_f1:
-        #         best_acc = acc_t_da
-        #         best_f1 = f1_t_da
-        # print("%-20s%-10s%10.2f%10.2f" % ('pheme', s, best_acc, best_f1))      
+        cross_val(HMM(s), data_train_X, data_train_y, 3, 42, s)    
 
 def train_test_danish(distribution_voter, file_name='../data/hmm/hmm_data_comment_trees.csv', min_length=1):
 
@@ -344,23 +307,9 @@ def train_test_danish(distribution_voter, file_name='../data/hmm/hmm_data_commen
 
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)
 
-    X = []# [x[1] for x in danish_data]
-    y = []# [x[0] for x in danish_data]
+    X = [x[1] for x in danish_data]
+    y = [x[0] for x in danish_data]
     
-    if sub_sample:
-        X, y = data_utils.sub_sample(danish_data, dist=1.0)
-    else:
-        X = [x[1] for x in danish_data]
-        y = [x[0] for x in danish_data]
-
-    y_set = set(y)
-    print(y_set)
-    y_counts = set([(yd, y.count(yd)) for yd in y_set])
-    print(y_counts)
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     danish_data_X, danish_data_y, test_size=0.20, random_state=42, stratify=danish_data_y)
-    
-    # train_y_x = list(zip(y_train, X_train))
     if distribution_voter:
         cross_val(DistributionVoter(), X, y, 3, 42, 0)
     else:
@@ -368,18 +317,7 @@ def train_test_danish(distribution_voter, file_name='../data/hmm/hmm_data_commen
             best_acc = 0.0
             best_f1 = 0.0
 
-            # try out different random configurations
-            # for c in range(1):
-            cross_val(HMM(s), X, y, 3, 42, s)
-            #     clf = HMM(s).fit(X_train, y_train)
-            #     da_predicts = clf.predict(X_test)
-            
-            #     _, acc_t_da, f1_t_da = model_stats.cm_acc_f1(y_test, da_predicts)
-                
-            #     if f1_t_da > best_f1:
-            #         best_acc = acc_t_da
-            #         best_f1 = f1_t_da
-            # print("%-20s%-10s%10.2f%10.2f" % ('danish', s, best_acc, best_f1))      
+            cross_val(HMM(s), X, y, 3, 42, s)    
     
 def save_model(file_name, out_file):
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_name)

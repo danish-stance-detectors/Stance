@@ -24,7 +24,7 @@ def main(argv):
     parser.add_argument('-mix', '--mix', action='store_true', default=False, help='Test kfold on a mix of danish an pheme data')
     parser.add_argument('-kf', '--k_folds', help='Number of folds to do in cross validation', type=int)
     parser.add_argument('-rs', '--restarts', help='Number of times to restart with new random state', type=int)
-    parser.add_argument('-rand', '--rand_state', default=357, help='Specific random state', type=int)
+    parser.add_argument('-rand', '--rand_state', default=42, help='Specific random state', type=int)
     parser.add_argument('-s', '--state_size', help='Specify the size of the space for the model', type=int)
     
     
@@ -43,8 +43,8 @@ def main(argv):
             if args.mix and args.k_folds:
                 X.extend(X_test)
                 y.extend(y_test)
-                if args.space_size:
-                    cross_val(MSHMM(2, args.space_size), X, y, args.k_folds, args.rand_state, i)
+                if args.state_size:
+                    cross_val(MSHMM(2, args.state_size), X, y, args.k_folds, args.rand_state, i)
                     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=args.rand_state)
                     predicts = cross_val_predict(MSHMM(2, args.state_size), X, y, cv=skf)
                     cm, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
@@ -54,8 +54,8 @@ def main(argv):
                         cross_val(MSHMM(2, i), X, y, args.k_folds, args.rand_state, i)
             else:
                 print("%-10s%10s%10s" % ('state space', 'acc', 'f1'))
-                if args.space_size:
-                    clf = MSHMM(2, args.space_size).fit(X, y)
+                if args.state_size:
+                    clf = MSHMM(2, args.state_size).fit(X, y)
                     predicts = clf.predict(X_test)
                     cm, acc, f1 = model_stats.cm_acc_f1(y_test, predicts)
                     print("%-10s%10.2f%10.2f" % (i, acc, f1))
