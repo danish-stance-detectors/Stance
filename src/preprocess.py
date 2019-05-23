@@ -1,11 +1,9 @@
 import os, json, csv, sys, re
-import word_embeddings
-from classes.Annotation import RedditDataset
-from classes.Features import FeatureExtractor
+from src import word_embeddings
+from src.classes.Annotation import RedditDataset
+from src.classes.Features import FeatureExtractor
 from nltk import word_tokenize, sent_tokenize
 import argparse
-import datetime
-import time
 
 datafolder = '../data/'
 hmm_folder = os.path.join(datafolder, 'hmm/')
@@ -13,6 +11,13 @@ preprocessed_folder = os.path.join(datafolder, 'preprocessed/')
 annotated_folder = os.path.join(datafolder, 'twitter_test_data/')
 
 punctuation = re.compile('[^a-zA-ZæøåÆØÅ0-9]')
+
+truth_to_id = {
+    'False': 0,
+    'True': 1,
+    'Unverified': 2
+}
+sub_to_truth = {}
 
 def preprocess(filename, sub_sample, super_sample):
     if not filename:
@@ -37,6 +42,9 @@ def preprocess(filename, sub_sample, super_sample):
                 print("Preprocessing submission: ", submission_json)
                 json_obj = json.load(file)
                 sub = json_obj['redditSubmission']
+                if sub['IsRumour'] and (not sub['IsIrrelevant']):
+                    truth = sub["TruthStatus"]
+                    sub_to_truth[submission_json.replace('.json', '')] = truth_to_id[truth]
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
                 for i, branch in enumerate(branches):
@@ -72,20 +80,34 @@ def create_features(feature_extractor, data,  text, lexicon, sentiment, reddit,
     return data
 
 
-def write_preprocessed(header_features, preprocessed_data, filename):
+def write_preprocessed(header_features, preprocessed_data, filename, write_rumours_sep=False):
     if not preprocessed_data:
         return
     out_path = os.path.join(preprocessed_folder, filename)
     print('Writing feature vectors to', out_path)
-    with open(out_path, "w+", newline='') as out_file:
+    with open(out_path + '.csv', "w+", newline='') as out_file:
         csv_writer = csv.writer(out_file, delimiter='\t')
-        header = ['comment_id', 'sdqc_parent', 'sdqc_submission']
+        header = ['sub_id', 'sdqc_parent', 'sdqc_submission']
         header.extend(header_features)
         csv_writer.writerow(header)
+
+        if write_rumours_sep:
+            with open(out_path + '_rumours.csv', 'w+', newline='') as rumour_file:
+                csv_writer_r = csv.writer(rumour_file, delimiter='\t')
+                header_r = ['sub_id', 'comment_id', 'time', 'truth', 'sdqc_submission']
+                header_r.extend(header_features)
+                csv_writer_r.writerow(header_r)
         
-        for (id, sdqc_p, sdqc_s, vec) in preprocessed_data:
-            csv_writer.writerow([id, sdqc_p, sdqc_s, *vec])
+        for (sub_id, id, t, sdqc_p, sdqc_s, vec) in preprocessed_data:
+            if write_rumours_sep and sub_id in sub_to_truth:
+                truth = sub_to_truth[sub_id]
+                with open(out_path + '_rumours.csv', 'w+', newline='') as rumour_file:
+                    csv_writer_r = csv.writer(rumour_file, delimiter='\t')
+                    csv_writer_r.writerow([sub_id, id, t, truth, sdqc_s, *vec])
+            else:
+                csv_writer.writerow([id, sdqc_p, sdqc_s, *vec])
     print('Done')
+
 
 def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.txt'):
     with open(filename, 'w+', encoding='utf-8') as outfile:
@@ -105,6 +127,7 @@ def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.
                 for t in tokens_clean:
                     outfile.write(t + ' ')
                 outfile.write('\n')
+
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -166,10 +189,10 @@ def main(argv):
     
     if args.concat:
         train_features.extend(test_features)
-        write_preprocessed(features, train_features, outputfile + '_concat.csv')
+        write_preprocessed(features, train_features, outputfile)
     else:
-        write_preprocessed(features, train_features, outputfile + '_train.csv')
-        write_preprocessed(features, test_features, outputfile + '_test.csv')
+        write_preprocessed(features, train_features, outputfile + '_train')
+        write_preprocessed(features, test_features, outputfile + '_test')
 
 
 if __name__ == "__main__":
