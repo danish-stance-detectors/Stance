@@ -1,9 +1,9 @@
 from nltk import word_tokenize
 import re, copy, random
-import word_embeddings
+from src import word_embeddings
 from sklearn.model_selection import train_test_split
-from classes.afinn_sentiment import get_afinn_sentiment
-from parse_synonyms import load_synonyms
+from src.classes.afinn_sentiment import get_afinn_sentiment
+from src.parse_synonyms import load_synonyms
 
 url_tag = 'urlurlurl'
 regex_url = re.compile(
@@ -15,6 +15,7 @@ regex_quote = re.compile(r">(.+?)\n")
 
 synonyms = load_synonyms()
 rand = random.Random(42)
+
 
 class RedditAnnotation:
         
@@ -100,6 +101,7 @@ class RedditAnnotation:
             self.user_gold_status = False
             self.user_is_employee = False
             self.user_has_verified_email = False
+
     def tokenize(self, text):
         # Convert all words to lower case and tokenize
         text_tokens = word_tokenize(text.lower(), language='danish')
@@ -147,7 +149,6 @@ class RedditAnnotation:
         self.tokens = self.tokenize(self.text)
         return 0.0, replacements
 
-
     def alter_id_and_text2(self, threshold=0.7, words_to_replace=5, early_stop=True):
         self.comment_id = self.comment_id + '_'
         # idx = randint(0, len(self.tokens)-1)
@@ -194,6 +195,7 @@ class RedditAnnotation:
         else:
             return 0.0, 0
 
+
 class RedditSubmission:
     def __init__(self, source):
         self.source = source
@@ -211,13 +213,16 @@ def compute_similarity(annotation, previous, source, branch_tokens, is_source=Fa
         annotation.sim_to_src = word_embeddings.cosine_similarity(annotation.tokens, source.tokens)
         annotation.sim_to_prev = word_embeddings.cosine_similarity(annotation.tokens, previous.tokens)
 
+
 def read_lexicon(file_path):
     """Loads lexicon file given path. Assumes file has one word per line"""
     with open(file_path, "r", encoding='utf8') as lexicon_file:
         return set([line.strip().lower() for line in lexicon_file.readlines()])
 
+
 def count_lexicon_occurence(words, lexion):
     return sum([1 if word in lexion else 0 for word in words])
+
 
 class RedditDataset:
     def __init__(self):
@@ -359,7 +364,6 @@ class RedditDataset:
         annotations.extend(super_sample)
         return annotations
 
-
     def print_status_report(self, annotations=None):
         histogram = {
             0: 0,
@@ -449,7 +453,6 @@ class RedditDataset:
                 else:
                     label_dict[seq] = 1
         
-
     def get_frequent_words(self, take_count):
         if self.unique_freq_histogram:
             return self.unique_freq_histogram
