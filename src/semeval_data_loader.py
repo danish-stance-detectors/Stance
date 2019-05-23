@@ -68,7 +68,7 @@ sdqc_to_int = {
 
 rumour_truth_to_int = {
     'true'       : 1,
-    'unverified' : 0,
+    'unverified' : 2,
     'false'      : 0
 }
 
