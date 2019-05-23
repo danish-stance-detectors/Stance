@@ -20,17 +20,14 @@ truth_to_id = {
 }
 sub_to_truth = {}
 
-def preprocess(filename, sub_sample, super_sample):
+
+def preprocess(filename, sub_sample, write_rumours=False):
     if not filename:
         return
     dataset = RedditDataset()
     s = 'Loading and preprocessing data '
     if sub_sample:
         s += 'with sub sampling'
-    if super_sample:
-        if sub_sample:
-            s += ' and '
-        s += 'with super sampling'
     print(s)
     for rumour_folder in os.listdir(filename):
         rumour_folder_path = os.path.join(filename, rumour_folder)
@@ -43,32 +40,46 @@ def preprocess(filename, sub_sample, super_sample):
                 print("Preprocessing submission: ", submission_json)
                 json_obj = json.load(file)
                 sub = json_obj['redditSubmission']
-                if sub['IsRumour'] and (not sub['IsIrrelevant']):
-                    truth = sub["TruthStatus"]
-                    sub_to_truth[submission_json.replace('.json', '')] = truth_to_id[truth]
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
+                if sub['IsRumour'] and (not sub['IsIrrelevant']):
+                    truth = sub["TruthStatus"]
+                    sub_id = submission_json.replace('.json', '')
+                    sub_to_truth[sub_id] = truth_to_id[truth]
+                    if write_rumours:
+                        with open('rumour_branches.txt', 'a+', encoding='utf8') as outfile:
+                            outfile.write(sub_id + '\n\n')
+                            for branch in branches:
+                                for anno in branch:
+                                    c_id = anno['comment']['comment_id']
+                                    outfile.write(c_id + '\n')
+                                outfile.write('\n')
+                            outfile.write('\n')
                 for i, branch in enumerate(branches):
                     dataset.add_submission_branch(branch, sub_sample=sub_sample)
     print('Done\n')
     dataset.print_status_report()
     print()
+    return dataset
+
+
+def super_sample(dataset, sup):
+    print('Super sampling...')
     print('Making train test split')
     train, test = dataset.train_test_split()
     print('Done\n')
-    if super_sample:
-        print('Super sampling...')
-        train = dataset.super_sample(train, pct_words_to_replace=super_sample)
-        print('Done\n')
-        print('Dataset after super sampling:')
-        print('Total:')
-        dataset.print_status_report()
-        print('Train:')
-        dataset.print_status_report(train)
-        print('Test:')
-        dataset.print_status_report(test)
-        print()
-    return dataset, train, test
+    print('Super sampling train...')
+    train = dataset.super_sample(train, pct_words_to_replace=sup)
+    print('Done\n')
+    print('Dataset after super sampling:')
+    print('Total:')
+    dataset.print_status_report()
+    print('Train:')
+    dataset.print_status_report(train)
+    print('Test:')
+    dataset.print_status_report(test)
+    print()
+    return train, test
 
 
 def create_features(feature_extractor, data,  text, lexicon, sentiment, reddit,
@@ -102,7 +113,7 @@ def write_preprocessed(header_features, preprocessed_data, filename, write_rumou
         for (sub_id, id, t, sdqc_p, sdqc_s, vec) in preprocessed_data:
             if write_rumours_sep and sub_id in sub_to_truth:
                 truth = sub_to_truth[sub_id]
-                with open(out_path + '_rumours.csv', 'w+', newline='') as rumour_file:
+                with open(out_path + '_rumours.csv', 'a', newline='') as rumour_file:
                     csv_writer_r = csv.writer(rumour_file, delimiter='\t')
                     csv_writer_r.writerow([sub_id, id, t, truth, sdqc_s, *vec])
             else:
@@ -110,7 +121,7 @@ def write_preprocessed(header_features, preprocessed_data, filename, write_rumou
     print('Done')
 
 
-def write_reddit_corupus(annotations, filename='../data/corpus/reddit_sentences.txt'):
+def write_reddit_corpus(annotations, filename='../data/corpus/reddit_sentences.txt'):
     with open(filename, 'w+', encoding='utf-8') as outfile:
         for i, annotation in enumerate(annotations):
             sentences = sent_tokenize(annotation.text.lower(), language='danish')
@@ -153,7 +164,6 @@ def main(argv):
                         help='Enable fastText word embeddings with default vector size 300')
     parser.add_argument('-c', '--corpus', default=False, dest='corpus', action='store_true',
                         help='Write a corpus file for Reddit data')
-    parser.add_argument('-concat', '--concat', default=False, action='store_true', help='Concatenate train and test to a single output file')
     parser.add_argument('-bow_dict', '--bow_dict', default=False, action='store_true', help='Store file with bow words.')
     parser.add_argument('-o', '--outname', help='output name prefix for preprocessed file')
     parser.add_argument('-path', '--path', help='path to data to preprocess', default='../data/annotated/')
@@ -173,7 +183,7 @@ def main(argv):
     features = []
     for arg in vars(args):
         attr = getattr(args, arg)
-        if attr:
+        if attr and not arg == 'path':
             if not (arg == 'sup' or arg == 'sub'):
                 features.append(arg)
             outputfile += '_%s' % arg
@@ -184,24 +194,27 @@ def main(argv):
 
     word_embeddings.load_saved_word_embeddings(args.word2vec, args.fasttext)
 
-    dataset, train, test = preprocess(args.path, args.sub, args.sup)
+    dataset = preprocess(args.path, args.sub)
     if args.corpus:
-        train.extend(test)
-        write_reddit_corupus(train)
+        write_reddit_corpus(dataset.iterate_annotations())
         return
 
     feature_extractor = FeatureExtractor(dataset)
-    train_features = create_features(feature_extractor, train, args.text, args.lexicon, args.sentiment, args.reddit,
-                                    args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
-    test_features = create_features(feature_extractor, test, args.text, args.lexicon, args.sentiment, args.reddit,
-                                    args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
 
-    if args.concat:
-        train_features.extend(test_features)
-        write_preprocessed(features, train_features, outputfile)
-    else:
+    if args.sup:
+        train, test = super_sample(dataset, args.sup)
+        train_features = create_features(feature_extractor, train, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
+        test_features = create_features(feature_extractor, test, args.text, args.lexicon, args.sentiment, args.reddit,
+                                        args.most_frequent, args.bow, args.pos, (args.word2vec or args.fasttext))
         write_preprocessed(features, train_features, outputfile + '_train')
         write_preprocessed(features, test_features, outputfile + '_test')
+    else:
+        feature_vectors = create_features(feature_extractor, dataset.iterate_annotations(), args.text, args.lexicon,
+                                          args.sentiment, args.reddit, args.most_frequent, args.bow, args.pos,
+                                          (args.word2vec or args.fasttext))
+        write_preprocessed(features, feature_vectors, outputfile)
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
