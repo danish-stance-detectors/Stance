@@ -12,10 +12,13 @@ output_folder = '../../output/end-to-end/'
 parser = argparse.ArgumentParser(description='Prediction of stance labels')
 parser.add_argument('-f', '--file_folder', default='../data/annotated/', help='Input folder holding annotated data')
 parser.add_argument('-b', '--branches', default=False, action='store_true', help='Predict and structure in branches')
+parser.add_argument('-c', '--conversations', default=False, action='store_true',
+                    help='Predict and structure in conversations')
 parser.add_argument('-s', '--stats', default=False, action='store_true', help='Write out stats')
 args = parser.parse_args()
 file_folder = args.file_folder
 branch_structure = args.branches
+conversation_structure = args.conversations
 enable_stats = args.stats
 
 truth_to_id = {
@@ -27,20 +30,35 @@ truth_to_id = {
 rand = np.random.RandomState(42)
 
 rumour_submissions = {}
-rumour_submissions_branches = {}
+rumour_branches = {}
+rumour_conversations = {}
 
-if branch_structure:
-    output_folder = os.path.join(output_folder, 'branches/')
-    with open('../rumour_branches.txt', 'r') as infile:
+if branch_structure or conversation_structure:
+    folder = os.path.join(output_folder, 'branches/')
+    with open(os.path.join(folder, 'rumour_branches.txt'), 'r') as infile:
         submissions = infile.read().split('\n\n\n')
         for submission in submissions:
             branches = submission.split('\n\n')
             sub_id = branches[0]
             for branch in branches[1:]:
                 branch_post_ids = branch.split('\n')
-                if sub_id not in rumour_submissions_branches:
-                    rumour_submissions_branches[sub_id] = []
-                rumour_submissions_branches[sub_id].append(branch_post_ids)
+                if sub_id not in rumour_branches:
+                    rumour_branches[sub_id] = []
+                rumour_branches[sub_id].append(branch_post_ids)
+    if conversation_structure:
+        folder = os.path.join(output_folder, 'conversations/')
+        for sub_id, branches in rumour_branches.items():
+            if sub_id not in rumour_conversations:
+                rumour_conversations[sub_id] = {}
+            for branch in branches:
+                head = branch[0]
+                if head not in rumour_conversations[sub_id]:
+                    rumour_conversations[sub_id][head] = {head}
+                # if not len(branch) > 1:  # Should never happen
+                #     continue
+                for c_id in branch[1:]:
+                    rumour_conversations[sub_id][head].add(c_id)
+    output_folder = folder
 else:
     output_folder = os.path.join(output_folder, 'submission/')
 
@@ -115,6 +133,8 @@ def create_files(stance_no_time, stance_time):
 
 if branch_structure:
     create_files('stance_labels_branch.csv', 'stance_labels_time_branch.csv')
+elif conversation_structure:
+    create_files('stance_labels_conv.csv', 'stance_labels_time_conv.csv')
 else:
     create_files('stance_labels.csv', 'stance_labels_time.csv')
 
@@ -144,13 +164,18 @@ for LOO_sub_id in submission_ids:  # The submission to leave out
     rumour_X_test = np.asarray(rumour_X_test, dtype=np.float64, order='C')
     rumour_y_test = [x[3] for x in rumour_test]
     y_true, y_pred = rumour_y_test, clf.predict(rumour_X_test)
+    id_to_y_pred = dict([(x[2], (x[0], y)) for x, y in zip(rumour_test, y_pred)])
 
     if branch_structure:
-        id_to_y_pred = dict([(x[2], (x[0], y)) for x, y in zip(rumour_test, y_pred)])
-        branches = rumour_submissions_branches[LOO_sub_id]
+        branches = rumour_branches[LOO_sub_id]
         for branch in branches:
             branch_time_label = [id_to_y_pred[c_id] for c_id in branch]
             write_labels(branch_time_label, 'stance_labels_branch.csv', 'stance_labels_time_branch.csv')
+    elif conversation_structure:
+        conversations = rumour_conversations[LOO_sub_id]
+        for conversation in conversations.values():
+            conversations_time_label = [id_to_y_pred[c_id] for c_id in conversation]
+            write_labels(conversations_time_label, 'stance_labels_conv.csv', 'stance_labels_time_conv.csv')
     else:
         y_pred_time = [(x[0], y) for x, y in zip(rumour_test, y_pred)]
         write_labels(y_pred_time, 'stance_labels.csv', 'stance_labels_time.csv')
