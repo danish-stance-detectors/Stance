@@ -190,12 +190,12 @@ classifiers_vt = {
 }
 
 classifiers_best = {
-    'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
-                                penalty='l2', C=1, class_weight='balanced', max_iter=50000),
+    # 'logit': LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
+    #                             penalty='l2', C=1, class_weight='balanced', max_iter=50000),
     'svm': LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand),
-    'mv': DummyClassifier(strategy='most_frequent'),
-    'stratify': DummyClassifier(strategy='stratified', random_state=rand),
-    'random': DummyClassifier(strategy='uniform', random_state=rand)
+    # 'mv': DummyClassifier(strategy='most_frequent'),
+    # 'stratify': DummyClassifier(strategy='stratified', random_state=rand),
+    # 'random': DummyClassifier(strategy='uniform', random_state=rand)
 }
 
     
@@ -327,16 +327,32 @@ def BOW_VT(X_train, X_test, y_train, y_test, feature_mapping):
 
 def CV_sup(clfs, name, X, y, X_sup, y_sup, k_folds=5):
     clf = clfs[name]
-    rs = StratifiedShuffleSplit(n_splits=k_folds, test_size=.25, random_state=rand)
+    rs = StratifiedShuffleSplit(n_splits=k_folds, test_size=.2, random_state=rand)
     f1s = []
     accs = []
-    for train_i, test_i in rs.split(X, y):
+
+    for (train_i, test_i), (suptrain_i, subtest_i) in zip(rs.split(np.zeros(len(X)), y),
+                                                          rs.split(np.zeros(len(X_sup)), y_sup)):
         X_train = [X[i] for i in train_i]
-        X_train = np.append(X_train, X_sup, axis=0)
+        # X_train = np.append(X_train, X_sup, axis=0)
+        for i in suptrain_i:
+            x_sup_orig, x_sup_cp = X_sup[i]
+            X_train.append(x_sup_orig)
+            X_train.append(x_sup_cp)
         X_test = [X[i] for i in test_i]
+        for i in subtest_i:
+            x_sup_orig, x_sup_cp = X_sup[i]
+            X_test.append(x_sup_orig)
+            X_test.append(x_sup_cp)
         y_train = [y[i] for i in train_i]
-        y_train.extend(y_sup)
+        for i in suptrain_i:
+            y_train.append(y_sup[i])
+            y_train.append(y_sup[i])
+        # y_train.extend(y_sup)
         y_test = [y[i] for i in test_i]
+        for i in subtest_i:
+            y_test.append(y_sup[i])
+            y_test.append(y_sup[i])
         clf.fit(X_train, y_train)
         y_true, y_pred = y_test, clf.predict(X_test)
         _, acc, f1 = model_stats.cm_acc_f1(y_true, y_pred)
@@ -353,13 +369,13 @@ def CV_sup(clfs, name, X, y, X_sup, y_sup, k_folds=5):
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
     parser.add_argument('-x', '--train_file', dest='train_file',
-                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_train.csv',
                         help='Input file holding train data')
     parser.add_argument('-y', '--test_file', dest='test_file',
-                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                         help='Input file holding test data')
     parser.add_argument('-sup', '--sup_file',
-                        default='../data/preprocessed/PP_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_sup.csv',
+                        default='../data/preprocessed/PP_sub_sup50_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_sup.csv',
                         help='Input file holding test data')
     parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                         help='Number of folds for cross validation (default=5)')
@@ -392,20 +408,28 @@ def main(argv):
     X_train_ = np.asarray(data_loader.select_features(X_train, feature_mapping, config), dtype=np.float64, order='C')
     X_test_ = np.asarray(data_loader.select_features(X_test, feature_mapping, config), dtype=np.float64, order='C')
     X_sup_, y_sup = [], []
-    if args.sup_file:
+    if args.sup_file and args.cross_validate_sup:
         X_sup, y_sup, _, _, sup_ids = data_loader.get_features_and_labels(args.sup_file, with_ids=True)
         X_train_new, y_train_new = [], []
+        X_sup_orig = [None]*len(sup_ids)
         for x_id, x_tr, y_tr in zip(train_ids, X_train, y_train):
-            if '%s_' % x_id in sup_ids:
-                X_sup.append(x_tr)
-                y_sup.append(y_tr)
+            sup_id = '%s_' % x_id
+            if sup_id in sup_ids:
+                # x_tr_sub = X_sup[sup_ids.index(sup_id)]
+                sup_index = sup_ids.index(sup_id)
+                X_sup_orig[sup_index] = x_tr
+                # y_sup.append(y_tr)
             else:
                 X_train_new.append(x_tr)
                 y_train_new.append(y_tr)
         X_train_ = np.asarray(data_loader.select_features(X_train_new, feature_mapping, config),
                               dtype=np.float64, order='C')
         y_train = y_train_new
-        X_sup_ = np.asarray(data_loader.select_features(X_sup, feature_mapping, config), dtype=np.float64, order='C')
+        X_sup_orig = np.asarray(data_loader.select_features(X_sup_orig, feature_mapping, config),
+                                dtype=np.float64, order='C')
+        X_sup = np.asarray(data_loader.select_features(X_sup, feature_mapping, config), dtype=np.float64, order='C')
+        for x_sup_orig, x_sup_cp in zip(X_sup_orig, X_sup):
+            X_sup_.append((x_sup_orig, x_sup_cp))
 
     # Merged data
     X_all = np.append(X_train_, X_test_, axis=0)
@@ -429,7 +453,7 @@ def main(argv):
     skf = StratifiedKFold(n_splits=args.k_folds, shuffle=True, random_state=rand)
 
     if args.cross_validate_sup:
-        CV_sup(clfs, 'svm', X_all, y_all, X_sup_, y_sup, k_folds=3)
+        CV_sup(clfs, 'svm', X_all, y_all, X_sup_, y_sup)
     if args.cross_val_plot:
         cross_val_plot(X_all, y_all, skf, clfs)
     if args.loo_features:

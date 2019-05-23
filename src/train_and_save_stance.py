@@ -1,6 +1,6 @@
 # external imports
 import argparse
-import os
+import numpy as np
 import sys
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
@@ -9,6 +9,8 @@ import numpy as np
 
 # our imports
 import data_loader
+
+rand = np.random.RandomState(42)
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -21,9 +23,10 @@ def main(argv):
     if args.train_file and args.test_file and args.out_path:
         clf = None
         if args.model == "svm":
-            clf = LinearSVC(C=10, class_weight=None, dual=True)
+            clf = LinearSVC(penalty='l2', C=10, class_weight=None, dual=True, max_iter=50000, random_state=rand)
         elif args.model == "logit":
-            clf = LogisticRegression(C=1, class_weight="balanced", dual=True)
+            clf = LogisticRegression(solver='liblinear', multi_class='auto', dual=True,
+                                     penalty='l2', C=1, class_weight='balanced', max_iter=50000)
         
         X, y, n_features, feature_mapping = data_loader.load_train_test_data(train_file=args.train_file, test_file=args.test_file, split=False)
         
