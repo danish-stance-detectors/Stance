@@ -20,7 +20,8 @@ truth_to_id = {
 }
 sub_to_truth = {}
 
-def preprocess(filename, sub_sample, super_sample):
+
+def preprocess(filename, sub_sample, super_sample, write_rumours=False):
     if not filename:
         return
     dataset = RedditDataset()
@@ -43,11 +44,21 @@ def preprocess(filename, sub_sample, super_sample):
                 print("Preprocessing submission: ", submission_json)
                 json_obj = json.load(file)
                 sub = json_obj['redditSubmission']
-                if sub['IsRumour'] and (not sub['IsIrrelevant']):
-                    truth = sub["TruthStatus"]
-                    sub_to_truth[submission_json.replace('.json', '')] = truth_to_id[truth]
                 dataset.add_reddit_submission(sub)
                 branches = json_obj['branches']
+                if sub['IsRumour'] and (not sub['IsIrrelevant']):
+                    truth = sub["TruthStatus"]
+                    sub_id = submission_json.replace('.json', '')
+                    sub_to_truth[sub_id] = truth_to_id[truth]
+                    if write_rumours:
+                        with open('rumour_branches.txt', 'a+', encoding='utf8') as outfile:
+                            outfile.write(sub_id + '\n\n')
+                            for branch in branches:
+                                for anno in branch:
+                                    c_id = anno['comment']['comment_id']
+                                    outfile.write(c_id + '\n')
+                                outfile.write('\n')
+                            outfile.write('\n')
                 for i, branch in enumerate(branches):
                     dataset.add_submission_branch(branch, sub_sample=sub_sample)
     print('Done\n')
@@ -202,6 +213,7 @@ def main(argv):
     else:
         write_preprocessed(features, train_features, outputfile + '_train')
         write_preprocessed(features, test_features, outputfile + '_test')
+
 
 if __name__ == "__main__":
     main(sys.argv[1:])
