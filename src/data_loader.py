@@ -34,7 +34,7 @@ def get_instances(filename=datafile, delimiter=tab):
     return instances, n_features, feature_mapping
 
 
-def get_features(all_true=True, text=True, lexicon=True, sentiment=True, reddit=True, most_freq=True,
+def get_features(all_true=True, text=True, lexicon=False, sentiment=True, reddit=False, most_freq=False,
                  bow=True, pos=True, wembs=True):
     if all_true:
         return {'all': all_true, 'text': text, 'lexicon': lexicon,
