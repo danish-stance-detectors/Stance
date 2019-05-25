@@ -27,6 +27,12 @@ truth_to_id = {
     'Unverified': 2
 }
 
+sub_to_title = {'all': 'All'}
+with open('rumour_titles.txt', 'r', encoding='utf8') as infile:
+    for line in infile.readlines():
+        values = line.split('\t')
+        sub_to_title[values[0]] = values[1].rstrip('\n')
+
 rand = np.random.RandomState(42)
 
 rumour_submissions = {}
@@ -107,7 +113,7 @@ def normalize(x_i, min_x, max_x):
     return 0.0
 
 
-def write_labels(time_to_label, stance_no_time, stance_time, sub_id):
+def write_labels(time_to_label, stance_no_time, stance_time, s_id):
     with open(os.path.join(output_folder, stance_no_time), 'a', newline='') as stance_file, open(
             os.path.join(output_folder, stance_time), 'a', newline='') as stance_file_time:
         stance_writer = csv.writer(stance_file, delimiter='\t')
@@ -117,11 +123,11 @@ def write_labels(time_to_label, stance_no_time, stance_time, sub_id):
         min_time, max_time = time_to_label[0][0], time_to_label[len(time_to_label) - 1][0]
 
         # Write out stance labels sorted by time, excluding time stamp
-        stance_writer.writerow([truth_status, [y for x, y in time_to_label], sub_id])
+        stance_writer.writerow([truth_status, [y for x, y in time_to_label], s_id])
 
         # Write out stance labels sorted by time, including normalized time stamps
         y_pred_time_norm = [(y, normalize(t, min_time, max_time)) for t, y in time_to_label]
-        stance_time_writer.writerow([truth_status, y_pred_time_norm, sub_id])
+        stance_time_writer.writerow([truth_status, y_pred_time_norm, s_id])
 
 
 def create_files(stance_no_time, stance_time):
@@ -135,21 +141,34 @@ def create_files(stance_no_time, stance_time):
 
 def report_stats(true_labels, predicted_labels, loo_sub_id):
     # Write out stats for the prediction
+    global sub_to_title
     cm, acc, f1, sdqc_acc = model_stats.plot_confusion_matrix(true_labels, predicted_labels,
-                                                              title='%s confusion matrix' % LOO_sub_id)
+                                                              title='%s confusion matrix' % loo_sub_id)
     target_names = ['S', 'D', 'Q', 'C']
     cr = classification_report(true_labels, predicted_labels, labels=[0, 1, 2, 3],
                                target_names=target_names, output_dict=True)
     sdqc_f1 = [cr['S']['f1-score'], cr['D']['f1-score'], cr['Q']['f1-score'], cr['C']['f1-score']]
+    sdqc_distr = {
+        0: 0,
+        1: 0,
+        2: 0,
+        3: 0
+    }
+    for y_label in true_labels:
+        sdqc_distr[y_label] += 1
     print('Predict rumour', loo_sub_id)
+    print('Title:', sub_to_title[loo_sub_id])
     print('Acc: %.4f' % acc)
     print('f1: %.4f' % f1)
     print("SDQC acc:", sdqc_acc)
     print('SDQC f1:', sdqc_f1)
     print('True:', true_labels)
     print('Pred:', predicted_labels.tolist())
+    print('SDQC distribution: {}'.format(sdqc_distr))
     print()
-    with open(os.path.join(output_folder, LOO_sub_id + '_stance.txt'), 'w+') as rumour_stance_file:
+    with open(os.path.join(output_folder, loo_sub_id + '_stance.txt'), 'w+', encoding='utf8') as rumour_stance_file:
+        rumour_stance_file.write('Predict rumour: %s\n' % loo_sub_id)
+        rumour_stance_file.write('Title: %s\n' % sub_to_title[loo_sub_id])
         rumour_stance_file.write(np.array2string(cm) + '\n')
         rumour_stance_file.write('Acc: %.4f\n' % acc)
         rumour_stance_file.write('F1: %.4f\n' % f1)
@@ -159,6 +178,7 @@ def report_stats(true_labels, predicted_labels, loo_sub_id):
         rumour_stance_file.write(','.join(str(x) for x in true_labels) + '\n')
         rumour_stance_file.write('Predicted labels:\n')
         rumour_stance_file.write(','.join(str(x) for x in predicted_labels) + '\n')
+        rumour_stance_file.write('SDQC distribution: {}\n'.format(sdqc_distr))
 
 
 if branch_structure:
@@ -167,6 +187,7 @@ elif conversation_structure:
     create_files('stance_labels_conv.csv', 'stance_labels_time_conv.csv')
 else:
     create_files('stance_labels.csv', 'stance_labels_time.csv')
+    create_files('stance_labels_true.csv', 'stance_labels_time_true.csv')
 
 submission_ids = rumour_submissions.keys()
 for LOO_sub_id in submission_ids:  # The submission to leave out
@@ -212,7 +233,7 @@ for LOO_sub_id in submission_ids:  # The submission to leave out
         y_pred_time = [(x[0], y) for x, y in zip(rumour_test, y_pred)]
         write_labels(y_pred_time, 'stance_labels.csv', 'stance_labels_time.csv', LOO_sub_id)
         y_true_time = [(x[0], y) for x, y in zip(rumour_test, y_true)]
-        write_labels(y_pred_time, 'stance_labels_true.csv', 'stance_labels_time_true.csv', LOO_sub_id)
+        write_labels(y_true_time, 'stance_labels_true.csv', 'stance_labels_time_true.csv', LOO_sub_id)
 
     if enable_stats:
         report_stats(y_true, y_pred, LOO_sub_id)
