@@ -56,7 +56,7 @@ def plot_confusion_matrix(y_true, y_pred,
     cm, acc, f1, sdqc_acc = cm_acc_f1_sdqc(y_true, y_pred)
     # cm = confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = [0, 1, 2, 3]
+    classes = ['S', 'D', 'Q', 'C']
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
         print("Normalized confusion matrix")
