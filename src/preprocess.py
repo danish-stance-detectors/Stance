@@ -140,6 +140,28 @@ def write_reddit_corpus(annotations, filename='../data/corpus/reddit_sentences.t
                     outfile.write(t + ' ')
                 outfile.write('\n')
 
+def clear_usernames(path, outpath):
+    print("Cleaning user names and annotator names from annotated data.. \n")
+    for rumour_folder in os.listdir(filename):
+        rumour_folder_path = os.path.join(filename, rumour_folder)
+        if not os.path.isdir(rumour_folder_path):
+            continue
+        print("Cleaning event: ", rumour_folder)
+        for submission_json in os.listdir(rumour_folder_path):
+            submission_json_path = os.path.join(rumour_folder_path, submission_json)
+            with open(submission_json_path, "r", encoding='utf-8') as file:
+                print("Cleaning submission: ", submission_json)
+                json_obj = json.load(file)
+                sub = json_obj['redditSubmission']
+                del sub['user']['username']
+                
+                for branch in sub['branches']:
+                    for comment in branch:
+                        del comment['annotator']
+                        del comment['comment']['user']['username']
+                    
+                with open(outpath + '/' + rumour_folder + '/' + submission_json, "w+") as clean_file:
+                    json.dump(json_obj)
 
 def main(argv):
     parser = argparse.ArgumentParser(description='Preprocessing of data files for stance classification')
@@ -167,7 +189,14 @@ def main(argv):
     parser.add_argument('-bow_dict', '--bow_dict', default=False, action='store_true', help='Store file with bow words.')
     parser.add_argument('-o', '--outname', help='output name prefix for preprocessed file')
     parser.add_argument('-path', '--path', help='path to data to preprocess', default='../data/annotated/')
+    parser.add_argument('-clean', '--clean', default=False, dest='clean', action='store_true', help='Clean usernames and annotator names from annotated data')
     args = parser.parse_args(argv)
+
+    if args.clean:
+        if not args.outname:
+            print("Please provide an outpath pointing to an empty directory.")
+        else:
+            clear_usernames(args.path, args.outname)
 
     if args.bow_dict:
         bow_set = load_bow_list(args.path)
