@@ -256,7 +256,7 @@ def train_eng_test_danish(file_en, file_da, distribution_voter, min_length=1):
     # load data
     danish_data, emb_size_da = hmm_data_loader.get_hmm_data(filename=file_da)
     danish_data_X = [x[1] for x in danish_data]
-    danish_data_y = [x[0] for x in danish_data]
+    danish_data_y = [x[0] if x[0] != 2 else 1 for x in danish_data]
     
     data_train, _ = hmm_data_loader.get_semeval_hmm_data(filename=file_en)
     y_train = [x[1] for x in data_train]
