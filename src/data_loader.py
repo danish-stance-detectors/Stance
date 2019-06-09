@@ -40,7 +40,7 @@ def get_instances(filename=datafile, delimiter=tab):
     return instances, n_features, feature_mapping
 
 
-def get_features(all_true=True, text=True, lexicon=False, sentiment=True, reddit=False, most_freq=False,
+def get_features(all_true=True, text=True, lexicon=True, sentiment=True, reddit=True, most_freq=True,
                  bow=True, pos=True, wembs=True):
     if all_true:
         return {'all': all_true, 'text': text, 'lexicon': lexicon,
@@ -92,7 +92,7 @@ def get_features_and_labels(filename=datafile, delimiter=tab, with_ids=False):
     return X, y, n_features, feature_mapping
 
 
-def get_train_test_split(filename=datafile, delimiter=tab, test_size=0.25):
+def get_train_test_split(filename=datafile, delimiter=tab, test_size=0.2):
     X, y, n_features, feature_mapping = get_features_and_labels(filename, delimiter)
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -135,10 +135,10 @@ def load_bow_list(path):
     print("Found {} unique words in {}".format(len(word_set), path))
     return word_set
 
-def union_reduce_then_split(x1, x2):
+def union_reduce_then_split(x1, x2, th=0.001):
     split = len(x1)
     x_union = []
     x_union.extend(x1)
     x_union.extend(x2)
-    x_transformed = VarianceThreshold(0.001).fit_transform(x_union)
+    x_transformed = VarianceThreshold(threshold=th).fit_transform(x_union)
     return x_transformed[:split], x_transformed[split:]
