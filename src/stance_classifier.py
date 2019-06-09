@@ -14,8 +14,8 @@ import argparse
 import os
 import sys
 import csv
-import data_loader
-import model_stats
+from src import data_loader
+from src import model_stats
 
 output_folder = '../output/cross_validation/'
 rand = np.random.RandomState(42)
@@ -335,24 +335,27 @@ def CV_sup(clfs, name, X, y, X_sup, y_sup, k_folds=5):
                                                           rs.split(np.zeros(len(X_sup)), y_sup)):
         X_train = [X[i] for i in train_i]
         # X_train = np.append(X_train, X_sup, axis=0)
-        for i in suptrain_i:
-            x_sup_orig, x_sup_cp = X_sup[i]
-            X_train.append(x_sup_orig)
-            X_train.append(x_sup_cp)
+        X_train = np.append(X_train, [x[0] for x in X_sup], axis=0)
+        X_train = np.append(X_train, [x[1] for x in X_sup], axis=0)
+        # for i in suptrain_i:
+        #     x_sup_orig, x_sup_cp = X_sup[i]
+        #     X_train.append(x_sup_orig)
+        #     X_train.append(x_sup_cp)
         X_test = [X[i] for i in test_i]
-        for i in subtest_i:
-            x_sup_orig, x_sup_cp = X_sup[i]
-            X_test.append(x_sup_orig)
-            X_test.append(x_sup_cp)
+        # for i in subtest_i:
+        #     x_sup_orig, x_sup_cp = X_sup[i]
+        #     X_test.append(x_sup_orig)
+        #     X_test.append(x_sup_cp)
         y_train = [y[i] for i in train_i]
-        for i in suptrain_i:
-            y_train.append(y_sup[i])
-            y_train.append(y_sup[i])
-        # y_train.extend(y_sup)
+        y_train.extend(y_sup)
+        y_train.extend(y_sup)
+        # for i in suptrain_i:
+        #     y_train.append(y_sup[i])
+        #     y_train.append(y_sup[i])
         y_test = [y[i] for i in test_i]
-        for i in subtest_i:
-            y_test.append(y_sup[i])
-            y_test.append(y_sup[i])
+        # for i in subtest_i:
+        #     y_test.append(y_sup[i])
+        #     y_test.append(y_sup[i])
         clf.fit(X_train, y_train)
         y_true, y_pred = y_test, clf.predict(X_test)
         _, acc, f1 = model_stats.cm_acc_f1(y_true, y_pred)
@@ -403,7 +406,7 @@ def main(argv):
     # X_train, X_test, y_train, y_test, n_features, feature_mapping = data_loader.load_train_test_data(
     #     train_file=args.train_file, test_file=args.test_file
     # )
-    config = data_loader.get_features(most_freq=False, reddit=False, lexicon=False)
+    config = data_loader.get_features()
     # Split data
     X_train_ = np.asarray(data_loader.select_features(X_train, feature_mapping, config), dtype=np.float64, order='C')
     X_test_ = np.asarray(data_loader.select_features(X_test, feature_mapping, config), dtype=np.float64, order='C')
