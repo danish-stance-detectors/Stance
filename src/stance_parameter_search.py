@@ -22,7 +22,7 @@ parser.add_argument('-x', '--train_file', dest='train_file', default='../data/pr
                         help='Input file holding train data')
 parser.add_argument('-y', '--test_file', dest='test_file', default='../data/preprocessed/PP_text_lexicon_sentiment_reddit_most_frequent100_bow_pos_word2vec300_test.csv',
                     help='Input file holding test data')
-parser.add_argument('-k', '--k_folds', dest='k_folds', default=3, type=int, nargs='?',
+parser.add_argument('-k', '--k_folds', dest='k_folds', default=5, type=int, nargs='?',
                     help='Number of folds for cross validation (default=5)')
 parser.add_argument('-g', '--grid', default=False, action='store_true',
                     help='Enable GridSearchCV, otherwise use RandomizedSearchCV')
@@ -50,26 +50,25 @@ settings = [
 ]
 
 settings_rand = [
-    ('svm', LinearSVC(random_state=rand, penalty='l2'), {
-        'C': [1, 10, 50, 100, 500, 1000], 'class_weight': ['balanced', None],
-        'max_iter': [50000], 'dual': [True, False]}),
-    ('logit', LogisticRegression(solver='liblinear', max_iter=50000, multi_class='auto',
-                                 penalty='l2', random_state=rand), {
-        'dual': [True, False], 'class_weight': ['balanced', None], 'C': [1, 10, 50, 100, 500, 1000]}),
-    # ('tree', DecisionTreeClassifier(presort=True, random_state=rand), {
-    #         'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
-    #         'max_depth': [3, 10, 50, None], "min_samples_split": sp_randint(2, 11),
-    #         'max_features': ['auto', 'log2', None], 'class_weight': ['balanced', None]}),
-    # ('rf', RandomForestClassifier(n_jobs=-1, random_state=rand), {
-    #     'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
-    #     'max_depth': [3, 10, 50, None], 'max_features': ['auto', 'log2', None],
-    #     "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False],
-    #     'class_weight': ['balanced_subsample', None]})
+    # ('svm', LinearSVC(random_state=rand, penalty='l2'), {
+    #     'C': [1, 10, 50, 100, 500, 1000], 'class_weight': ['balanced', None],
+    #     'max_iter': [50000], 'dual': [True, False]}),
+    # ('logit', LogisticRegression(solver='liblinear', max_iter=50000, multi_class='auto',
+    #                              penalty='l2', random_state=rand), {
+    #     'dual': [True, False], 'class_weight': ['balanced', None], 'C': [1, 10, 50, 100, 500, 1000]}),
+    ('tree', DecisionTreeClassifier(presort=True, random_state=rand, max_features='auto', class_weight='balanced'), {
+            'criterion': ['entropy', 'gini'], 'splitter':['best', 'random'],
+            'max_depth': [10, 50, None], "min_samples_split": sp_randint(2, 11),
+            'max_features': ['auto', 'log2', None]}),
+    ('rf', RandomForestClassifier(n_jobs=-1, random_state=rand, max_features='auto', class_weight='balanced_subsample'), {
+        'n_estimators': sp_randint(10, 1000), 'criterion': ['entropy', 'gini'],
+        'max_depth': [10, 50, None],
+        "min_samples_split": sp_randint(2, 11), "bootstrap": [True, False]})
 ]
 
 scorer = 'f1_macro'
 folds = args.k_folds
-skf = StratifiedKFold(n_splits=folds, shuffle=True, random_state=rand)
+skf = StratifiedKFold(n_splits=folds)#, shuffle=True, random_state=rand)
 config = data_loader.get_features(lexicon=False, reddit=False, most_freq=False)
 feature_names = config.keys()
 
@@ -108,10 +107,10 @@ for name, estimator, tuned_parameters in (settings_rand if not grid_search else 
     with open('%s.txt' % results_filename, 'a+') as outfile, \
             open(stats_filename, 'a', newline='') as statsfile:
         csv_writer = csv.writer(statsfile)
-        clf = GridSearchCV(
+        clf = RandomizedSearchCV(
             estimator, tuned_parameters, scoring=scorer, n_jobs=-1, error_score=0, verbose=1,
             cv=skf, iid=False, return_train_score=False, pre_dispatch='2*n_jobs',
-            # random_state=rand, n_iter=rand_iter
+            random_state=rand, n_iter=rand_iter
         )
         clf.fit(X_train_, y_train)
 
